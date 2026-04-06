@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Revenue and Billing - AI LEGALNOMICS OS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top left,#0b1633 0%,#050816 55%,#02040b 100%);
+      color:#fff;
+      padding:20px;
+    }
+    a{text-decoration:none;color:#c9b3ff}
+    .shell{max-width:1600px;margin:0 auto}
+    .hero,.panel,.stat,.card{
+      background:rgba(8,15,40,.94);
+      border:1px solid rgba(120,140,255,.18);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 0 18px rgba(0,0,0,.18);
+    }
+    .hero{
+      background:linear-gradient(135deg,rgba(88,44,130,.30),rgba(17,61,115,.35));
+      border:1px solid rgba(180,120,255,.25);
+      padding:28px;
+      margin-bottom:22px;
+      box-shadow:0 0 30px rgba(76,36,120,.15);
+    }
+    .hero h1{font-size:34px;margin-bottom:14px}
+    .hero p{font-size:16px;line-height:1.8;max-width:1200px;color:#e9e9f4}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .chip{
+      background:rgba(122,66,188,.18);
+      border:1px solid rgba(189,136,255,.25);
+      color:#f1d8ff;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:13px;
+    }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+    .stat .label{font-size:15px;color:#c9b7ff;margin-bottom:10px}
+    .stat .value{font-size:28px;font-weight:700;margin-bottom:10px}
+    .stat .sub{font-size:15px;color:#d8dbe7;line-height:1.7}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .card h3{font-size:18px;margin-bottom:16px}
+    .list div{
+      padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      line-height:1.7;
+      color:#e5e7f2;
+      font-size:15px;
+    }
+    .list div:last-child{border-bottom:none}
+    .badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      margin-right:8px;
+      background:#173d73;
+      color:#d9e9ff;
+      border:1px solid #3967a6;
+    }
+    .btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .btn{
+      display:inline-block;
+      padding:12px 18px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.12);
+      background:#6d3cc7;
+      color:#fff;
+    }
+    .btn.alt{background:#13224d}
+    .btn.green{background:#0c7c46}
+    @media(max-width:1200px){
+      .stats,.grid2{grid-template-columns:repeat(2,1fr)}
+    }
+    @media(max-width:700px){
+      .stats,.grid2{grid-template-columns:1fr}
+      .hero h1{font-size:28px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div style="margin-bottom:16px;">
+      <a href="/legalnomics/advocate/">Back to Advocate Workspace</a>
+    </div>
+
+    <section class="hero">
+      <h1>Revenue and Billing</h1>
+      <p>
+        Financial visibility layer for legal consultations, drafting charges, advocate-reviewed outputs,
+        premium case strategy billing and payment collection follow-ups.
+      </p>
+      <div class="chips">
+        <span class="chip">Revenue Tracking</span>
+        <span class="chip">Billing Queue</span>
+        <span class="chip">Package Pricing</span>
+        <span class="chip">Collection Status</span>
+        <span class="chip">Matter Monetization</span>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="label">Current Month Revenue</div>
+        <div class="value">INR 2.48L</div>
+        <div class="sub">Combined revenue from consultation, drafting and review work.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Pending Invoices</div>
+        <div class="value">11</div>
+        <div class="sub">Cases ready for invoice issuance or payment reminder.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Collected Payments</div>
+        <div class="value">34</div>
+        <div class="sub">Closed or partially collected billing records for active matters.</div>
+      </div>
+      <div class="stat">
+        <div class="label">High Value Matters</div>
+        <div class="value">7</div>
+        <div class="sub">Premium legal matters with higher review or strategy billing.</div>
+      </div>
+    </section>
+
+    <section class="grid2">
+      <div class="panel">
+        <h2 style="margin-bottom:18px;">Billing Queue</h2>
+        <div class="list">
+          <div><span class="badge">Pending</span> Rakesh Patel - Reply Draft - INR 699</div>
+          <div><span class="badge">Part Paid</span> Neha Shah - Property Matter - INR 1499</div>
+          <div><span class="badge">Pending</span> ABC Manufacturing - Corporate Response - INR 2999</div>
+          <div><span class="badge">Paid</span> Mehul Trivedi - Consumer Notice - INR 299</div>
+          <div><span class="badge">Internal</span> Compliance desk matter - Non-billable</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin-bottom:18px;">Pricing and Monetization Layers</h2>
+        <div class="list">
+          <div>Quick Consultation - INR 299</div>
+          <div>Priority Review - INR 699</div>
+          <div>Notice Draft - INR 299 to INR 499</div>
+          <div>Strong Rebuttal - INR 699 to INR 999</div>
+          <div>Advocate Reviewed Output - INR 1499</div>
+          <div>Premium Case Strategy - INR 2999</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin-bottom:18px;">Collection Follow-up</h2>
+        <div class="list">
+          <div>Invoice ready matters can trigger payment follow-up reminders</div>
+          <div>Part-paid matters stay visible in CRM and billing queue</div>
+          <div>Billing can later sync with case stage and closure status</div>
+          <div>High-value clients can move into retainership or premium support</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 style="margin-bottom:18px;">Revenue Control Actions</h2>
+        <div class="list">
+          <div>Generate invoice placeholder</div>
+          <div>Mark paid / part paid / pending</div>
+          <div>Flag high-value matters for senior attention</div>
+          <div>Track package-wise revenue contribution</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="btnrow">
+      <a href="#" class="btn">Generate Invoice</a>
+      <a href="#" class="btn alt">Mark Payment Collected</a>
+      <a href="#" class="btn green">Open Billing Queue</a>
+    </div>
+  </div>
+</body>
+</html>
