@@ -1,320 +1,162 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI LEGALNOMICS OS - Master Structure</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Arial,sans-serif;
-      background:radial-gradient(circle at top right,#241530 0%,#0b0e18 42%,#05070d 100%);
-      color:#fff;
-      min-height:100vh;
-      padding:28px;
-    }
-    .wrap{max-width:1540px;margin:auto}
-    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
-    .hero,.panel,.module,.metric,.sidecard{
-      background:rgba(12,16,30,.92);
-      border:1px solid #2a3250;
-      border-radius:22px;
-      box-shadow:0 0 30px rgba(96,54,150,.12);
-    }
-    .hero{
-      padding:32px;
-      margin-bottom:20px;
-      background:linear-gradient(135deg,#31183b,#1a2147,#0a1730);
-    }
-    .hero h1{font-size:48px;line-height:1.08;margin-bottom:14px}
-    .hero p{color:#ddd2f0;line-height:1.78;font-size:17px;max-width:1080px}
-    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
-    .chip{
-      display:inline-block;
-      padding:8px 12px;
-      border-radius:999px;
-      background:#231d38;
-      color:#e0c8ff;
-      font-size:12px;
-      border:1px solid #4a3566;
-    }
-    .layout{
-      display:grid;
-      grid-template-columns:290px 1fr;
-      gap:18px;
-      margin-top:18px;
-    }
-    .sidecard{padding:20px;height:fit-content}
-    .sidecard h3{font-size:18px;margin-bottom:14px}
-    .navbtn{
-      display:block;
-      width:100%;
-      text-decoration:none;
-      color:#fff;
-      background:#13192c;
-      border:1px solid #334064;
-      border-radius:14px;
-      padding:12px 14px;
-      margin-bottom:10px;
-      font-size:14px;
-    }
-    .navbtn.active{
-      background:linear-gradient(90deg,#4a245f,#2b2f63);
-      border-color:#8f5ed1;
-    }
-    .main{display:grid;gap:18px}
-    .metrics{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:18px;
-    }
-    .metric{padding:20px}
-    .metric h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
-    .value{font-size:34px;font-weight:700}
-    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
-    .split{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:18px;
-    }
-    .panel{padding:22px}
-    .panel h2{font-size:24px;margin-bottom:14px}
-    .panel p.lead{color:#cfc6e7;line-height:1.72;margin-bottom:18px}
-    .modules{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:18px;
-    }
-    .module{
-      padding:22px;
-      min-height:220px;
-      background:linear-gradient(180deg,#12182c,#0d1426);
-    }
-    .module h3{font-size:24px;margin-bottom:12px;color:#f4ddff}
-    .module p{color:#cbbfe3;line-height:1.68;font-size:14px;margin-bottom:16px}
-    .btnrow{display:flex;gap:10px;flex-wrap:wrap}
-    .btn{
-      display:inline-block;
-      padding:10px 14px;
-      border-radius:12px;
-      background:#6b2fa8;
-      border:1px solid #9659d4;
-      color:#fff;
-      text-decoration:none;
-      font-size:14px;
-    }
-    .btn.secondary{
-      background:#1b2340;
-      border-color:#43548c;
-    }
-    .queue{display:grid;gap:12px}
-    .queueitem{
-      background:#101729;
-      border:1px solid #2d3656;
-      border-radius:16px;
-      padding:14px;
-    }
-    .queueitem strong{display:block;margin-bottom:6px}
-    .queueitem span{color:#c2b8dd;font-size:14px;line-height:1.5}
-    .footergrid{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:18px;
-    }
-    .list div{
-      padding:10px 0;
-      border-bottom:1px solid #2a2140;
-      color:#f0ebff;
-      line-height:1.55;
-    }
-    .list div:last-child{border-bottom:none}
-    @media (max-width:1280px){
-      .layout{grid-template-columns:1fr}
-      .metrics,.footergrid,.split,.modules{grid-template-columns:repeat(2,1fr)}
-    }
-    @media (max-width:760px){
-      .metrics,.footergrid,.split,.modules{grid-template-columns:1fr}
-      .hero h1{font-size:36px}
-    }
-  </style>
+  <title>AI LEGALNOMICS OS</title>
+  <link rel="stylesheet" href="/legalnomics/_shared/shell.css" />
 </head>
 <body>
-  <div class="wrap">
-    <a class="toplink" href="/">Back to HNI WORLD OS</a>
-
-    <section class="hero">
-      <h1>AI LEGALNOMICS OS - Master Structure</h1>
-      <p>
-        AI LEGALNOMICS OS is now structured as a multi-segment legal operating system with separate active lanes for
-        B2C legal assist, advocate and law-firm workflow, corporate legal operations, and a shared legal intelligence core.
-        Judicial and government-employee legal layers remain intentionally separate and reserved for future dedicated build waves.
-      </p>
-      <div class="chipbar">
-        <span class="chip">B2C Legal Assist</span>
-        <span class="chip">Advocate Workspace</span>
-        <span class="chip">Corporate Legal Ops</span>
-        <span class="chip">Shared Legal Core</span>
-        <span class="chip">Judicial Reserved</span>
-        <span class="chip">Govt Reserved</span>
+  <div class="os-shell">
+    <aside class="os-sidebar">
+      <div class="brandbox">
+        <h1>AI LEGALNOMICS OS</h1>
+        <p>Master legal operating system under HNI WORLD OS. B2C, Advocate, Corporate and Shared Intelligence layers connected.</p>
       </div>
-    </section>
 
-    <div class="layout">
-      <aside class="sidecard">
-        <h3>LEGALNOMICS Navigation</h3>
-        <a class="navbtn active" href="/legalnomics/">Master Landing</a>
-        <a class="navbtn" href="/legalnomics/b2c/">B2C Legal Assist</a>
-        <a class="navbtn" href="/legalnomics/advocate/">Advocate Workspace</a>
-        <a class="navbtn" href="/legalnomics/corporate/">Corporate Legal Ops</a>
-        <a class="navbtn" href="/legalnomics/shared/">Shared Legal Core</a>
-        <a class="navbtn" href="/">Back to HNI WORLD OS</a>
-      </aside>
+      <div class="navgroup">
+        <div class="navtitle">Core</div>
+        <a class="navlink active" href="/legalnomics/">Legalnomics Home</a>
+        <a class="navlink" href="/">HNI WORLD OS</a>
+      </div>
 
-      <main class="main">
-        <section class="metrics">
-          <div class="metric">
-            <h3>Active Segments</h3>
+      <div class="navgroup">
+        <div class="navtitle">B2C Legal Assist</div>
+        <a class="navlink" href="/legalnomics/b2c/">B2C Home</a>
+        <a class="navlink" href="/legalnomics/b2c/notice/">Notice Generator</a>
+        <a class="navlink" href="/legalnomics/b2c/reply/">Reply Engine</a>
+        <a class="navlink" href="/legalnomics/b2c/consultation/">Consultation Funnel</a>
+      </div>
+
+      <div class="navgroup">
+        <div class="navtitle">Advocate Workspace</div>
+        <a class="navlink" href="/legalnomics/advocate/">Advocate Home</a>
+        <a class="navlink" href="/legalnomics/advocate/dashboard/">Dashboard</a>
+        <a class="navlink" href="/legalnomics/advocate/crm/">CRM</a>
+        <a class="navlink" href="/legalnomics/advocate/drafting/">Drafting Studio</a>
+        <a class="navlink" href="/legalnomics/advocate/vault/">Vault</a>
+        <a class="navlink" href="/legalnomics/advocate/hearing/">Hearing</a>
+        <a class="navlink" href="/legalnomics/advocate/timeline/">Timeline</a>
+        <a class="navlink" href="/legalnomics/advocate/leads/">Leads</a>
+        <a class="navlink" href="/legalnomics/advocate/billing/">Billing</a>
+      </div>
+
+      <div class="navgroup">
+        <div class="navtitle">Corporate</div>
+        <a class="navlink" href="/legalnomics/corporate/">Corporate Home</a>
+      </div>
+
+      <div class="navgroup">
+        <div class="navtitle">Shared Core</div>
+        <a class="navlink" href="/legalnomics/shared/">Shared Core</a>
+      </div>
+    </aside>
+
+    <main class="os-main">
+      <div class="os-topbar">
+        <div class="top-left">
+          <h2>AI LEGALNOMICS OS</h2>
+          <div class="breadcrumb">HNI WORLD OS > Legalnomics > Master Landing</div>
+        </div>
+        <div class="top-right">
+          <span class="topchip">India First</span>
+          <span class="topchip">Global Ready</span>
+          <span class="topchip">Role Based OS</span>
+        </div>
+      </div>
+
+      <div class="page-wrap">
+        <section class="hero">
+          <h1>Master Legal Operating System</h1>
+          <p>
+            AI LEGALNOMICS OS is structured as a multi-segment legal operating system with active layers for B2C legal assist, advocate workspace, corporate legal operations and shared legal intelligence. This shell is now persistent and forms the master navigation standard for future Legalnomics pages.
+          </p>
+          <div class="chips">
+            <span class="chip">B2C</span>
+            <span class="chip">Advocate</span>
+            <span class="chip">Corporate</span>
+            <span class="chip">Shared Core</span>
+            <span class="chip">Partner Network Pending</span>
+            <span class="chip">Lead Exchange Pending</span>
+          </div>
+        </section>
+
+        <section class="stats">
+          <div class="stat">
+            <div class="label">Active Segments</div>
             <div class="value">4</div>
-            <div class="sub">B2C, Advocate, Corporate and Shared Core are live as structured operating roots.</div>
+            <div class="sub">B2C, Advocate, Corporate and Shared Core active in structure.</div>
           </div>
-          <div class="metric">
-            <h3>Public Access</h3>
+          <div class="stat">
+            <div class="label">B2C Funnel</div>
             <div class="value">Live</div>
-            <div class="sub">Low-cost legal drafting and notice-response entry layer is active.</div>
+            <div class="sub">Notice, reply and consultation funnel already built.</div>
           </div>
-          <div class="metric">
-            <h3>Professional Lane</h3>
-            <div class="value">Ready</div>
-            <div class="sub">Advocate and law-firm workspace is structured for scale.</div>
+          <div class="stat">
+            <div class="label">Advocate Layer</div>
+            <div class="value">Strong</div>
+            <div class="sub">Workspace, CRM, drafting, vault, hearing, leads and billing live.</div>
           </div>
-          <div class="metric">
-            <h3>Reserved Verticals</h3>
-            <div class="value">2</div>
-            <div class="sub">Judicial and government employee legal layers kept separate intentionally.</div>
-          </div>
-        </section>
-
-        <section class="split">
-          <div class="panel">
-            <h2>Operational Segments</h2>
-            <p class="lead">
-              LEGALNOMICS is no longer a single page. It is now a structured legal system root with dedicated lanes
-              for public users, advocates, corporate teams and a shared intelligence layer that can later support deeper AI workflows.
-            </p>
-
-            <div class="modules">
-              <div class="module">
-                <h3>B2C Legal Assist</h3>
-                <p>
-                  Public-facing legal self-service lane for notices, replies, voice-note intake, affordable consultation entry
-                  and practical issue-resolution guidance.
-                </p>
-                <div class="btnrow">
-                  <a class="btn" href="/legalnomics/b2c/">Open B2C</a>
-                  <a class="btn secondary" href="/legalnomics/b2c/notice/">Notice</a>
-                </div>
-              </div>
-
-              <div class="module">
-                <h3>Advocate Workspace</h3>
-                <p>
-                  Professional operating layer for advocates, junior staff, law firms and legal teams with CRM,
-                  drafting, hearing prep and structured legal workflow.
-                </p>
-                <div class="btnrow">
-                  <a class="btn" href="/legalnomics/advocate/">Open Advocate</a>
-                  <a class="btn secondary" href="/legalnomics/advocate/drafting/">Drafting</a>
-                </div>
-              </div>
-
-              <div class="module">
-                <h3>Corporate Legal Ops</h3>
-                <p>
-                  Internal legal operations layer for companies, HR and compliance desks handling notices,
-                  disputes, escalation and internal legal response flow.
-                </p>
-                <div class="btnrow">
-                  <a class="btn" href="/legalnomics/corporate/">Open Corporate</a>
-                  <a class="btn secondary" href="/legalnomics/corporate/disputes/">Disputes</a>
-                </div>
-              </div>
-
-              <div class="module">
-                <h3>Shared Legal Core</h3>
-                <p>
-                  Shared intelligence spine for AI engine, templates, law library, case-Bible logic
-                  and future reusable legal automation across all active segments.
-                </p>
-                <div class="btnrow">
-                  <a class="btn" href="/legalnomics/shared/">Open Shared Core</a>
-                  <a class="btn secondary" href="/legalnomics/shared/law-library/">Law Library</a>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <h2>Current Priority Stack</h2>
-            <div class="queue">
-              <div class="queueitem">
-                <strong>B2C Conversion Layer</strong>
-                <span>Public drafting lane can later convert into consultation, advocate review and professional assignment flow.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Advocate Productivity Layer</strong>
-                <span>Law-firm workspace is positioned to reduce assistant dependency and speed up review operations.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Corporate Response Layer</strong>
-                <span>Companies can centralize notices, disputes, compliance actions and escalation visibility.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Shared AI Spine</strong>
-                <span>Templates, law references and future legal AI logic remain reusable across all segments.</span>
-              </div>
-            </div>
+          <div class="stat">
+            <div class="label">Next Phase</div>
+            <div class="value">Shell Lock</div>
+            <div class="sub">Now applying one uniform OS shell across the whole legal system.</div>
           </div>
         </section>
 
-        <section class="footergrid">
-          <div class="panel">
-            <h2>B2C Layer</h2>
-            <div class="list">
-              <div>Notice generator</div>
-              <div>Reply engine</div>
-              <div>Consultation intake</div>
+        <section class="grid">
+          <div class="card">
+            <h3>B2C Legal Assist</h3>
+            <p>Affordable public legal funnel with notice drafting, reply generation and consultation intake.</p>
+            <div class="btnrow">
+              <a class="btn" href="/legalnomics/b2c/">Open B2C</a>
+              <a class="btn alt" href="/legalnomics/b2c/notice/">Notice</a>
             </div>
           </div>
 
-          <div class="panel">
-            <h2>Advocate Layer</h2>
-            <div class="list">
-              <div>Dashboard and CRM</div>
-              <div>Drafting and review flow</div>
-              <div>Hearing preparation lane</div>
+          <div class="card">
+            <h3>Advocate Workspace</h3>
+            <p>Operational legal workspace for law firms, junior staff, hearing prep, CRM and billing.</p>
+            <div class="btnrow">
+              <a class="btn" href="/legalnomics/advocate/">Open Advocate</a>
+              <a class="btn alt" href="/legalnomics/advocate/dashboard/">Dashboard</a>
             </div>
           </div>
 
-          <div class="panel">
-            <h2>Corporate Layer</h2>
-            <div class="list">
-              <div>Dashboard and disputes</div>
-              <div>Compliance response support</div>
-              <div>Escalation-ready workflow</div>
+          <div class="card">
+            <h3>Corporate Legal Ops</h3>
+            <p>Enterprise legal desk for disputes, HR legal queue, compliance and internal response management.</p>
+            <div class="btnrow">
+              <a class="btn" href="/legalnomics/corporate/">Open Corporate</a>
             </div>
           </div>
 
-          <div class="panel">
-            <h2>Shared Core</h2>
-            <div class="list">
-              <div>AI engine structure</div>
-              <div>Templates vault</div>
-              <div>Law library and case-Bible base</div>
+          <div class="card">
+            <h3>Shared Legal Core</h3>
+            <p>Templates, law library, clause bank and future AI legal drafting intelligence spine.</p>
+            <div class="btnrow">
+              <a class="btn" href="/legalnomics/shared/">Open Shared Core</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Advocate Partner Network</h3>
+            <p>Pending build: registration, verification, specialization, notary network and staff management.</p>
+            <div class="btnrow">
+              <a class="btn alt" href="#">Pending Phase</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Lead Exchange Engine</h3>
+            <p>Pending build: lead buying, matching, assignment, geo-based routing and conversion logic.</p>
+            <div class="btnrow">
+              <a class="btn alt" href="#">Pending Phase</a>
             </div>
           </div>
         </section>
-      </main>
-    </div>
+      </div>
+    </main>
   </div>
 </body>
 </html>
