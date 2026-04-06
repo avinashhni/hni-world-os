@@ -13,10 +13,7 @@
       min-height: 100vh;
       padding: 40px 24px;
     }
-    .wrap {
-      max-width: 1250px;
-      margin: auto;
-    }
+    .wrap { max-width: 1250px; margin: auto; }
     .hero {
       background: rgba(9, 16, 32, 0.88);
       border: 1px solid #22365d;
@@ -25,10 +22,7 @@
       margin-bottom: 28px;
       box-shadow: 0 0 40px rgba(77, 163, 255, 0.12);
     }
-    .hero h1 {
-      font-size: 42px;
-      margin-bottom: 12px;
-    }
+    .hero h1 { font-size: 42px; margin-bottom: 12px; }
     .hero p {
       color: #c2d1f0;
       line-height: 1.7;
@@ -50,14 +44,14 @@
       gap: 18px;
       margin-bottom: 28px;
     }
+    .cardlink { text-decoration: none; color: inherit; }
     .card {
       background: rgba(9, 16, 32, 0.92);
       border: 1px solid #22365d;
       border-radius: 20px;
       padding: 22px;
-      text-decoration: none;
-      color: #fff;
       transition: transform .18s ease, border-color .18s ease;
+      min-height: 120px;
     }
     .card:hover {
       transform: translateY(-3px);
@@ -114,29 +108,39 @@
     </section>
 
     <section class="grid">
-      <a class="card" href="/dashboard/">
-        <h3>Owner Dashboard</h3>
-        <p>Main HNI WORLD OS command center and live operating shell.</p>
+      <a class="cardlink" href="/dashboard/">
+        <div class="card">
+          <h3>Owner Dashboard</h3>
+          <p>Main HNI WORLD OS command center and live operating shell.</p>
+        </div>
       </a>
 
-      <a class="card" href="/muski/">
-        <h3>MUSKI AI Core</h3>
-        <p>Master AI command brain and orchestration control layer.</p>
+      <a class="cardlink" href="/muski/">
+        <div class="card">
+          <h3>MUSKI AI Core</h3>
+          <p>Master AI command brain and orchestration control layer.</p>
+        </div>
       </a>
 
-      <a class="card" href="/airnomics/">
-        <h3>AI AIRNOMICS OS</h3>
-        <p>Air and travel execution structure under the shared enterprise spine.</p>
+      <a class="cardlink" href="/airnomics/">
+        <div class="card">
+          <h3>AI AIRNOMICS OS</h3>
+          <p>Air and travel execution structure under the shared enterprise spine.</p>
+        </div>
       </a>
 
-      <a class="card" href="/edunomics/">
-        <h3>AI EDUNOMICS OS</h3>
-        <p>Education intelligence and admissions ecosystem structure.</p>
+      <a class="cardlink" href="/edunomics/">
+        <div class="card">
+          <h3>AI EDUNOMICS OS</h3>
+          <p>Education intelligence and admissions ecosystem structure.</p>
+        </div>
       </a>
 
-      <a class="card" href="/legalnomics/">
-        <h3>AI LEGALNOMICS OS</h3>
-        <p>Legal intelligence, drafting, and case operations system shell.</p>
+      <a class="cardlink" href="/legalnomics/">
+        <div class="card">
+          <h3>AI LEGALNOMICS OS</h3>
+          <p>Legal intelligence, drafting, and case operations system shell.</p>
+        </div>
       </a>
     </section>
 
@@ -146,6 +150,7 @@
         <li>Wave 1: Live dashboard shell completed</li>
         <li>Wave 2: MUSKI AI Core section completed</li>
         <li>Wave 3: Multi-page OS structure completed</li>
+        <li>Wave 4: Route pages for MUSKI, AIRNOMICS, EDUNOMICS and LEGALNOMICS completed</li>
         <li>Next: Deeper module screens and internal workflow routing</li>
       </ul>
     </section>
