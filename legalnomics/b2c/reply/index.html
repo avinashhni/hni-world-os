@@ -1,1 +1,346 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LEGALNOMICS B2C Reply</title><style>body{font-family:Arial,sans-serif;background:#05070d;color:#fff;margin:0;padding:28px}.box{max-width:1100px;margin:auto;background:#0d1426;border:1px solid #1d2a49;border-radius:20px;padding:28px}a{color:#bba9ff;text-decoration:none}.tag{display:inline-block;padding:8px 12px;border-radius:999px;background:#241c36;color:#d7b6ff;margin:10px 8px 0 0;font-size:12px}</style></head><body><div class="box"><a href="/legalnomics/">Back to LEGALNOMICS</a><h1>B2C Reply Engine</h1><p>Public reply-drafting structure for uploaded notices and guided rebuttal flow.</p><span class="tag">B2C</span><span class="tag">Reply</span></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reply to Notice - LEGALNOMICS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top right,#241530 0%,#0b0e18 42%,#05070d 100%);
+      color:#fff;
+      min-height:100vh;
+      padding:28px;
+    }
+    .wrap{max-width:1600px;margin:auto}
+    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
+    .hero,.panel,.metric,.draftbox{
+      background:rgba(12,16,30,.92);
+      border:1px solid #2a3250;
+      border-radius:22px;
+      box-shadow:0 0 30px rgba(96,54,150,.10);
+    }
+    .hero{
+      padding:30px;
+      margin-bottom:20px;
+      background:linear-gradient(135deg,#31183b,#1a2147,#0a1730);
+    }
+    .hero h1{font-size:42px;margin-bottom:12px}
+    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1100px}
+    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+    .chip{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#231d38;
+      color:#e0c8ff;
+      font-size:12px;
+      border:1px solid #4a3566;
+    }
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:18px;
+      margin-bottom:20px;
+    }
+    .metric{padding:20px}
+    .metric h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
+    .value{font-size:34px;font-weight:700}
+    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
+    .layout{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:20px;
+    }
+    .panel,.draftbox{padding:24px}
+    .section-title{
+      font-size:26px;
+      margin-bottom:18px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
+    }
+    .grid3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+    }
+    label{
+      display:block;
+      font-size:13px;
+      color:#c8b8e6;
+      margin-bottom:8px;
+    }
+    input,select,textarea{
+      width:100%;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid #344063;
+      background:#0f1526;
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    textarea{min-height:120px;resize:vertical}
+    .btnrow{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+    .btn{
+      display:inline-block;
+      padding:13px 18px;
+      border-radius:14px;
+      background:#6b2fa8;
+      border:1px solid #9659d4;
+      color:#fff;
+      text-decoration:none;
+      font-size:14px;
+      font-weight:700;
+    }
+    .btn.secondary{
+      background:#1b2340;
+      border-color:#43548c;
+    }
+    .btn.green{
+      background:#0f5d3c;
+      border-color:#2ea56f;
+    }
+    .list div{
+      padding:12px 0;
+      border-bottom:1px solid #2a2140;
+      color:#f0ebff;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .list div:last-child{border-bottom:none}
+    .draftpreview{
+      background:#101729;
+      border:1px solid #2d3656;
+      border-radius:18px;
+      padding:18px;
+      margin-top:16px;
+    }
+    .draftpreview h3{margin-bottom:10px;font-size:20px}
+    .draftpreview p{color:#d4c8eb;line-height:1.72;font-size:14px}
+    .status{
+      display:inline-block;
+      padding:7px 12px;
+      border-radius:999px;
+      background:#20304f;
+      border:1px solid #506b9d;
+      color:#d7e4ff;
+      font-size:12px;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+    @media (max-width:1280px){
+      .layout{grid-template-columns:1fr}
+      .metrics{grid-template-columns:repeat(2,1fr)}
+      .grid2,.grid3{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      .metrics{grid-template-columns:1fr}
+      .hero h1{font-size:34px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="toplink" href="/legalnomics/b2c/">Back to B2C Legal Assist</a>
+
+    <section class="hero">
+      <h1>Reply to Notice Engine</h1>
+      <p>
+        Build a structured rebuttal and response to a received legal notice. This screen is designed for urgent,
+        emotional and conversion-heavy legal use cases where the user wants to defend, counter, settle or escalate.
+      </p>
+      <div class="chipbar">
+        <span class="chip">Reply Drafting</span>
+        <span class="chip">Rebuttal Logic</span>
+        <span class="chip">Urgency Handling</span>
+        <span class="chip">Escalation Ready</span>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <h3>Draft Type</h3>
+        <div class="value">Reply</div>
+        <div class="sub">Structured rebuttal and notice-response engine.</div>
+      </div>
+      <div class="metric">
+        <h3>Monetization</h3>
+        <div class="value">INR 399</div>
+        <div class="sub">Recommended base pricing for stronger legal reply draft.</div>
+      </div>
+      <div class="metric">
+        <h3>Use Case</h3>
+        <div class="value">High</div>
+        <div class="sub">One of the strongest emotional and commercial conversion entry points.</div>
+      </div>
+      <div class="metric">
+        <h3>Escalation</h3>
+        <div class="value">Ready</div>
+        <div class="sub">Can route to advocate review and stronger rebuttal upgrade.</div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2 class="section-title">Reply Input Form</h2>
+
+        <div class="grid2">
+          <div>
+            <label>Your / Client Name</label>
+            <input type="text" placeholder="Enter your full name" />
+          </div>
+          <div>
+            <label>Opponent / Notice Sender</label>
+            <input type="text" placeholder="Enter company / person / advocate name" />
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Notice Sender Type</label>
+            <select>
+              <option>Company / Employer</option>
+              <option>Individual</option>
+              <option>Advocate / Law Firm</option>
+              <option>Landlord / Tenant</option>
+              <option>Vendor / Service Provider</option>
+            </select>
+          </div>
+          <div>
+            <label>Notice Category</label>
+            <select>
+              <option>Employment / HR</option>
+              <option>Recovery / Payment</option>
+              <option>Property / Rent</option>
+              <option>Consumer / Service</option>
+              <option>Defamation / Harassment</option>
+              <option>Contract / Breach</option>
+            </select>
+          </div>
+          <div>
+            <label>Risk Level</label>
+            <select>
+              <option>Low</option>
+              <option>Medium</option>
+              <option>High</option>
+              <option>Not Sure</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Response Goal</label>
+            <select>
+              <option>Defend Myself</option>
+              <option>Counter Allegations</option>
+              <option>Seek Settlement</option>
+              <option>Challenge Legality</option>
+              <option>Need Professional Review</option>
+            </select>
+          </div>
+          <div>
+            <label>Reply Tone</label>
+            <select>
+              <option>Professional</option>
+              <option>Strong Rebuttal</option>
+              <option>Balanced Diplomatic</option>
+              <option>Firm and Serious</option>
+            </select>
+          </div>
+          <div>
+            <label>Preferred Language</label>
+            <select>
+              <option>English</option>
+              <option>Hindi</option>
+              <option>Gujarati</option>
+              <option>English + Hindi</option>
+              <option>English + Gujarati</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Upload Received Notice</label>
+          <input type="file" />
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Paste Notice Content (Optional)</label>
+          <textarea placeholder="Paste the content of the received legal notice here if available."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Your Side of Facts / Rebuttal Summary</label>
+          <textarea placeholder="Explain what the notice says, what is incorrect, what facts are missing, what actually happened, and what your side wants to communicate."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Key Weak Points in Opponent Notice (If Known)</label>
+          <textarea placeholder="Mention any false claims, missing facts, wrong allegations, legal overreach, unsupported accusations or misleading statements."></textarea>
+        </div>
+
+        <div class="btnrow">
+          <a class="btn" href="#">Generate Reply</a>
+          <a class="btn secondary" href="#">Save Draft</a>
+          <a class="btn green" href="#">Upgrade to Stronger Rebuttal</a>
+        </div>
+      </section>
+
+      <section class="draftbox">
+        <h2 class="section-title">AI Reply Guidance Panel</h2>
+
+        <span class="status">Risk Detection: Medium</span>
+        <span class="status">Rebuttal Strength: Recommended</span>
+        <span class="status">Advocate Review: Optional</span>
+
+        <div class="draftpreview">
+          <h3>Expected Reply Behavior</h3>
+          <p>
+            Based on the uploaded or pasted notice, this screen should later create a structured rebuttal draft
+            with issue-by-issue responses, factual correction, defensive legal positioning and closing response language.
+          </p>
+        </div>
+
+        <div class="draftpreview">
+          <h3>Suggested Rebuttal Strategy</h3>
+          <p>
+            Use this area later for opponent weakness detection, missing-fact analysis, false-claim flagging,
+            seriousness scoring and advice on whether the reply should be purely defensive or strongly counter-positioned.
+          </p>
+        </div>
+
+        <div class="draftpreview">
+          <h3>Recommended Next Actions</h3>
+          <div class="list">
+            <div>Upload full notice and all attachments if available</div>
+            <div>Keep rebuttal factual and avoid emotional overstatement</div>
+            <div>Clearly separate admitted facts from disputed allegations</div>
+            <div>Escalate to advocate if employment, payment or criminal exposure is high</div>
+          </div>
+        </div>
+
+        <div class="draftpreview">
+          <h3>Commercial Upgrade Flow</h3>
+          <div class="list">
+            <div>Base reply draft: INR 399</div>
+            <div>Stronger rebuttal version: INR 699</div>
+            <div>Bilingual reply: INR 999</div>
+            <div>Advocate-reviewed response: INR 1499</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
