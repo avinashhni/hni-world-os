@@ -1,1 +1,361 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LEGALNOMICS B2C Notice</title><style>body{font-family:Arial,sans-serif;background:#05070d;color:#fff;margin:0;padding:28px}.box{max-width:1100px;margin:auto;background:#0d1426;border:1px solid #1d2a49;border-radius:20px;padding:28px}a{color:#bba9ff;text-decoration:none}.tag{display:inline-block;padding:8px 12px;border-radius:999px;background:#241c36;color:#d7b6ff;margin:10px 8px 0 0;font-size:12px}</style></head><body><div class="box"><a href="/legalnomics/">Back to LEGALNOMICS</a><h1>B2C Notice Generator</h1><p>Public notice-drafting structure for low-cost entry use cases.</p><span class="tag">B2C</span><span class="tag">Notice</span></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Notice Generator - LEGALNOMICS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top right,#241530 0%,#0b0e18 42%,#05070d 100%);
+      color:#fff;
+      min-height:100vh;
+      padding:28px;
+    }
+    .wrap{max-width:1600px;margin:auto}
+    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
+    .hero,.panel,.metric,.draftbox{
+      background:rgba(12,16,30,.92);
+      border:1px solid #2a3250;
+      border-radius:22px;
+      box-shadow:0 0 30px rgba(96,54,150,.10);
+    }
+    .hero{
+      padding:30px;
+      margin-bottom:20px;
+      background:linear-gradient(135deg,#31183b,#1a2147,#0a1730);
+    }
+    .hero h1{font-size:42px;margin-bottom:12px}
+    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1100px}
+    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+    .chip{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#231d38;
+      color:#e0c8ff;
+      font-size:12px;
+      border:1px solid #4a3566;
+    }
+    .metrics{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:18px;
+      margin-bottom:20px;
+    }
+    .metric{padding:20px}
+    .metric h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
+    .value{font-size:34px;font-weight:700}
+    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
+    .layout{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:20px;
+    }
+    .panel,.draftbox{padding:24px}
+    .section-title{
+      font-size:26px;
+      margin-bottom:18px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
+    }
+    .grid3{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+    }
+    label{
+      display:block;
+      font-size:13px;
+      color:#c8b8e6;
+      margin-bottom:8px;
+    }
+    input,select,textarea{
+      width:100%;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid #344063;
+      background:#0f1526;
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    textarea{min-height:120px;resize:vertical}
+    .full{grid-column:1/-1}
+    .btnrow{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
+    .btn{
+      display:inline-block;
+      padding:13px 18px;
+      border-radius:14px;
+      background:#6b2fa8;
+      border:1px solid #9659d4;
+      color:#fff;
+      text-decoration:none;
+      font-size:14px;
+      font-weight:700;
+    }
+    .btn.secondary{
+      background:#1b2340;
+      border-color:#43548c;
+    }
+    .btn.green{
+      background:#0f5d3c;
+      border-color:#2ea56f;
+    }
+    .list div{
+      padding:12px 0;
+      border-bottom:1px solid #2a2140;
+      color:#f0ebff;
+      line-height:1.55;
+      font-size:14px;
+    }
+    .list div:last-child{border-bottom:none}
+    .draftpreview{
+      background:#101729;
+      border:1px solid #2d3656;
+      border-radius:18px;
+      padding:18px;
+      margin-top:16px;
+    }
+    .draftpreview h3{margin-bottom:10px;font-size:20px}
+    .draftpreview p{color:#d4c8eb;line-height:1.72;font-size:14px}
+    .status{
+      display:inline-block;
+      padding:7px 12px;
+      border-radius:999px;
+      background:#20304f;
+      border:1px solid #506b9d;
+      color:#d7e4ff;
+      font-size:12px;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+    @media (max-width:1280px){
+      .layout{grid-template-columns:1fr}
+      .metrics{grid-template-columns:repeat(2,1fr)}
+      .grid2,.grid3{grid-template-columns:1fr}
+    }
+    @media (max-width:760px){
+      .metrics{grid-template-columns:1fr}
+      .hero h1{font-size:34px}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <a class="toplink" href="/legalnomics/b2c/">Back to B2C Legal Assist</a>
+
+    <section class="hero">
+      <h1>Legal Notice Generator</h1>
+      <p>
+        Create structured first-draft legal notices using guided facts, issue framing, notice demand logic,
+        and tone control. This is the first monetizable drafting screen under B2C Legal Assist.
+      </p>
+      <div class="chipbar">
+        <span class="chip">Notice Drafting</span>
+        <span class="chip">Demand Structuring</span>
+        <span class="chip">Legal Tone Control</span>
+        <span class="chip">Escalation Ready</span>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <h3>Draft Type</h3>
+        <div class="value">Notice</div>
+        <div class="sub">First legal communication generation screen.</div>
+      </div>
+      <div class="metric">
+        <h3>Monetization</h3>
+        <div class="value">INR 299</div>
+        <div class="sub">Recommended base pricing for stronger notice draft.</div>
+      </div>
+      <div class="metric">
+        <h3>Risk Type</h3>
+        <div class="value">Variable</div>
+        <div class="sub">Can be used across employment, payment, property and service disputes.</div>
+      </div>
+      <div class="metric">
+        <h3>Escalation</h3>
+        <div class="value">Ready</div>
+        <div class="sub">Can route to advocate or premium drafting lane later.</div>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="panel">
+        <h2 class="section-title">Notice Input Form</h2>
+
+        <div class="grid2">
+          <div>
+            <label>Sender / Client Name</label>
+            <input type="text" placeholder="Enter sender full name" />
+          </div>
+          <div>
+            <label>Recipient Name</label>
+            <input type="text" placeholder="Enter opponent / company / person name" />
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Recipient Type</label>
+            <select>
+              <option>Company / Employer</option>
+              <option>Individual</option>
+              <option>Landlord / Tenant</option>
+              <option>Vendor / Service Provider</option>
+              <option>Builder / Developer</option>
+            </select>
+          </div>
+          <div>
+            <label>Issue Category</label>
+            <select>
+              <option>Employment / HR</option>
+              <option>Payment Recovery</option>
+              <option>Consumer Dispute</option>
+              <option>Property / Rent</option>
+              <option>Defamation / Harassment</option>
+              <option>Service Deficiency</option>
+            </select>
+          </div>
+          <div>
+            <label>Legal Demand Type</label>
+            <select>
+              <option>Warning / Demand Notice</option>
+              <option>Payment Demand</option>
+              <option>Termination Challenge</option>
+              <option>Harassment Objection</option>
+              <option>Contract Breach Notice</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Date of Incident</label>
+            <input type="date" />
+          </div>
+          <div>
+            <label>Amount Involved (if any)</label>
+            <input type="text" placeholder="Example: INR 1,25,000" />
+          </div>
+          <div>
+            <label>Deadline to Opponent</label>
+            <select>
+              <option>3 Days</option>
+              <option>7 Days</option>
+              <option>15 Days</option>
+              <option>30 Days</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Notice Summary</label>
+          <textarea placeholder="Write a short summary of what happened and why you are issuing this legal notice."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Key Allegations / Legal Issues</label>
+          <textarea placeholder="Mention key wrongful acts, breaches, threats, harassment, unpaid dues, illegal action, or misconduct involved."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Desired Outcome / Relief Sought</label>
+          <textarea placeholder="Mention what exactly you want: payment, apology, reinstatement, compliance, compensation, withdrawal, or corrective action."></textarea>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Preferred Language</label>
+            <select>
+              <option>English</option>
+              <option>Hindi</option>
+              <option>Gujarati</option>
+              <option>English + Hindi</option>
+              <option>English + Gujarati</option>
+            </select>
+          </div>
+          <div>
+            <label>Draft Tone</label>
+            <select>
+              <option>Professional</option>
+              <option>Strong Legal</option>
+              <option>Firm and Serious</option>
+              <option>Balanced Diplomatic</option>
+            </select>
+          </div>
+          <div>
+            <label>Escalation Preference</label>
+            <select>
+              <option>Self Draft Only</option>
+              <option>Want Stronger Draft</option>
+              <option>Need Advocate Review</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <a class="btn" href="#">Generate Notice</a>
+          <a class="btn secondary" href="#">Save Draft</a>
+          <a class="btn green" href="#">Upgrade to Stronger Version</a>
+        </div>
+      </section>
+
+      <section class="draftbox">
+        <h2 class="section-title">AI Draft Guidance Panel</h2>
+
+        <span class="status">Draft Strength: Medium</span>
+        <span class="status">Risk Review: Recommended</span>
+        <span class="status">Language: English</span>
+
+        <div class="draftpreview">
+          <h3>Expected Draft Behavior</h3>
+          <p>
+            Based on the selected issue type, this screen should later generate a structured legal notice draft
+            with factual chronology, legal framing, demand paragraph, time-bound warning, and escalation statement.
+          </p>
+        </div>
+
+        <div class="draftpreview">
+          <h3>Suggested Legal Positioning</h3>
+          <p>
+            Use this area later for clause suggestions, legal notice structure, seriousness level,
+            issue severity, and AI guidance on whether the case should remain diplomatic or become strongly adversarial.
+          </p>
+        </div>
+
+        <div class="draftpreview">
+          <h3>Recommended Next Actions</h3>
+          <div class="list">
+            <div>Upload proof or supporting evidence</div>
+            <div>Keep notice language factual and chronological</div>
+            <div>Avoid emotional or defamatory wording</div>
+            <div>Escalate to advocate if monetary or employment risk is high</div>
+          </div>
+        </div>
+
+        <div class="draftpreview">
+          <h3>Commercial Upgrade Flow</h3>
+          <div class="list">
+            <div>Base notice draft: INR 299</div>
+            <div>Stronger legal version: INR 499</div>
+            <div>Bilingual version: INR 699</div>
+            <div>Advocate-reviewed draft: INR 999</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
