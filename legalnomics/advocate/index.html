@@ -3,339 +3,195 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LEGALNOMICS Advocate Workspace</title>
+  <title>Advocate Workspace - AI LEGALNOMICS OS</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family:Arial,sans-serif;
-      background:radial-gradient(circle at top right,#1e1734 0%,#090b14 45%,#05070d 100%);
+      background:radial-gradient(circle at top left,#0b1633 0%,#050816 55%,#02040b 100%);
       color:#fff;
-      min-height:100vh;
-      padding:28px;
+      padding:20px;
     }
-    .wrap{max-width:1480px;margin:auto}
-    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
-    .hero,.panel,.card,.mini,.sidebar-card,.tablebox{
-      background:rgba(12,16,30,.92);
-      border:1px solid #2a3250;
-      border-radius:22px;
-      box-shadow:0 0 30px rgba(96,54,150,.12);
+    a{text-decoration:none;color:#c9b3ff}
+    .shell{max-width:1600px;margin:0 auto}
+    .hero,.panel,.stat,.card{
+      background:rgba(8,15,40,.94);
+      border:1px solid rgba(120,140,255,.18);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 0 18px rgba(0,0,0,.18);
     }
     .hero{
-      padding:30px;
-      margin-bottom:20px;
-      background:linear-gradient(135deg,#251538,#182142,#0b1730);
+      background:linear-gradient(135deg,rgba(88,44,130,.30),rgba(17,61,115,.35));
+      border:1px solid rgba(180,120,255,.25);
+      padding:28px;
+      margin-bottom:22px;
+      box-shadow:0 0 30px rgba(76,36,120,.15);
     }
-    .hero h1{font-size:44px;line-height:1.1;margin-bottom:14px}
-    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1020px}
-    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+    .hero h1{font-size:36px;margin-bottom:14px}
+    .hero p{font-size:16px;line-height:1.8;max-width:1250px;color:#e9e9f4}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
     .chip{
-      display:inline-block;
-      padding:8px 12px;
+      background:rgba(122,66,188,.18);
+      border:1px solid rgba(189,136,255,.25);
+      color:#f1d8ff;
+      padding:8px 14px;
       border-radius:999px;
-      background:#231d38;
-      color:#e0c8ff;
-      font-size:12px;
-      border:1px solid #4a3566;
+      font-size:13px;
     }
-    .layout{
-      display:grid;
-      grid-template-columns:300px 1fr;
-      gap:18px;
-      margin-top:18px;
-    }
-    .sidebar-card{padding:20px;height:fit-content}
-    .sidebar-card h3{font-size:18px;margin-bottom:14px}
-    .navbtn{
-      display:block;
-      width:100%;
-      text-decoration:none;
-      color:#fff;
-      background:#13192c;
-      border:1px solid #334064;
-      border-radius:14px;
-      padding:12px 14px;
-      margin-bottom:10px;
-      font-size:14px;
-    }
-    .navbtn.active{
-      background:linear-gradient(90deg,#4a245f,#2b2f63);
-      border-color:#8f5ed1;
-    }
-    .main{display:grid;gap:18px}
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:18px;
-    }
-    .card{padding:20px}
-    .card h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
-    .value{font-size:34px;font-weight:700}
-    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
-    .panel{padding:22px}
-    .panel h2{font-size:24px;margin-bottom:14px}
-    .panel p.lead{color:#cfc6e7;line-height:1.7;margin-bottom:18px}
-    .actions{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:16px;
-    }
-    .mini{
-      padding:18px;
-      background:linear-gradient(180deg,#12182c,#0d1426);
-    }
-    .mini h4{font-size:18px;margin-bottom:10px}
-    .mini p{color:#c4bddb;line-height:1.65;font-size:14px;margin-bottom:14px}
-    .btn{
-      display:inline-block;
-      padding:10px 14px;
-      border-radius:12px;
-      background:#6b2fa8;
-      border:1px solid #9659d4;
-      color:#fff;
-      text-decoration:none;
-      font-size:14px;
-    }
-    .btn.secondary{
-      background:#1b2340;
-      border-color:#43548c;
-    }
-    .two{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:18px;
-    }
-    .tablebox{padding:18px;overflow:auto}
-    table{width:100%;border-collapse:collapse}
-    th,td{
-      text-align:left;
-      padding:12px 10px;
-      border-bottom:1px solid #2a2140;
-      font-size:14px;
-    }
-    th{color:#d7c5ff}
-    td{color:#f1ebff}
-    .status-badge{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      background:#1a2340;
-      color:#9dc0ff;
-    }
-    .queue{display:grid;gap:12px}
-    .queueitem{
-      background:#101729;
-      border:1px solid #2d3656;
-      border-radius:16px;
-      padding:14px;
-    }
-    .queueitem strong{display:block;margin-bottom:6px}
-    .queueitem span{color:#c2b8dd;font-size:14px;line-height:1.5}
-    .footergrid{
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+    .stat .label{font-size:15px;color:#c9b7ff;margin-bottom:10px}
+    .stat .value{font-size:28px;font-weight:700;margin-bottom:10px}
+    .stat .sub{font-size:15px;color:#d8dbe7;line-height:1.7}
+    .grid{
       display:grid;
       grid-template-columns:repeat(3,1fr);
       gap:18px;
     }
-    .list div{
-      padding:10px 0;
-      border-bottom:1px solid #2a2140;
-      color:#f0ebff;
-      line-height:1.55;
+    .card h3{font-size:22px;margin-bottom:12px}
+    .card p{font-size:15px;line-height:1.75;color:#e1e4f2;margin-bottom:16px}
+    .btnrow{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      display:inline-block;
+      padding:12px 18px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.12);
+      background:#6d3cc7;
+      color:#fff;
     }
-    .list div:last-child{border-bottom:none}
-    @media (max-width:1250px){
-      .layout{grid-template-columns:1fr}
-      .stats,.actions,.footergrid,.two{grid-template-columns:repeat(2,1fr)}
+    .btn.alt{background:#13224d}
+    @media(max-width:1200px){
+      .stats,.grid{grid-template-columns:repeat(2,1fr)}
     }
-    @media (max-width:760px){
-      .stats,.actions,.footergrid,.two{grid-template-columns:1fr}
-      .hero h1{font-size:34px}
+    @media(max-width:700px){
+      .stats,.grid{grid-template-columns:1fr}
+      .hero h1{font-size:28px}
     }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <a class="toplink" href="/legalnomics/">Back to LEGALNOMICS</a>
+  <div class="shell">
+    <div style="margin-bottom:16px;">
+      <a href="/legalnomics/">Back to LEGALNOMICS</a>
+    </div>
 
     <section class="hero">
       <h1>Advocate and Law Firm Workspace</h1>
       <p>
-        Professional operating layer for advocates, legal teams and junior-to-senior legal workflow.
-        This workspace is designed for drafting, matter tracking, hearing preparation, consultation notes,
-        client coordination and structured legal execution.
+        Central operating layer for advocates, law firms, junior legal staff and senior review teams.
+        This workspace connects dashboard control, matter CRM, drafting, vault, hearing, timeline,
+        consultation conversion and billing into one structured legal operating system shell.
       </p>
-      <div class="chipbar">
-        <span class="chip">Advocate Desk</span>
-        <span class="chip">Matter CRM</span>
-        <span class="chip">Drafting Studio</span>
-        <span class="chip">Hearing Prep</span>
-        <span class="chip">Senior Review Flow</span>
+      <div class="chips">
+        <span class="chip">Dashboard</span>
+        <span class="chip">CRM</span>
+        <span class="chip">Drafting</span>
+        <span class="chip">Vault</span>
+        <span class="chip">Hearing</span>
+        <span class="chip">Timeline</span>
+        <span class="chip">Leads</span>
+        <span class="chip">Billing</span>
       </div>
     </section>
 
-    <div class="layout">
-      <aside class="sidebar-card">
-        <h3>Advocate Navigation</h3>
-        <a class="navbtn active" href="/legalnomics/advocate/">Advocate Home</a>
-        <a class="navbtn" href="/legalnomics/advocate/dashboard/">Dashboard</a>
-        <a class="navbtn" href="/legalnomics/advocate/crm/">CRM</a>
-        <a class="navbtn" href="/legalnomics/advocate/drafting/">Drafting</a>
-        <a class="navbtn" href="/legalnomics/advocate/hearing/">Hearing</a>
-        <a class="navbtn" href="/legalnomics/">Back to Master Legalnomics</a>
-      </aside>
+    <section class="stats">
+      <div class="stat">
+        <div class="label">Open Matters</div>
+        <div class="value">42</div>
+        <div class="sub">Matters currently active across drafting, hearing and follow-up stages.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Draft Queue</div>
+        <div class="value">19</div>
+        <div class="sub">Drafts in production, review or bilingual output stage.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Consultation Leads</div>
+        <div class="value">27</div>
+        <div class="sub">Fresh intake opportunities feeding the advocate workflow.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Billing Queue</div>
+        <div class="value">11</div>
+        <div class="sub">Matters ready for invoice or collection follow-up.</div>
+      </div>
+    </section>
 
-      <main class="main">
-        <section class="stats">
-          <div class="card">
-            <h3>Active Matters</h3>
-            <div class="value">48</div>
-            <div class="sub">Current tracked matters across clients and stages.</div>
-          </div>
-          <div class="card">
-            <h3>Draft Queue</h3>
-            <div class="value">12</div>
-            <div class="sub">Replies, notices and revision drafts pending action.</div>
-          </div>
-          <div class="card">
-            <h3>Hearings</h3>
-            <div class="value">07</div>
-            <div class="sub">Upcoming hearing and court-prep items in queue.</div>
-          </div>
-          <div class="card">
-            <h3>Review Flow</h3>
-            <div class="value">Live</div>
-            <div class="sub">Junior to senior review and approval lane structured.</div>
-          </div>
-        </section>
+    <section class="grid">
+      <div class="card">
+        <h3>Dashboard</h3>
+        <p>Operational command center for daily legal workflow, alerts, reviews and team activity.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/dashboard/">Open Dashboard</a>
+        </div>
+      </div>
 
-        <section class="panel">
-          <h2>Core Advocate Actions</h2>
-          <p class="lead">
-            This workspace is intended to reduce manual dependence on assistants, improve matter clarity,
-            speed up drafting, and create a stronger operating discipline inside law firms and legal teams.
-          </p>
-          <div class="actions">
-            <div class="mini">
-              <h4>Drafting Desk</h4>
-              <p>Create notices, replies, stronger drafts and multilingual outputs.</p>
-              <a class="btn" href="/legalnomics/advocate/drafting/">Open Drafting</a>
-            </div>
-            <div class="mini">
-              <h4>Client CRM</h4>
-              <p>Track clients, matters, next actions and status progression.</p>
-              <a class="btn" href="/legalnomics/advocate/crm/">Open CRM</a>
-            </div>
-            <div class="mini">
-              <h4>Hearing Desk</h4>
-              <p>Manage hearing dates, preparation and argument checklists.</p>
-              <a class="btn" href="/legalnomics/advocate/hearing/">Open Hearing</a>
-            </div>
-            <div class="mini">
-              <h4>Dashboard View</h4>
-              <p>Get a quick view of legal operations, queues and priorities.</p>
-              <a class="btn" href="/legalnomics/advocate/dashboard/">Open Dashboard</a>
-            </div>
-          </div>
-        </section>
+      <div class="card">
+        <h3>Client and Matter CRM</h3>
+        <p>Client records, matter stages, next actions, follow-up reminders and billing visibility.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/crm/">Open CRM</a>
+        </div>
+      </div>
 
-        <section class="two">
-          <div class="panel">
-            <h2>Matter and Client Tracker</h2>
-            <div class="tablebox">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Client</th>
-                    <th>Matter</th>
-                    <th>Stage</th>
-                    <th>Next Action</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>Client A</td>
-                    <td>Employment recovery</td>
-                    <td>Reply Draft</td>
-                    <td>Senior review</td>
-                    <td><span class="status-badge">In Progress</span></td>
-                  </tr>
-                  <tr>
-                    <td>Client B</td>
-                    <td>Property dispute</td>
-                    <td>Notice sent</td>
-                    <td>Await response</td>
-                    <td><span class="status-badge">Waiting</span></td>
-                  </tr>
-                  <tr>
-                    <td>Client C</td>
-                    <td>Corporate complaint</td>
-                    <td>Consultation</td>
-                    <td>Prepare brief</td>
-                    <td><span class="status-badge">Action Due</span></td>
-                  </tr>
-                  <tr>
-                    <td>Client D</td>
-                    <td>Recovery notice</td>
-                    <td>Drafting</td>
-                    <td>Client approval</td>
-                    <td><span class="status-badge">Review</span></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </div>
+      <div class="card">
+        <h3>Drafting Studio</h3>
+        <p>Notice, reply, rebuttal and bilingual legal production engine for daily drafting work.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/drafting/">Open Drafting</a>
+        </div>
+      </div>
 
-          <div class="panel">
-            <h2>Todays Work Queue</h2>
-            <div class="queue">
-              <div class="queueitem">
-                <strong>Urgent Reply Due</strong>
-                <span>Three received notices require stronger rebuttal drafts before evening review.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Senior Approval Pending</strong>
-                <span>Two junior-drafted matters are waiting for final advocate correction and signoff.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Hearing Preparation</strong>
-                <span>Tomorrow’s labour matter needs issue chronology, annexure sequence and speaking notes.</span>
-              </div>
-            </div>
-          </div>
-        </section>
+      <div class="card">
+        <h3>Notice and Reply Vault</h3>
+        <p>Saved draft history, reusable formats, version memory and structured legal archive.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/vault/">Open Vault</a>
+        </div>
+      </div>
 
-        <section class="footergrid">
-          <div class="panel">
-            <h2>Drafting Workflow</h2>
-            <div class="list">
-              <div>Notice and reply drafting</div>
-              <div>Paragraph-wise rebuttal versions</div>
-              <div>Bilingual and multilingual outputs</div>
-            </div>
-          </div>
+      <div class="card">
+        <h3>Hearing Preparation</h3>
+        <p>Argument checklist, annexure flow, clause mapping and senior briefing preparation.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/hearing/">Open Hearing</a>
+        </div>
+      </div>
 
-          <div class="panel">
-            <h2>Operational Workflow</h2>
-            <div class="list">
-              <div>Junior to senior review lane</div>
-              <div>Consultation note sharing</div>
-              <div>Client briefing and next-action tracking</div>
-            </div>
-          </div>
+      <div class="card">
+        <h3>Case Timeline</h3>
+        <p>Lifecycle movement across intake, drafting, hearing, settlement, billing and closure.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/timeline/">Open Timeline</a>
+        </div>
+      </div>
 
-          <div class="panel">
-            <h2>Hearing and Court Prep</h2>
-            <div class="list">
-              <div>Issue chronology management</div>
-              <div>Argument checklist support</div>
-              <div>Hearing reminders and preparation flow</div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+      <div class="card">
+        <h3>Consultation Leads</h3>
+        <p>Lead intake, callback queue, conversion tracking and advocate assignment routing.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/leads/">Open Leads</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Revenue and Billing</h3>
+        <p>Invoice queue, payment tracking, package monetization and collection follow-up.</p>
+        <div class="btnrow">
+          <a class="btn" href="/legalnomics/advocate/billing/">Open Billing</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Back to Master Legalnomics</h3>
+        <p>Return to the Legalnomics root and access B2C, Corporate and Shared Legal Core layers.</p>
+        <div class="btnrow">
+          <a class="btn alt" href="/legalnomics/">Open Legalnomics Root</a>
+        </div>
+      </div>
+    </section>
   </div>
 </body>
 </html>
