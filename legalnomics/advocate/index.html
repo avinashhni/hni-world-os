@@ -9,12 +9,13 @@
     .wrap{max-width:1280px;margin:auto}
     .box,.card{background:#0d1426;border:1px solid #1d2a49;border-radius:20px}
     .box{padding:28px;margin-bottom:18px;background:linear-gradient(135deg,#1a1020,#1a1738,#0c1228)}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
     .card{padding:18px}
     h1{margin:0 0 12px 0} p{color:#d1c8ea;line-height:1.7}
     .tag{display:inline-block;padding:8px 12px;border-radius:999px;background:#241c36;color:#d7b6ff;margin:10px 8px 0 0;font-size:12px}
+    .btn{display:inline-block;padding:10px 14px;border-radius:12px;background:#3a2150;border:1px solid #6d4290;color:#fff;text-decoration:none;font-size:14px;margin-top:12px}
     a{color:#bba9ff;text-decoration:none}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    @media (max-width:1000px){.grid{grid-template-columns:repeat(2,1fr)}} @media (max-width:700px){.grid{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -22,13 +23,14 @@
   <a href="/legalnomics/">Back to LEGALNOMICS</a>
   <div class="box">
     <h1>Advocate and Law Firm Workspace</h1>
-    <p>Professional productivity layer for advocates, law firms, legal teams and junior-to-senior structured workflow.</p>
-    <span class="tag">Drafting Studio</span><span class="tag">Matter CRM</span><span class="tag">Review Workflow</span><span class="tag">Court Prep</span>
+    <p>Professional operating layer for advocates, legal teams, and junior-to-senior legal workflow with CRM, drafting and hearing support.</p>
+    <span class="tag">Advocate</span><span class="tag">Law Firm</span><span class="tag">CRM</span><span class="tag">Court Prep</span>
   </div>
   <div class="grid">
-    <div class="card"><h3>Drafting Desk</h3><p>Create notices, replies, strong drafts and multilingual outputs.</p></div>
-    <div class="card"><h3>Matter Tracker</h3><p>Track clients, current stage, next action and hearing preparation status.</p></div>
-    <div class="card"><h3>Senior Review Flow</h3><p>Junior staff drafting, advocate review, approval and client-share pathway.</p></div>
+    <div class="card"><h3>Dashboard</h3><p>Operational overview for clients, matters and work queues.</p><a class="btn" href="/legalnomics/advocate/dashboard/">Open Dashboard</a></div>
+    <div class="card"><h3>CRM</h3><p>Client and matter tracking with timeline and reminders.</p><a class="btn" href="/legalnomics/advocate/crm/">Open CRM</a></div>
+    <div class="card"><h3>Drafting</h3><p>Notice, reply and multilingual drafting shell.</p><a class="btn" href="/legalnomics/advocate/drafting/">Open Drafting</a></div>
+    <div class="card"><h3>Hearing</h3><p>Court checklist, hearing date and preparation structure.</p><a class="btn" href="/legalnomics/advocate/hearing/">Open Hearing</a></div>
   </div>
 </div>
 </body>
