@@ -3,31 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LEGALNOMICS B2C Legal Assist</title>
+  <title>B2C Legal Assist - LEGALNOMICS</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{
       font-family:Arial,sans-serif;
-      background:radial-gradient(circle at top right,#2a1238 0%,#0a0c16 42%,#05070d 100%);
+      background:radial-gradient(circle at top right,#241530 0%,#0b0e18 42%,#05070d 100%);
       color:#fff;
       min-height:100vh;
       padding:28px;
     }
-    .wrap{max-width:1440px;margin:auto}
+    .wrap{max-width:1600px;margin:auto}
     .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
-    .hero,.panel,.card,.mini,.sidebar-card{
+    .hero,.panel,.card,.metric,.formbox{
       background:rgba(12,16,30,.92);
       border:1px solid #2a3250;
       border-radius:22px;
-      box-shadow:0 0 30px rgba(96,54,150,.12);
+      box-shadow:0 0 30px rgba(96,54,150,.10);
     }
     .hero{
       padding:30px;
       margin-bottom:20px;
-      background:linear-gradient(135deg,#2a1537,#1b1f49,#0a1730);
+      background:linear-gradient(135deg,#31183b,#1a2147,#0a1730);
     }
-    .hero h1{font-size:46px;line-height:1.1;margin-bottom:14px}
-    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:980px}
+    .hero h1{font-size:44px;margin-bottom:12px}
+    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1100px}
     .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
     .chip{
       display:inline-block;
@@ -38,100 +38,97 @@
       font-size:12px;
       border:1px solid #4a3566;
     }
-    .layout{
-      display:grid;
-      grid-template-columns: 290px 1fr;
-      gap:18px;
-      margin-top:18px;
-    }
-    .sidebar-card{padding:20px;height:fit-content}
-    .sidebar-card h3{font-size:18px;margin-bottom:14px}
-    .navbtn{
-      display:block;
-      width:100%;
-      text-decoration:none;
-      color:#fff;
-      background:#13192c;
-      border:1px solid #334064;
-      border-radius:14px;
-      padding:12px 14px;
-      margin-bottom:10px;
-      font-size:14px;
-    }
-    .navbtn.active{
-      background:linear-gradient(90deg,#4a245f,#2b2f63);
-      border-color:#8f5ed1;
-    }
-    .main{display:grid;gap:18px}
-    .stats{
+    .metrics{
       display:grid;
       grid-template-columns:repeat(4,1fr);
       gap:18px;
+      margin-bottom:20px;
     }
-    .card{padding:20px}
-    .card h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
+    .metric{padding:20px}
+    .metric h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
     .value{font-size:34px;font-weight:700}
     .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
-    .panel{padding:22px}
-    .panel h2{font-size:24px;margin-bottom:14px}
-    .panel p.lead{color:#cfc6e7;line-height:1.7;margin-bottom:18px}
-    .actions{
+    .layout{
+      display:grid;
+      grid-template-columns:1.15fr .85fr;
+      gap:20px;
+    }
+    .formbox,.panel{padding:24px}
+    .section-title{
+      font-size:26px;
+      margin-bottom:18px;
+    }
+    .grid2{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
+    }
+    .grid3{
       display:grid;
       grid-template-columns:repeat(3,1fr);
       gap:16px;
     }
-    .mini{
-      padding:18px;
-      background:linear-gradient(180deg,#12182c,#0d1426);
+    label{
+      display:block;
+      font-size:13px;
+      color:#c8b8e6;
+      margin-bottom:8px;
     }
-    .mini h4{font-size:18px;margin-bottom:10px}
-    .mini p{color:#c4bddb;line-height:1.65;font-size:14px;margin-bottom:14px}
+    input,select,textarea{
+      width:100%;
+      padding:14px 14px;
+      border-radius:14px;
+      border:1px solid #344063;
+      background:#0f1526;
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    textarea{min-height:130px;resize:vertical}
+    .full{grid-column:1/-1}
+    .btnrow{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
     .btn{
       display:inline-block;
-      padding:10px 14px;
-      border-radius:12px;
+      padding:13px 18px;
+      border-radius:14px;
       background:#6b2fa8;
       border:1px solid #9659d4;
       color:#fff;
       text-decoration:none;
       font-size:14px;
+      font-weight:700;
     }
     .btn.secondary{
       background:#1b2340;
       border-color:#43548c;
     }
-    .two{
-      display:grid;
-      grid-template-columns:1.1fr .9fr;
-      gap:18px;
+    .btn.green{
+      background:#0f5d3c;
+      border-color:#2ea56f;
     }
-    .formgrid{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:14px;
+    .card{
+      padding:20px;
+      margin-bottom:18px;
     }
-    .field{
-      background:#101729;
-      border:1px solid #2c3554;
-      border-radius:16px;
-      padding:14px;
-    }
-    .field label{
-      display:block;
-      color:#beafd8;
-      font-size:12px;
-      margin-bottom:8px;
-      text-transform:uppercase;
-      letter-spacing:.4px;
-    }
-    .field div{
-      color:#f4efff;
+    .card h3{font-size:22px;margin-bottom:12px}
+    .card p{color:#d4c8eb;line-height:1.7;font-size:14px}
+    .list div{
+      padding:11px 0;
+      border-bottom:1px solid #2a2140;
+      color:#f0ebff;
       line-height:1.55;
       font-size:14px;
     }
+    .list div:last-child{border-bottom:none}
     .queue{
       display:grid;
       gap:12px;
+      margin-top:16px;
     }
     .queueitem{
       background:#101729;
@@ -141,24 +138,13 @@
     }
     .queueitem strong{display:block;margin-bottom:6px}
     .queueitem span{color:#c2b8dd;font-size:14px;line-height:1.5}
-    .footergrid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:18px;
-    }
-    .list div{
-      padding:10px 0;
-      border-bottom:1px solid #2a2140;
-      color:#f0ebff;
-      line-height:1.55;
-    }
-    .list div:last-child{border-bottom:none}
-    @media (max-width:1200px){
+    @media (max-width:1280px){
       .layout{grid-template-columns:1fr}
-      .stats,.actions,.footergrid,.two{grid-template-columns:repeat(2,1fr)}
+      .metrics{grid-template-columns:repeat(2,1fr)}
+      .grid2,.grid3{grid-template-columns:1fr}
     }
     @media (max-width:760px){
-      .stats,.actions,.footergrid,.two,.formgrid{grid-template-columns:1fr}
+      .metrics{grid-template-columns:1fr}
       .hero h1{font-size:34px}
     }
   </style>
@@ -170,148 +156,196 @@
     <section class="hero">
       <h1>B2C Legal Assist</h1>
       <p>
-        Public self-service legal help layer for notices, replies, consultation intake, voice-note support,
-        and affordable legal drafting. This interface is designed for users who need structured legal help
-        before moving into advocate-assisted workflow.
+        Public-facing legal self-service workflow for affordable notice creation, reply drafting, consultation intake,
+        issue structuring and advocate escalation. This is the first active consumer legal conversion layer inside AI LEGALNOMICS OS.
       </p>
       <div class="chipbar">
         <span class="chip">Public</span>
-        <span class="chip">Affordable Entry</span>
-        <span class="chip">Guided Drafting</span>
-        <span class="chip">Voice Intake</span>
-        <span class="chip">Consultation Conversion</span>
+        <span class="chip">Affordable</span>
+        <span class="chip">Notice Drafting</span>
+        <span class="chip">Reply Engine</span>
+        <span class="chip">Consultation Intake</span>
+      </div>
+    </section>
+
+    <section class="metrics">
+      <div class="metric">
+        <h3>Entry Layer</h3>
+        <div class="value">Live</div>
+        <div class="sub">Public legal drafting lane is operational.</div>
+      </div>
+      <div class="metric">
+        <h3>Language Mode</h3>
+        <div class="value">Multi</div>
+        <div class="sub">English, Hindi, Gujarati and regional outputs later expandable.</div>
+      </div>
+      <div class="metric">
+        <h3>Use Case</h3>
+        <div class="value">B2C</div>
+        <div class="sub">Designed for self-service individuals and affordable legal access.</div>
+      </div>
+      <div class="metric">
+        <h3>Escalation</h3>
+        <div class="value">Ready</div>
+        <div class="sub">Can later route into advocate or paid consultation flow.</div>
       </div>
     </section>
 
     <div class="layout">
-      <aside class="sidebar-card">
-        <h3>B2C Legal Navigation</h3>
-        <a class="navbtn active" href="/legalnomics/b2c/">B2C Home</a>
-        <a class="navbtn" href="/legalnomics/b2c/notice/">Notice Generator</a>
-        <a class="navbtn" href="/legalnomics/b2c/reply/">Reply Engine</a>
-        <a class="navbtn" href="/legalnomics/b2c/consultation/">Consultation Lane</a>
-        <a class="navbtn" href="/legalnomics/">Back to Master Legalnomics</a>
-      </aside>
+      <section class="formbox">
+        <h2 class="section-title">Legal Draft Request Form</h2>
 
-      <main class="main">
-        <section class="stats">
-          <div class="card">
-            <h3>Drafting Mode</h3>
-            <div class="value">Live</div>
-            <div class="sub">Notice, reply and guided legal intake lane active.</div>
+        <div class="grid2">
+          <div>
+            <label>Full Name</label>
+            <input type="text" placeholder="Enter client full name" />
           </div>
-          <div class="card">
-            <h3>User Access</h3>
-            <div class="value">Open</div>
-            <div class="sub">Built for public users, employees and low-cost legal access needs.</div>
+          <div>
+            <label>Mobile Number</label>
+            <input type="text" placeholder="Enter mobile number" />
           </div>
-          <div class="card">
-            <h3>Escalation Path</h3>
-            <div class="value">Ready</div>
-            <div class="sub">Self-service to consultation to advocate-routing path is structured.</div>
-          </div>
-          <div class="card">
-            <h3>Language Layer</h3>
-            <div class="value">Multi</div>
-            <div class="sub">English, Gujarati, Hindi and future local language expansion.</div>
-          </div>
-        </section>
 
-        <section class="panel">
-          <h2>Core User Actions</h2>
-          <p class="lead">
-            This B2C lane is designed for people who need immediate structured legal assistance without entering a full law-firm workflow at the first stage.
+          <div>
+            <label>Email Address</label>
+            <input type="email" placeholder="Enter email address" />
+          </div>
+          <div>
+            <label>City / State</label>
+            <input type="text" placeholder="Example: Ahmedabad, Gujarat" />
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Draft Type</label>
+            <select>
+              <option>Create Legal Notice</option>
+              <option>Reply to Notice</option>
+              <option>Consultation Intake</option>
+              <option>Complaint Draft</option>
+              <option>Employment Dispute Draft</option>
+            </select>
+          </div>
+          <div>
+            <label>Issue Category</label>
+            <select>
+              <option>Employment / HR</option>
+              <option>Property / Rent</option>
+              <option>Consumer Dispute</option>
+              <option>Payment Recovery</option>
+              <option>Family / Personal</option>
+              <option>Corporate / Service</option>
+            </select>
+          </div>
+          <div>
+            <label>Opponent Type</label>
+            <select>
+              <option>Company / Employer</option>
+              <option>Individual</option>
+              <option>Landlord / Tenant</option>
+              <option>Vendor / Service Provider</option>
+              <option>Unknown / Mixed</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Preferred Language</label>
+            <select>
+              <option>English</option>
+              <option>Hindi</option>
+              <option>Gujarati</option>
+              <option>English + Hindi</option>
+              <option>English + Gujarati</option>
+            </select>
+          </div>
+          <div>
+            <label>Draft Tone</label>
+            <select>
+              <option>Professional</option>
+              <option>Strong Legal</option>
+              <option>Balanced Diplomatic</option>
+              <option>Firm and Serious</option>
+            </select>
+          </div>
+          <div>
+            <label>Urgency</label>
+            <select>
+              <option>Normal</option>
+              <option>Urgent - 24 Hours</option>
+              <option>Very Urgent - Same Day</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Case Summary / Full Situation</label>
+          <textarea placeholder="Describe the issue, timeline, what happened, what documents you have, what outcome you want, and what the other side has done."></textarea>
+        </div>
+
+        <div class="grid2" style="margin-top:16px;">
+          <div>
+            <label>Upload Notice / Supporting Document</label>
+            <input type="file" />
+          </div>
+          <div>
+            <label>Voice Note Intake (Future Ready Placeholder)</label>
+            <input type="text" placeholder="Voice upload integration can be connected later" />
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <a class="btn" href="#">Generate Draft</a>
+          <a class="btn secondary" href="#">Save as Draft</a>
+          <a class="btn green" href="#">Escalate to Advocate</a>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <h3>What this screen will do</h3>
+          <p>
+            This screen is your first monetizable legal workflow layer. It is designed to help common users create
+            legal drafts without immediately needing a full lawyer appointment.
           </p>
-          <div class="actions">
-            <div class="mini">
-              <h4>Generate Notice</h4>
-              <p>Create a first structured legal notice from guided factual inputs.</p>
-              <a class="btn" href="/legalnomics/b2c/notice/">Open Notice Generator</a>
+          <div class="queue">
+            <div class="queueitem">
+              <strong>Notice Creation</strong>
+              <span>Users can generate first-draft notices from structured factual input.</span>
             </div>
-            <div class="mini">
-              <h4>Reply to Notice</h4>
-              <p>Upload or describe a received notice and generate a draft response.</p>
-              <a class="btn" href="/legalnomics/b2c/reply/">Open Reply Engine</a>
+            <div class="queueitem">
+              <strong>Reply Engine</strong>
+              <span>Users can upload or describe a received notice and draft a rebuttal response.</span>
             </div>
-            <div class="mini">
-              <h4>Consultation Entry</h4>
-              <p>Convert a self-service issue into junior review, advocate review, or paid consultation.</p>
-              <a class="btn" href="/legalnomics/b2c/consultation/">Open Consultation Lane</a>
+            <div class="queueitem">
+              <strong>Consultation Funnel</strong>
+              <span>Can later convert users into paid legal consultation or advocate assignment.</span>
             </div>
           </div>
-        </section>
+        </div>
 
-        <section class="two">
-          <div class="panel">
-            <h2>Guided Drafting Intake</h2>
-            <div class="formgrid">
-              <div class="field">
-                <label>Matter Type</label>
-                <div>Employment, salary, recovery, property, contract, consumer, dispute.</div>
-              </div>
-              <div class="field">
-                <label>Input Mode</label>
-                <div>Typed facts, voice note, uploaded notice, guided questions.</div>
-              </div>
-              <div class="field">
-                <label>Draft Style</label>
-                <div>Soft notice, strong notice, reply, consultation brief.</div>
-              </div>
-              <div class="field">
-                <label>Language</label>
-                <div>English, Gujarati, Hindi, future regional expansion ready.</div>
-              </div>
-            </div>
+        <div class="card">
+          <h3>Expected Monetization</h3>
+          <div class="list">
+            <div>?199 starter reply draft</div>
+            <div>?299 stronger legal notice</div>
+            <div>?499 bilingual premium draft</div>
+            <div>?999 advocate-reviewed escalation</div>
           </div>
+        </div>
 
-          <div class="panel">
-            <h2>Typical User Queue</h2>
-            <div class="queue">
-              <div class="queueitem">
-                <strong>Employee Salary Issue</strong>
-                <span>Needs first formal notice before advocate escalation.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Received Legal Notice</strong>
-                <span>Needs guided reply draft with factual rebuttal points.</span>
-              </div>
-              <div class="queueitem">
-                <strong>Consumer / Recovery Issue</strong>
-                <span>Needs structured complaint notice with consultation option.</span>
-              </div>
-            </div>
+        <div class="card">
+          <h3>Future Add-ons</h3>
+          <div class="list">
+            <div>PDF output generation</div>
+            <div>Auto legal formatting</div>
+            <div>Clause and law suggestion engine</div>
+            <div>Case-Bible integration</div>
+            <div>Regional language legal templates</div>
           </div>
-        </section>
-
-        <section class="footergrid">
-          <div class="panel">
-            <h2>Value Layer</h2>
-            <div class="list">
-              <div>Affordable legal entry point</div>
-              <div>Voice-note based accessibility</div>
-              <div>Conversion into paid legal workflow</div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <h2>Resolution Layer</h2>
-            <div class="list">
-              <div>Diplomatic resolution support</div>
-              <div>Escalation only when needed</div>
-              <div>Practical issue-framing before conflict expands</div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <h2>Future Path</h2>
-            <div class="list">
-              <div>Smart notice builder UI</div>
-              <div>Real file upload + parsing</div>
-              <div>Consultation booking and payment flow</div>
-            </div>
-          </div>
-        </section>
-      </main>
+        </div>
+      </section>
     </div>
   </div>
 </body>
