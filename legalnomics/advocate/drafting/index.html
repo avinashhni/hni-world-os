@@ -1,1 +1,277 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>LEGALNOMICS Drafting Studio</title><style>body{font-family:Arial,sans-serif;background:#05070d;color:#fff;margin:0;padding:28px}.box{max-width:1100px;margin:auto;background:#0d1426;border:1px solid #1d2a49;border-radius:20px;padding:28px}a{color:#bba9ff;text-decoration:none}.tag{display:inline-block;padding:8px 12px;border-radius:999px;background:#241c36;color:#d7b6ff;margin:10px 8px 0 0;font-size:12px}</style></head><body><div class="box"><a href="/legalnomics/">Back to LEGALNOMICS</a><h1>Advocate Drafting Studio</h1><p>Drafting shell for notices, replies, strong versions, bilingual outputs and review flow.</p><span class="tag">Advocate</span><span class="tag">Drafting</span></div></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Drafting Studio - AI LEGALNOMICS OS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top left,#0b1633 0%,#050816 55%,#02040b 100%);
+      color:#fff;
+      padding:20px;
+    }
+    a{text-decoration:none;color:#c9b3ff}
+    .shell{max-width:1600px;margin:0 auto}
+    .hero,.panel,.card,.stat,.draftbox{
+      background:rgba(8,15,40,.94);
+      border:1px solid rgba(120,140,255,.18);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 0 18px rgba(0,0,0,.18);
+    }
+    .hero{
+      background:linear-gradient(135deg,rgba(88,44,130,.30),rgba(17,61,115,.35));
+      border:1px solid rgba(180,120,255,.25);
+      padding:28px;
+      margin-bottom:22px;
+      box-shadow:0 0 30px rgba(76,36,120,.15);
+    }
+    .hero h1{font-size:34px;margin-bottom:14px}
+    .hero p{font-size:16px;line-height:1.8;max-width:1200px;color:#e9e9f4}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .chip{
+      background:rgba(122,66,188,.18);
+      border:1px solid rgba(189,136,255,.25);
+      color:#f1d8ff;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:13px;
+    }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+    .stat .label{font-size:15px;color:#c9b7ff;margin-bottom:10px}
+    .stat .value{font-size:28px;font-weight:700;margin-bottom:10px}
+    .stat .sub{font-size:15px;color:#d8dbe7;line-height:1.7}
+    .layout{display:grid;grid-template-columns:1.1fr .9fr;gap:20px}
+    .panel h2{font-size:18px;margin-bottom:18px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    label{
+      display:block;
+      font-size:13px;
+      color:#c8b8e6;
+      margin-bottom:8px;
+    }
+    input,select,textarea{
+      width:100%;
+      padding:13px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#0d1731;
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    textarea{min-height:130px;resize:vertical}
+    .full{grid-column:1/-1}
+    .draftbox{
+      background:rgba(255,255,255,.02);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:20px;
+      padding:18px;
+      margin-top:16px;
+    }
+    .draftbox h3{font-size:18px;margin-bottom:12px}
+    .list div{
+      padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      line-height:1.7;
+      color:#e5e7f2;
+      font-size:15px;
+    }
+    .list div:last-child{border-bottom:none}
+    .btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .btn{
+      display:inline-block;
+      padding:12px 18px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.12);
+      background:#6d3cc7;
+      color:#fff;
+    }
+    .btn.alt{background:#13224d}
+    .btn.green{background:#0c7c46}
+    .badge{
+      display:inline-block;
+      padding:7px 12px;
+      border-radius:999px;
+      background:#20304f;
+      border:1px solid #506b9d;
+      color:#d7e4ff;
+      font-size:12px;
+      margin-right:8px;
+      margin-bottom:8px;
+    }
+    @media(max-width:1200px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .layout,.grid2,.grid3{grid-template-columns:1fr}
+    }
+    @media(max-width:700px){
+      .stats{grid-template-columns:1fr}
+      .hero h1{font-size:28px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div style="margin-bottom:16px;">
+      <a href="/legalnomics/advocate/">Back to Advocate Workspace</a>
+    </div>
+
+    <section class="hero">
+      <h1>Drafting Studio</h1>
+      <p>
+        This is the legal production engine for notices, replies, rebuttals, bilingual versions, structured drafts,
+        and advocate-reviewed outputs. It is designed for daily drafting work across law firms and legal teams.
+      </p>
+      <div class="chips">
+        <span class="chip">Notice Drafting</span>
+        <span class="chip">Reply Drafting</span>
+        <span class="chip">Bilingual Output</span>
+        <span class="chip">Clause Support</span>
+        <span class="chip">Senior Review</span>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="label">Active Drafts</div>
+        <div class="value">19</div>
+        <div class="sub">Drafts currently under preparation, correction or approval.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Reply Queue</div>
+        <div class="value">8</div>
+        <div class="sub">Urgent rebuttal drafts requiring action.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Bilingual Work</div>
+        <div class="value">6</div>
+        <div class="sub">English plus Gujarati or English plus Hindi outputs pending.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Review Status</div>
+        <div class="value">Live</div>
+        <div class="sub">Junior-to-senior drafting correction flow active.</div>
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel">
+        <h2>Draft Builder</h2>
+
+        <div class="grid2">
+          <div>
+            <label>Draft Type</label>
+            <select>
+              <option>Legal Notice</option>
+              <option>Reply to Notice</option>
+              <option>Strong Rebuttal</option>
+              <option>Consultation Brief</option>
+              <option>Compliance Response</option>
+            </select>
+          </div>
+          <div>
+            <label>Matter Category</label>
+            <select>
+              <option>Employment / HR</option>
+              <option>Property / Rent</option>
+              <option>Recovery / Payment</option>
+              <option>Consumer / Service</option>
+              <option>Corporate / Compliance</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid3" style="margin-top:16px;">
+          <div>
+            <label>Client Name</label>
+            <input type="text" placeholder="Enter client name" />
+          </div>
+          <div>
+            <label>Language Mode</label>
+            <select>
+              <option>English</option>
+              <option>Gujarati</option>
+              <option>Hindi</option>
+              <option>English + Gujarati</option>
+              <option>English + Hindi</option>
+            </select>
+          </div>
+          <div>
+            <label>Draft Tone</label>
+            <select>
+              <option>Professional</option>
+              <option>Strong Legal</option>
+              <option>Balanced Diplomatic</option>
+              <option>Firm and Serious</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Core Facts / Draft Instructions</label>
+          <textarea placeholder="Enter the matter facts, legal position, desired outcome, and draft guidance."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Opponent Notice / Incoming Text (if any)</label>
+          <textarea placeholder="Paste incoming notice text, allegations or relevant communication here."></textarea>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label>Desired Relief / Draft Objective</label>
+          <textarea placeholder="Mention what the final draft must demand, deny, rebut or request."></textarea>
+        </div>
+
+        <div class="btnrow">
+          <a href="#" class="btn">Generate Draft</a>
+          <a href="#" class="btn alt">Save Version</a>
+          <a href="#" class="btn green">Send for Senior Review</a>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>AI Draft Guidance</h2>
+
+        <span class="badge">Draft Strength: Recommended</span>
+        <span class="badge">Language Control: Active</span>
+        <span class="badge">Review Flow: Ready</span>
+
+        <div class="draftbox">
+          <h3>Expected Output</h3>
+          <div class="list">
+            <div>Structured legal notice or reply format</div>
+            <div>Chronological issue framing</div>
+            <div>Clause and rebuttal placeholder logic</div>
+            <div>Bilingual version generation pathway</div>
+          </div>
+        </div>
+
+        <div class="draftbox">
+          <h3>Drafting Productivity Layer</h3>
+          <div class="list">
+            <div>Junior drafts can be corrected by senior advocates</div>
+            <div>Templates can be reused from vault later</div>
+            <div>Final matter-specific output can be stored by version</div>
+            <div>Escalation-ready for hearing prep and filing pack</div>
+          </div>
+        </div>
+
+        <div class="draftbox">
+          <h3>Commercial Drafting Flow</h3>
+          <div class="list">
+            <div>Basic notice draft - INR 299</div>
+            <div>Strong rebuttal draft - INR 699</div>
+            <div>Bilingual output - INR 999</div>
+            <div>Senior reviewed output - INR 1499</div>
+          </div>
+        </div>
+      </section>
+    </section>
+  </div>
+</body>
+</html>
