@@ -4,377 +4,183 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Client and Matter CRM - AI LEGALNOMICS OS</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Arial,sans-serif;
-      background:radial-gradient(circle at top left,#0b1633 0%,#050816 55%,#02040b 100%);
-      color:#fff;
-      padding:20px;
-    }
-    a{text-decoration:none;color:#c9b3ff}
-    .shell{max-width:1600px;margin:0 auto}
-    .hero{
-      background:linear-gradient(135deg,rgba(88,44,130,.30),rgba(17,61,115,.35));
-      border:1px solid rgba(180,120,255,.25);
-      border-radius:24px;
-      padding:28px;
-      margin-bottom:22px;
-      box-shadow:0 0 30px rgba(76,36,120,.15);
-    }
-    .hero h1{font-size:34px;margin-bottom:14px}
-    .hero p{font-size:16px;line-height:1.8;max-width:1200px;color:#e9e9f4}
-    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
-    .chip{
-      background:rgba(122,66,188,.18);
-      border:1px solid rgba(189,136,255,.25);
-      color:#f1d8ff;
-      padding:8px 14px;
-      border-radius:999px;
-      font-size:13px;
-    }
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:18px;
-      margin-bottom:22px;
-    }
-    .stat{
-      background:rgba(8,15,40,.92);
-      border:1px solid rgba(110,140,255,.18);
-      border-radius:22px;
-      padding:22px;
-      min-height:150px;
-      box-shadow:0 0 18px rgba(0,0,0,.18);
-    }
-    .stat .label{font-size:15px;color:#c9b7ff;margin-bottom:10px}
-    .stat .value{font-size:28px;font-weight:700;margin-bottom:10px}
-    .stat .sub{font-size:15px;color:#d8dbe7;line-height:1.7}
-    .layout{
-      display:grid;
-      grid-template-columns:300px 1fr 360px;
-      gap:20px;
-      align-items:start;
-    }
-    .panel{
-      background:rgba(8,15,40,.94);
-      border:1px solid rgba(120,140,255,.18);
-      border-radius:24px;
-      padding:22px;
-      box-shadow:0 0 18px rgba(0,0,0,.18);
-    }
-    .panel h2{font-size:18px;margin-bottom:18px}
-    .nav a{
-      display:block;
-      padding:14px 16px;
-      border-radius:14px;
-      margin-bottom:12px;
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.08);
-      color:#fff;
-      font-size:15px;
-    }
-    .nav a.active{
-      background:linear-gradient(135deg,#6d3cc7,#2e5eff);
-      border:none;
-    }
-    .toolbar{
-      display:grid;
-      grid-template-columns:1.2fr .8fr .8fr .8fr;
-      gap:14px;
-      margin-bottom:18px;
-    }
-    input,select{
-      width:100%;
-      padding:13px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:#0d1731;
-      color:#fff;
-      font-size:14px;
-      outline:none;
-    }
-    .tablewrap{
-      overflow:auto;
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:18px;
-      background:rgba(255,255,255,.02);
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:980px;
-    }
-    th,td{
-      text-align:left;
-      padding:14px 14px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      font-size:14px;
-      vertical-align:top;
-    }
-    th{
-      color:#c9b7ff;
-      background:rgba(255,255,255,.03);
-    }
-    td{color:#eef1fb;line-height:1.6}
-    .badge{
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      font-size:12px;
-      margin-right:6px;
-      white-space:nowrap;
-    }
-    .b-open{background:#173d73;color:#d9e9ff;border:1px solid #3967a6}
-    .b-review{background:#4d2f12;color:#ffe3b8;border:1px solid #a86828}
-    .b-hearing{background:#3a164e;color:#f1d8ff;border:1px solid #8d4ab4}
-    .b-urgent{background:#5a1616;color:#ffd8d8;border:1px solid #b14a4a}
-    .b-paid{background:#0f4c2f;color:#d4ffe8;border:1px solid #2e9c64}
-    .grid2{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-      margin-top:18px;
-    }
-    .card{
-      background:rgba(255,255,255,.02);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:20px;
-      padding:20px;
-      min-height:220px;
-    }
-    .card h3{font-size:18px;margin-bottom:16px}
-    .list div{
-      padding:12px 0;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      line-height:1.7;
-      color:#e5e7f2;
-      font-size:15px;
-    }
-    .list div:last-child{border-bottom:none}
-    .mini{
-      display:grid;
-      gap:14px;
-    }
-    .mini .item{
-      background:rgba(255,255,255,.03);
-      border:1px solid rgba(255,255,255,.08);
-      border-radius:18px;
-      padding:16px;
-    }
-    .mini .item h4{font-size:16px;margin-bottom:8px}
-    .mini .item p{font-size:14px;line-height:1.7;color:#e1e4f2}
-    .btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
-    .btn{
-      display:inline-block;
-      padding:12px 18px;
-      border-radius:14px;
-      font-size:14px;
-      font-weight:700;
-      border:1px solid rgba(255,255,255,.12);
-      background:#6d3cc7;
-      color:#fff;
-    }
-    .btn.alt{background:#13224d}
-    .btn.green{background:#0c7c46}
-    @media(max-width:1250px){
-      .stats{grid-template-columns:repeat(2,1fr)}
-      .layout{grid-template-columns:1fr}
-      .grid2{grid-template-columns:1fr}
-      .toolbar{grid-template-columns:1fr 1fr}
-    }
-    @media(max-width:700px){
-      .stats{grid-template-columns:1fr}
-      .hero h1{font-size:28px}
-      .toolbar{grid-template-columns:1fr}
-    }
-  </style>
+  <link rel="stylesheet" href="/legalnomics/_shared/shell.css" />
 </head>
 <body>
-  <div class="shell">
-    <div style="margin-bottom:16px;">
-      <a href="/legalnomics/advocate/">Back to Advocate Workspace</a>
-    </div>
-
-    <section class="hero">
-      <h1>Client and Matter CRM</h1>
-      <p>
-        This is the central client, matter and follow-up management layer for advocates and legal teams.
-        It is designed to track every case from intake to drafting, review, hearing, billing and closure.
-      </p>
-      <div class="chips">
-        <span class="chip">Client Records</span>
-        <span class="chip">Matter Tracking</span>
-        <span class="chip">Follow-up Control</span>
-        <span class="chip">Hearing Dates</span>
-        <span class="chip">Billing Visibility</span>
+  <div class="os-shell">
+    <aside class="os-sidebar">
+      <div class="brandbox">
+        <h1>AI LEGALNOMICS OS</h1>
+        <p>Persistent advocate shell for daily legal workflow, client management, drafting, hearing and revenue control.</p>
       </div>
-    </section>
 
-    <section class="stats">
-      <div class="stat">
-        <div class="label">Total Clients</div>
-        <div class="value">186</div>
-        <div class="sub">Active and archived client profiles tracked in the workspace.</div>
+      <div class="navgroup">
+        <div class="navtitle">Core</div>
+        <a class="navlink" href="/legalnomics/">Legalnomics Home</a>
+        <a class="navlink" href="/legalnomics/advocate/">Advocate Home</a>
       </div>
-      <div class="stat">
-        <div class="label">Open Matters</div>
-        <div class="value">42</div>
-        <div class="sub">Matters currently in intake, drafting, hearing or escalation stage.</div>
-      </div>
-      <div class="stat">
-        <div class="label">Follow-ups Due</div>
-        <div class="value">17</div>
-        <div class="sub">Client callbacks, document reminders and hearing confirmations pending.</div>
-      </div>
-      <div class="stat">
-        <div class="label">Billing Ready</div>
-        <div class="value">11</div>
-        <div class="sub">Matters ready for invoice generation, collection or payment follow-up.</div>
-      </div>
-    </section>
 
-    <section class="layout">
-      <aside class="panel nav">
-        <h2>CRM Navigation</h2>
-        <a href="/legalnomics/advocate/dashboard/">Dashboard</a>
-        <a href="#" class="active">Client and Matter CRM</a>
-        <a href="/legalnomics/advocate/leads/">New Client Intake</a>
-        <a href="/legalnomics/advocate/timeline/">Matter Stage Tracker</a>
-        <a href="/legalnomics/advocate/leads/">Follow-up Queue</a>
-        <a href="/legalnomics/advocate/hearing/">Hearing Calendar</a>
-        <a href="/legalnomics/advocate/billing/">Billing Visibility</a>
-        <a href="/legalnomics/advocate/">Back to Advocate Home</a>
-      </aside>
+      <div class="navgroup">
+        <div class="navtitle">Advocate Modules</div>
+        <a class="navlink" href="/legalnomics/advocate/dashboard/">Dashboard</a>
+        <a class="navlink active" href="/legalnomics/advocate/crm/">Client and Matter CRM</a>
+        <a class="navlink" href="/legalnomics/advocate/drafting/">Drafting Studio</a>
+        <a class="navlink" href="/legalnomics/advocate/vault/">Notice and Reply Vault</a>
+        <a class="navlink" href="/legalnomics/advocate/hearing/">Hearing Preparation</a>
+        <a class="navlink" href="/legalnomics/advocate/timeline/">Case Timeline</a>
+        <a class="navlink" href="/legalnomics/advocate/leads/">Consultation Leads</a>
+        <a class="navlink" href="/legalnomics/advocate/billing/">Revenue and Billing</a>
+      </div>
 
-      <main class="panel">
-        <h2>Client and Matter Register</h2>
+      <div class="navgroup">
+        <div class="navtitle">Other Legalnomics</div>
+        <a class="navlink" href="/legalnomics/b2c/">B2C Legal Assist</a>
+        <a class="navlink" href="/legalnomics/corporate/">Corporate Legal Ops</a>
+        <a class="navlink" href="/legalnomics/shared/">Shared Legal Core</a>
+      </div>
+    </aside>
 
-        <div class="toolbar">
-          <input type="text" placeholder="Search client name, matter, city or phone" />
-          <select>
-            <option>All Matter Stages</option>
-            <option>Intake</option>
-            <option>Drafting</option>
-            <option>Review</option>
-            <option>Hearing</option>
-            <option>Settlement</option>
-            <option>Closed</option>
-          </select>
-          <select>
-            <option>All Priorities</option>
-            <option>Normal</option>
-            <option>Urgent</option>
-            <option>High Value</option>
-          </select>
-          <select>
-            <option>All Billing Status</option>
-            <option>Pending</option>
-            <option>Part Paid</option>
-            <option>Paid</option>
-          </select>
+    <main class="os-main">
+      <div class="os-topbar">
+        <div class="top-left">
+          <h2>Client and Matter CRM</h2>
+          <div class="breadcrumb">HNI WORLD OS > Legalnomics > Advocate Workspace > CRM</div>
         </div>
-
-        <div class="tablewrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Client</th>
-                <th>Matter</th>
-                <th>Stage</th>
-                <th>Next Action</th>
-                <th>Hearing / Deadline</th>
-                <th>Assigned</th>
-                <th>Billing</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <strong>Rakesh Patel</strong><br>
-                  Ahmedabad<br>
-                  +91 98XXXXXX12
-                </td>
-                <td>
-                  Salary recovery dispute<br>
-                  Employment / HR
-                </td>
-                <td><span class="badge b-review">Review</span></td>
-                <td>Senior draft correction</td>
-                <td>Reply due in 2 days</td>
-                <td>Junior A ? Senior 1</td>
-                <td><span class="badge b-paid">Part Paid</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <strong>Neha Shah</strong><br>
-                  Vadodara<br>
-                  +91 99XXXXXX45
-                </td>
-                <td>
-                  Property notice matter<br>
-                  Property / Rent
-                </td>
-                <td><span class="badge b-hearing">Hearing</span></td>
-                <td>Prepare argument summary</td>
-                <td>12 Apr 2026</td>
-                <td>Senior 2</td>
-                <td><span class="badge b-paid">Paid</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <strong>ABC Manufacturing Pvt Ltd</strong><br>
-                  Ahmedabad<br>
-                  Corporate Client
-                </td>
-                <td>
-                  Employee legal notice<br>
-                  Corporate / HR
-                </td>
-                <td><span class="badge b-open">Drafting</span></td>
-                <td>Generate rebuttal pack</td>
-                <td>Internal deadline tomorrow</td>
-                <td>Corp Desk + Senior 1</td>
-                <td><span class="badge b-open">Pending</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <strong>Mehul Trivedi</strong><br>
-                  Surat<br>
-                  +91 97XXXXXX78
-                </td>
-                <td>
-                  Consumer refund complaint<br>
-                  Consumer / Service
-                </td>
-                <td><span class="badge b-urgent">Urgent</span></td>
-                <td>Client callback and notice issue</td>
-                <td>Same day</td>
-                <td>Junior B</td>
-                <td><span class="badge b-open">Pending</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <strong>HNI Office Internal</strong><br>
-                  Ahmedabad<br>
-                  Corporate Desk
-                </td>
-                <td>
-                  Appointment letter compliance review<br>
-                  Corporate / Compliance
-                </td>
-                <td><span class="badge b-open">Intake</span></td>
-                <td>Draft policy revision</td>
-                <td>This week</td>
-                <td>Compliance Desk</td>
-                <td><span class="badge b-paid">Internal</span></td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="top-right">
+          <span class="topchip">Client Records</span>
+          <span class="topchip">Matter Tracking</span>
+          <span class="topchip">Billing Visible</span>
         </div>
+      </div>
 
-        <div class="grid2">
-          <div class="card">
+      <div class="page-wrap">
+        <section class="hero">
+          <h1>Client and Matter CRM</h1>
+          <p>
+            Central client, matter and follow-up management layer for advocates and legal teams. Designed to track every case from intake to drafting, review, hearing, billing and closure.
+          </p>
+          <div class="chips">
+            <span class="chip">Client Records</span>
+            <span class="chip">Matter Tracking</span>
+            <span class="chip">Follow-up Control</span>
+            <span class="chip">Hearing Dates</span>
+            <span class="chip">Billing Visibility</span>
+          </div>
+        </section>
+
+        <section class="stats">
+          <div class="stat">
+            <div class="label">Total Clients</div>
+            <div class="value">186</div>
+            <div class="sub">Active and archived client profiles tracked in the workspace.</div>
+          </div>
+          <div class="stat">
+            <div class="label">Open Matters</div>
+            <div class="value">42</div>
+            <div class="sub">Matters currently in intake, drafting, hearing or escalation stage.</div>
+          </div>
+          <div class="stat">
+            <div class="label">Follow-ups Due</div>
+            <div class="value">17</div>
+            <div class="sub">Client callbacks, document reminders and hearing confirmations pending.</div>
+          </div>
+          <div class="stat">
+            <div class="label">Billing Ready</div>
+            <div class="value">11</div>
+            <div class="sub">Matters ready for invoice generation, collection or payment follow-up.</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>Client and Matter Register</h3>
+
+          <div class="grid2" style="margin-bottom:18px;">
+            <input type="text" placeholder="Search client name, matter, city or phone" />
+            <div class="grid2">
+              <select>
+                <option>All Matter Stages</option>
+                <option>Intake</option>
+                <option>Drafting</option>
+                <option>Review</option>
+                <option>Hearing</option>
+                <option>Settlement</option>
+                <option>Closed</option>
+              </select>
+              <select>
+                <option>All Billing Status</option>
+                <option>Pending</option>
+                <option>Part Paid</option>
+                <option>Paid</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Client</th>
+                  <th>Matter</th>
+                  <th>Stage</th>
+                  <th>Next Action</th>
+                  <th>Hearing / Deadline</th>
+                  <th>Assigned</th>
+                  <th>Billing</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Rakesh Patel</strong><br>Ahmedabad<br>+91 98XXXXXX12</td>
+                  <td>Salary recovery dispute<br>Employment / HR</td>
+                  <td><span class="badge">Review</span></td>
+                  <td>Senior draft correction</td>
+                  <td>Reply due in 2 days</td>
+                  <td>Junior A to Senior 1</td>
+                  <td><span class="badge">Part Paid</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Neha Shah</strong><br>Vadodara<br>+91 99XXXXXX45</td>
+                  <td>Property notice matter<br>Property / Rent</td>
+                  <td><span class="badge">Hearing</span></td>
+                  <td>Prepare argument summary</td>
+                  <td>12 Apr 2026</td>
+                  <td>Senior 2</td>
+                  <td><span class="badge">Paid</span></td>
+                </tr>
+                <tr>
+                  <td><strong>ABC Manufacturing Pvt Ltd</strong><br>Ahmedabad<br>Corporate Client</td>
+                  <td>Employee legal notice<br>Corporate / HR</td>
+                  <td><span class="badge">Drafting</span></td>
+                  <td>Generate rebuttal pack</td>
+                  <td>Internal deadline tomorrow</td>
+                  <td>Corp Desk + Senior 1</td>
+                  <td><span class="badge">Pending</span></td>
+                </tr>
+                <tr>
+                  <td><strong>Mehul Trivedi</strong><br>Surat<br>+91 97XXXXXX78</td>
+                  <td>Consumer refund complaint<br>Consumer / Service</td>
+                  <td><span class="badge">Urgent</span></td>
+                  <td>Client callback and notice issue</td>
+                  <td>Same day</td>
+                  <td>Junior B</td>
+                  <td><span class="badge">Pending</span></td>
+                </tr>
+                <tr>
+                  <td><strong>HNI Office Internal</strong><br>Ahmedabad<br>Corporate Desk</td>
+                  <td>Appointment letter compliance review<br>Corporate / Compliance</td>
+                  <td><span class="badge">Intake</span></td>
+                  <td>Draft policy revision</td>
+                  <td>This week</td>
+                  <td>Compliance Desk</td>
+                  <td><span class="badge">Internal</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="grid2" style="margin-top:18px;">
+          <div class="panel">
             <h3>CRM Control Features</h3>
             <div class="list">
               <div><strong>Client master profile</strong><br>Store name, city, contact details, matter history and communication log.</div>
@@ -384,47 +190,28 @@
             </div>
           </div>
 
-          <div class="card">
-            <h3>Follow-up Queue</h3>
+          <div class="panel">
+            <h3>Priority CRM Alerts</h3>
             <div class="list">
-              <div><strong>Callback due</strong><br>7 consultation leads need response today.</div>
-              <div><strong>Documents pending</strong><br>5 clients need to submit notice copies or annexures.</div>
-              <div><strong>Hearing reminders</strong><br>3 matters require pre-hearing briefing packs.</div>
-              <div><strong>Billing follow-up</strong><br>4 completed matters are pending invoice collection.</div>
+              <div><strong>Urgent Consumer Matter</strong><br>One consumer refund matter requires same-day draft and immediate client callback.</div>
+              <div><strong>Corporate HR Escalation</strong><br>Corporate client matter has moved from internal review to rebuttal drafting stage.</div>
+              <div><strong>Billing Exposure</strong><br>Four matters are completed but pending invoice issuance and payment collection.</div>
+              <div><strong>Document Deficiency</strong><br>Multiple matters are blocked until notice copies and annexures are uploaded.</div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div class="btnrow">
-          <a href="/legalnomics/advocate/leads/" class="btn">Add New Client</a>
-          <a href="/legalnomics/advocate/timeline/" class="btn alt">Create New Matter</a>
-          <a href="/legalnomics/advocate/leads/" class="btn green">Open Follow-up Queue</a>
-        </div>
-      </main>
-
-      <aside class="panel">
-        <h2>Priority CRM Alerts</h2>
-        <div class="mini">
-          <div class="item">
-            <h4>Urgent Consumer Matter</h4>
-            <p>One consumer refund matter requires same-day draft and immediate client callback.</p>
+        <section class="panel" style="margin-top:18px;">
+          <h3>CRM Actions</h3>
+          <div class="btnrow">
+            <a href="/legalnomics/advocate/leads/" class="btn">Add New Client</a>
+            <a href="/legalnomics/advocate/timeline/" class="btn alt">Create New Matter</a>
+            <a href="/legalnomics/advocate/leads/" class="btn green">Open Follow-up Queue</a>
+            <a href="/legalnomics/advocate/billing/" class="btn alt">Open Billing</a>
           </div>
-          <div class="item">
-            <h4>Corporate HR Escalation</h4>
-            <p>Corporate client matter has moved from internal review to rebuttal drafting stage.</p>
-          </div>
-          <div class="item">
-            <h4>Billing Exposure</h4>
-            <p>Four matters are completed but pending invoice issuance and payment collection.</p>
-          </div>
-          <div class="item">
-            <h4>Document Deficiency</h4>
-            <p>Multiple matters are blocked until notice copies and annexures are uploaded.</p>
-          </div>
-        </div>
-      </aside>
-    </section>
+        </section>
+      </div>
+    </main>
   </div>
 </body>
 </html>
-
