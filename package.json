@@ -2,6 +2,6 @@
   "name": "hni-world-os",
   "private": true,
   "scripts": {
-    "build": "node -e \"const fs=require('fs'); fs.mkdirSync('dist',{recursive:true}); fs.copyFileSync('index.html','dist/index.html');\""
+    "build": "node -e \"const fs=require('fs'); const path=require('path'); fs.rmSync('dist',{recursive:true,force:true}); fs.mkdirSync('dist',{recursive:true}); const copy=(src,dst)=>{ if(!fs.existsSync(src)) return; const stat=fs.statSync(src); if(stat.isDirectory()){ fs.mkdirSync(dst,{recursive:true}); for(const item of fs.readdirSync(src)){ copy(path.join(src,item), path.join(dst,item)); } } else { fs.mkdirSync(path.dirname(dst),{recursive:true}); fs.copyFileSync(src,dst); } }; ['index.html','dashboard','muski','airnomics','edunomics','legalnomics','vercel.json'].forEach(name=>copy(name,path.join('dist',name)));\""
   }
 }
