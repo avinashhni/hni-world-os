@@ -8,327 +8,147 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: Arial, sans-serif;
-      background: #05070d;
+      background: radial-gradient(circle at top right, #12214a 0%, #05070d 45%, #03050a 100%);
       color: #fff;
       min-height: 100vh;
+      padding: 40px 24px;
     }
-    .app {
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      min-height: 100vh;
-    }
-    .sidebar {
-      background: #0b1020;
-      border-right: 1px solid #1b2238;
-      padding: 24px 18px;
-    }
-    .brand {
-      font-size: 24px;
-      font-weight: 700;
-      margin-bottom: 28px;
-      color: #ffffff;
-    }
-    .brand span {
-      color: #4da3ff;
-    }
-    .menu-title {
-      font-size: 12px;
-      color: #7f8db3;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin: 20px 0 10px;
-    }
-    .menu a {
-      display: block;
-      color: #dbe6ff;
-      text-decoration: none;
-      padding: 12px 14px;
-      border-radius: 12px;
-      margin-bottom: 8px;
-      background: #10172b;
-      border: 1px solid transparent;
-    }
-    .menu a.active {
-      background: linear-gradient(90deg, #112a4f, #0e1a33);
-      border-color: #2e5fa7;
-    }
-    .main {
-      padding: 28px;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-    }
-    .topbar h1 {
-      font-size: 28px;
-    }
-    .status {
-      padding: 10px 14px;
-      border-radius: 999px;
-      background: #0e1f13;
-      color: #7dff9b;
-      border: 1px solid #1e6b35;
-      font-size: 14px;
+    .wrap {
+      max-width: 1250px;
+      margin: auto;
     }
     .hero {
-      background: linear-gradient(135deg, #0e1630, #111b3d, #091120);
-      border: 1px solid #25365f;
-      border-radius: 22px;
-      padding: 28px;
-      margin-bottom: 24px;
-      box-shadow: 0 0 40px rgba(36, 88, 170, 0.18);
+      background: rgba(9, 16, 32, 0.88);
+      border: 1px solid #22365d;
+      border-radius: 24px;
+      padding: 36px;
+      margin-bottom: 28px;
+      box-shadow: 0 0 40px rgba(77, 163, 255, 0.12);
     }
-    .hero h2 {
-      font-size: 30px;
-      margin-bottom: 10px;
+    .hero h1 {
+      font-size: 42px;
+      margin-bottom: 12px;
     }
     .hero p {
-      color: #b9c7e8;
-      line-height: 1.6;
-      max-width: 900px;
+      color: #c2d1f0;
+      line-height: 1.7;
+      max-width: 980px;
+      font-size: 17px;
+    }
+    .tags span {
+      display: inline-block;
+      margin: 14px 10px 0 0;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #12213d;
+      color: #8fb8ff;
+      font-size: 13px;
     }
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 18px;
-      margin-bottom: 24px;
+      margin-bottom: 28px;
     }
     .card {
-      background: #0d1426;
-      border: 1px solid #1d2a49;
-      border-radius: 18px;
-      padding: 20px;
+      background: rgba(9, 16, 32, 0.92);
+      border: 1px solid #22365d;
+      border-radius: 20px;
+      padding: 22px;
+      text-decoration: none;
+      color: #fff;
+      transition: transform .18s ease, border-color .18s ease;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: #4da3ff;
     }
     .card h3 {
-      font-size: 14px;
-      color: #8fa6d9;
+      font-size: 20px;
       margin-bottom: 10px;
-      font-weight: 500;
     }
-    .card .value {
-      font-size: 30px;
-      font-weight: 700;
-      color: #ffffff;
-    }
-    .card .sub {
-      margin-top: 8px;
-      color: #90a2c8;
-      font-size: 13px;
-    }
-    .two-col {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 18px;
-      margin-bottom: 18px;
-    }
-    .panel {
-      background: #0d1426;
-      border: 1px solid #1d2a49;
-      border-radius: 18px;
-      padding: 22px;
-    }
-    .panel h3 {
-      font-size: 18px;
-      margin-bottom: 16px;
-    }
-    .list div {
-      padding: 12px 0;
-      border-bottom: 1px solid #18233d;
-      color: #dce6ff;
-    }
-    .list div:last-child {
-      border-bottom: none;
-    }
-    .tag {
-      display: inline-block;
-      margin-top: 8px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      background: #13213d;
-      color: #87b7ff;
-      font-size: 12px;
-      margin-right: 8px;
-    }
-    .muski-panel {
-      margin-top: 18px;
-      background: linear-gradient(135deg, #09111f, #0c1630, #101a38);
-      border: 1px solid #2d4274;
-      border-radius: 22px;
-      padding: 26px;
-      box-shadow: 0 0 40px rgba(77,163,255,0.14);
-    }
-    .muski-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 22px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-    .muski-header h3 {
-      font-size: 28px;
-    }
-    .voice-bar {
-      width: 100%;
-      background: #0b1222;
-      border: 1px solid #233659;
-      border-radius: 16px;
-      padding: 16px 18px;
-      color: #8ea7d9;
-      margin-bottom: 20px;
-      font-size: 15px;
-    }
-    .muski-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
-    }
-    .muski-card {
-      background: rgba(10, 16, 30, 0.92);
-      border: 1px solid #223455;
-      border-radius: 18px;
-      padding: 20px;
-    }
-    .muski-card h4 {
-      font-size: 16px;
-      margin-bottom: 10px;
-      color: #b8d1ff;
-    }
-    .muski-card p {
-      color: #95a8cf;
+    .card p {
+      color: #a9badf;
       line-height: 1.6;
       font-size: 14px;
     }
+    .footer {
+      background: rgba(9, 16, 32, 0.88);
+      border: 1px solid #22365d;
+      border-radius: 20px;
+      padding: 24px;
+    }
+    .footer h3 {
+      margin-bottom: 14px;
+      font-size: 20px;
+    }
+    .footer ul {
+      padding-left: 20px;
+      color: #c9d6f0;
+      line-height: 1.8;
+    }
     @media (max-width: 1100px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
-      .two-col { grid-template-columns: 1fr; }
-      .muski-grid { grid-template-columns: 1fr; }
     }
-    @media (max-width: 760px) {
-      .app { grid-template-columns: 1fr; }
-      .sidebar { border-right: none; border-bottom: 1px solid #1b2238; }
+    @media (max-width: 700px) {
       .grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 34px; }
     }
   </style>
 </head>
 <body>
-  <div class="app">
-    <aside class="sidebar">
-      <div class="brand">HNI <span>WORLD OS</span></div>
-
-      <div class="menu-title">Core Command</div>
-      <div class="menu">
-        <a href="#" class="active">Owner Dashboard</a>
-        <a href="#">MUSKI AI Core</a>
-        <a href="#">Boardroom Command</a>
+  <div class="wrap">
+    <section class="hero">
+      <h1>HNI WORLD OS</h1>
+      <p>
+        This is the live operating system entry point for the HNI WORLD ecosystem.
+        Core deployment is active, routing is live, and module families are now being expanded
+        into structured enterprise-grade operating screens.
+      </p>
+      <div class="tags">
+        <span>GitHub Connected</span>
+        <span>Vercel Live</span>
+        <span>MUSKI Active</span>
+        <span>Multi-Page OS Structure</span>
       </div>
+    </section>
 
-      <div class="menu-title">Product Families</div>
-      <div class="menu">
-        <a href="#">AI AIRNOMICS OS</a>
-        <a href="#">AI EDUNOMICS OS</a>
-        <a href="#">AI LEGALNOMICS OS</a>
-      </div>
+    <section class="grid">
+      <a class="card" href="/dashboard/">
+        <h3>Owner Dashboard</h3>
+        <p>Main HNI WORLD OS command center and live operating shell.</p>
+      </a>
 
-      <div class="menu-title">Enterprise</div>
-      <div class="menu">
-        <a href="#">Governance</a>
-        <a href="#">Reporting Layer</a>
-        <a href="#">Hybrid EXE + SaaS</a>
-      </div>
-    </aside>
+      <a class="card" href="/muski/">
+        <h3>MUSKI AI Core</h3>
+        <p>Master AI command brain and orchestration control layer.</p>
+      </a>
 
-    <main class="main">
-      <div class="topbar">
-        <h1>Owner Command Center</h1>
-        <div class="status">System Live</div>
-      </div>
+      <a class="card" href="/airnomics/">
+        <h3>AI AIRNOMICS OS</h3>
+        <p>Air and travel execution structure under the shared enterprise spine.</p>
+      </a>
 
-      <section class="hero">
-        <h2>HNI WORLD OS - Live Deployment Shell</h2>
-        <p>
-          Master deployment pipeline is active. This is the first live dashboard shell for HNI WORLD OS.
-          GitHub and Vercel are connected successfully. Phase-wise production rollout will continue from this live foundation.
-        </p>
-        <span class="tag">GitHub Connected</span>
-        <span class="tag">Vercel Live</span>
-        <span class="tag">Phase 1 Shell Active</span>
-      </section>
+      <a class="card" href="/edunomics/">
+        <h3>AI EDUNOMICS OS</h3>
+        <p>Education intelligence and admissions ecosystem structure.</p>
+      </a>
 
-      <section class="grid">
-        <div class="card">
-          <h3>Deployment Status</h3>
-          <div class="value">LIVE</div>
-          <div class="sub">Production pipeline active</div>
-        </div>
-        <div class="card">
-          <h3>Shared Spine</h3>
-          <div class="value">Ready</div>
-          <div class="sub">Enterprise shell deployed</div>
-        </div>
-        <div class="card">
-          <h3>MUSKI Layer</h3>
-          <div class="value">Active</div>
-          <div class="sub">Foundational orchestration shell</div>
-        </div>
-        <div class="card">
-          <h3>Next Wave</h3>
-          <div class="value">Build</div>
-          <div class="sub">Real module UI rollout</div>
-        </div>
-      </section>
+      <a class="card" href="/legalnomics/">
+        <h3>AI LEGALNOMICS OS</h3>
+        <p>Legal intelligence, drafting, and case operations system shell.</p>
+      </a>
+    </section>
 
-      <section class="two-col">
-        <div class="panel">
-          <h3>Phase Rollout Queue</h3>
-          <div class="list">
-            <div>1. Owner Dashboard Shell - Completed</div>
-            <div>2. MUSKI AI Core Screen - Active</div>
-            <div>3. AIRNOMICS OS Live Module Shell - Pending</div>
-            <div>4. EDUNOMICS OS Live Module Shell - Pending</div>
-            <div>5. LEGALNOMICS OS Live Module Shell - Pending</div>
-          </div>
-        </div>
-
-        <div class="panel">
-          <h3>System Notes</h3>
-          <div class="list">
-            <div>Deployment model: GitHub + Vercel</div>
-            <div>Offline path: EXE later</div>
-            <div>Plan: Hobby</div>
-            <div>Status: Stable foundation</div>
-          </div>
-        </div>
-      </section>
-
-      <section class="muski-panel">
-        <div class="muski-header">
-          <h3>MUSKI AI CORE</h3>
-          <div class="status">AI Brain Active</div>
-        </div>
-
-        <div class="voice-bar">
-          Voice Command / Smart Search: Ask MUSKI to manage OS layers, module reporting, enterprise execution, intelligence routing, and deployment coordination.
-        </div>
-
-        <div class="muski-grid">
-          <div class="muski-card">
-            <h4>Command Intelligence</h4>
-            <p>MUSKI is structured as the master AI command brain for HNI WORLD OS. It will supervise approved modules, reporting systems, and enterprise execution layers.</p>
-          </div>
-          <div class="muski-card">
-            <h4>Manager Routing Layer</h4>
-            <p>Module-level and intelligence-level manager AIs will report upward into MUSKI, reducing chaos and keeping operational load structured.</p>
-          </div>
-          <div class="muski-card">
-            <h4>Security + Role Control</h4>
-            <p>MUSKI must never expose confidential architecture, source code, internal files, prompts, or protected business logic to unauthorized users.</p>
-          </div>
-        </div>
-      </section>
-    </main>
+    <section class="footer">
+      <h3>Current Live Deployment Notes</h3>
+      <ul>
+        <li>Wave 1: Live dashboard shell completed</li>
+        <li>Wave 2: MUSKI AI Core section completed</li>
+        <li>Wave 3: Multi-page OS structure completed</li>
+        <li>Next: Deeper module screens and internal workflow routing</li>
+      </ul>
+    </section>
   </div>
 </body>
 </html>
