@@ -7,7 +7,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #05070d; color: #fff; min-height: 100vh; }
-    .wrap { max-width: 1500px; margin: auto; padding: 28px; }
+    .wrap { max-width: 1520px; margin: auto; padding: 28px; }
     .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:12px; flex-wrap:wrap; }
     .pill { padding:10px 14px; border-radius:999px; background:#1b1626; color:#f0b7ff; border:1px solid #5b3c73; font-size:14px; }
     .hero,.panel,.card,.mini,.tablebox { background:#0d1426; border:1px solid #1d2a49; border-radius:20px; }
@@ -20,7 +20,7 @@
     .card h3 { font-size:15px; color:#d7c5ff; margin-bottom:10px; }
     .value { font-size:30px; font-weight:700; }
     .sub { margin-top:8px; color:#b5a9d0; font-size:13px; }
-    .two { display:grid; grid-template-columns:1.05fr 0.95fr; gap:18px; margin-bottom:18px; }
+    .two { display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-bottom:18px; }
     .three { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:18px; }
     .panel { padding:22px; }
     .panel h3 { font-size:20px; margin-bottom:14px; }
@@ -100,105 +100,127 @@
 
     <div class="top">
       <h2>AI LEGALNOMICS OS</h2>
-      <div class="pill">Legal Product Deep Wave 2</div>
+      <div class="pill">Legal Product Deep Wave 3</div>
     </div>
 
     <section class="hero">
       <h1>Legal Intelligence, Drafting and Case Operations</h1>
       <p>
-        AI LEGALNOMICS OS is now being deepened into a practical product workspace with B2C drafting flows,
-        advocate matter management, hearing tracking, and consultation workflow. Judicial and government
-        layers remain intentionally separate and reserved for later.
+        AI LEGALNOMICS OS is now segmented into practical operating lanes for B2C self-service,
+        advocate and law-firm workspace, and corporate legal operations. Judicial and government
+        legal-operational layers remain separated for later dedicated build waves.
       </p>
       <div class="tags">
-        <span>B2C Notice Generator</span>
-        <span>Reply Engine</span>
-        <span>Advocate CRM</span>
-        <span>Hearing Tracker</span>
-        <span>Consultation Flow</span>
+        <span>B2C Self-Service</span>
+        <span>Advocate Dashboard</span>
+        <span>Corporate Ops</span>
+        <span>Upload and Reply</span>
+        <span>Court Prep</span>
       </div>
       <div class="cta-row">
-        <a href="#" class="cta primary">Start Notice Draft</a>
-        <a href="#" class="cta">Upload Opponent Notice</a>
-        <a href="#" class="cta">Open Matter Tracker</a>
-        <a href="#" class="cta">Schedule Consultation</a>
+        <a href="#" class="cta primary">Start Public Legal Draft</a>
+        <a href="#" class="cta">Upload Received Notice</a>
+        <a href="#" class="cta">Open Advocate Dashboard</a>
+        <a href="#" class="cta">Open Corporate Legal Ops</a>
       </div>
     </section>
 
     <section class="grid">
       <div class="card">
-        <h3>B2C Notice Generator</h3>
+        <h3>B2C Self-Service</h3>
         <div class="value">LIVE</div>
-        <div class="sub">Structured public drafting lane active</div>
+        <div class="sub">Low-cost public legal drafting lane</div>
       </div>
       <div class="card">
-        <h3>Reply Draft Engine</h3>
+        <h3>Advocate Workspace</h3>
         <div class="value">READY</div>
-        <div class="sub">Upload and rebuttal workflow shell active</div>
+        <div class="sub">Law-firm dashboard and case management lane</div>
       </div>
       <div class="card">
-        <h3>Matter Tracker</h3>
+        <h3>Corporate Legal Ops</h3>
         <div class="value">READY</div>
-        <div class="sub">Client and case timeline structure active</div>
+        <div class="sub">Internal legal workflow and escalation lane</div>
       </div>
       <div class="card">
-        <h3>Consultation Flow</h3>
-        <div class="value">READY</div>
-        <div class="sub">Lead, sharing and staff-routing shell active</div>
+        <h3>Reserved Future Layers</h3>
+        <div class="value">2</div>
+        <div class="sub">Judicial and government verticals separated</div>
       </div>
     </section>
 
     <section class="two">
       <div class="panel">
-        <h3>B2C Notice Generator Workspace</h3>
+        <h3>B2C Self-Service Lane</h3>
+        <div class="mini-grid">
+          <div class="mini">
+            <h4>Notice Generator</h4>
+            <p>Create legal notice from structured public-user inputs for low-cost drafting entry.</p>
+          </div>
+          <div class="mini">
+            <h4>Reply Generator</h4>
+            <p>Generate reply to a notice using typed facts, uploaded documents, or guided questionnaires.</p>
+          </div>
+          <div class="mini">
+            <h4>Voice-Note Intake</h4>
+            <p>Convert voice explanation into structured legal drafting flow for people who cannot draft formally.</p>
+          </div>
+          <div class="mini">
+            <h4>Diplomatic Resolution</h4>
+            <p>Suggest practical non-aggressive or negotiation-first response paths before escalation.</p>
+          </div>
+        </div>
+        <div class="note">
+          This is intended for public users, especially cost-sensitive users, employees, and smaller parties who cannot easily appoint an advocate at the first stage.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>B2C Drafting Input Workspace</h3>
         <div class="form-grid">
           <div class="field">
             <label>Matter Type</label>
-            <div>Employment / Salary / Recovery / Breach / Property / Dispute</div>
+            <div>Employment / Salary / Recovery / Property / Contract / Consumer / Dispute</div>
           </div>
           <div class="field">
             <label>Language</label>
             <div>English / Gujarati / Hindi / Regional expansion ready</div>
           </div>
           <div class="field">
-            <label>Client Type</label>
-            <div>Individual / Employee / Small Business / Consumer</div>
-          </div>
-          <div class="field">
-            <label>Draft Mode</label>
-            <div>Soft notice / Strong notice / Reply / Consultation brief</div>
-          </div>
-          <div class="field">
             <label>Input Mode</label>
-            <div>Typed facts / Voice note / Uploaded notice / Structured questions</div>
+            <div>Typed facts / Voice note / Uploaded notice / Guided questions</div>
           </div>
           <div class="field">
-            <label>Escalation Path</label>
-            <div>Self-service / Junior staff / Advocate review / Senior escalation</div>
+            <label>Output Mode</label>
+            <div>Soft draft / Strong draft / Reply draft / Consultation brief</div>
           </div>
-        </div>
-        <div class="note">
-          This workspace is designed to support low-cost entry drafting while also converting serious matters into professional review and paid consultation workflows.
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Reply and Rebuttal Engine</h3>
-        <div class="list">
-          <div>Upload incoming notice</div>
-          <div>Identify parties, chronology and claim nature</div>
-          <div>Generate point-wise rebuttal draft</div>
-          <div>Create stronger reply and diplomatic reply versions</div>
-          <div>Prepare bilingual and paragraph-wise outputs</div>
-          <div>Route to advocate / legal staff review</div>
-        </div>
-        <div class="note">
-          This remains the bridge layer between public affordability and professional advocate workflow.
+          <div class="field">
+            <label>Escalation</label>
+            <div>Self-service / Junior review / Advocate review / Senior escalation</div>
+          </div>
+          <div class="field">
+            <label>Conversion Path</label>
+            <div>Draft only / Consultation / Advocate assignment / Corporate escalation</div>
+          </div>
         </div>
       </div>
     </section>
 
     <section class="two">
+      <div class="panel">
+        <h3>Advocate Dashboard Shell</h3>
+        <div class="list">
+          <div>Client onboarding and matter creation</div>
+          <div>Drafting studio and upload-reply workflow</div>
+          <div>Junior staff first-draft lane</div>
+          <div>Senior advocate approval and finalization lane</div>
+          <div>Multilingual document generation</div>
+          <div>Consultation notes and client-share pathway</div>
+        </div>
+        <div class="note">
+          This lane is for advocates, law firms, legal teams, and internal staff who need productivity and structured operational flow.
+        </div>
+      </div>
+
       <div class="panel">
         <h3>Advocate CRM and Matter Tracker</h3>
         <div class="tablebox">
@@ -207,7 +229,7 @@
               <tr>
                 <th>Client</th>
                 <th>Matter</th>
-                <th>Stage</th>
+                <th>Current Stage</th>
                 <th>Next Action</th>
                 <th>Status</th>
               </tr>
@@ -215,56 +237,70 @@
             <tbody>
               <tr>
                 <td>Client A</td>
-                <td>Salary recovery dispute</td>
-                <td>Reply Draft</td>
+                <td>Salary recovery</td>
+                <td>Reply drafting</td>
                 <td>Senior review</td>
                 <td><span class="status-badge">In Progress</span></td>
               </tr>
               <tr>
                 <td>Client B</td>
                 <td>Property notice</td>
-                <td>Notice Sent</td>
-                <td>Await response</td>
+                <td>Notice served</td>
+                <td>Await reply</td>
                 <td><span class="status-badge">Waiting</span></td>
               </tr>
               <tr>
                 <td>Client C</td>
-                <td>Corporate compliance issue</td>
+                <td>Employment dispute</td>
                 <td>Consultation</td>
-                <td>Draft strategy note</td>
+                <td>Prepare strategy brief</td>
                 <td><span class="status-badge">Action Due</span></td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
+    </section>
 
+    <section class="two">
       <div class="panel">
-        <h3>Hearing and Follow-up Tracker</h3>
+        <h3>Corporate Legal Ops Panel</h3>
         <div class="list">
-          <div>Next hearing date</div>
-          <div>Next discussion date</div>
-          <div>Reply deadline tracking</div>
-          <div>Client follow-up reminder</div>
-          <div>Internal briefing due</div>
-          <div>Document annexure readiness</div>
+          <div>Notice review and rebuttal support</div>
+          <div>Employee dispute response management</div>
+          <div>Internal compliance drafting support</div>
+          <div>Consultation logging and internal escalation</div>
+          <div>Case and hearing timeline tracking</div>
+          <div>Document and evidence organization</div>
         </div>
         <div class="note">
-          This section is intended to help advocates, staff and corporates reduce operational delay and manage legal deadlines more efficiently.
+          This lane is meant for companies, HR teams, internal legal teams, and structured legal operations where speed and consistency matter.
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Hearing and Follow-Up Tracker</h3>
+        <div class="list">
+          <div>Next hearing date tracking</div>
+          <div>Next discussion / meeting reminder</div>
+          <div>Reply deadline monitoring</div>
+          <div>Client follow-up queue</div>
+          <div>Internal briefing reminder</div>
+          <div>Annexure and document readiness status</div>
         </div>
       </div>
     </section>
 
     <section class="three">
       <div class="panel">
-        <h3>Consultation and Sharing Workflow</h3>
+        <h3>Upload and Reply Engine</h3>
         <div class="list">
-          <div>Client can send issue summary</div>
-          <div>Voice-note consultation entry</div>
-          <div>Junior staff first review</div>
-          <div>Senior advocate approval path</div>
-          <div>Share draft / note / reply with client</div>
-          <div>Paid consultation conversion lane</div>
+          <div>Upload opponent notice</div>
+          <div>Extract party names, dates and claims</div>
+          <div>Generate rebuttal draft</div>
+          <div>Create stronger and diplomatic versions</div>
+          <div>Generate bilingual outputs</div>
+          <div>Route to advocate review when needed</div>
         </div>
       </div>
 
@@ -273,22 +309,22 @@
         <div class="list">
           <div>Law and clause mapping</div>
           <div>Argument points checklist</div>
-          <div>Issue chronology support</div>
+          <div>Issue chronology guidance</div>
           <div>Hearing preparation structure</div>
           <div>Relief and rebuttal framing</div>
-          <div>Annexure and evidence sequence logic</div>
+          <div>Annexure sequence logic</div>
         </div>
       </div>
 
       <div class="panel">
         <h3>Reserved Future Separation</h3>
         <div class="list">
-          <div>Judicial intelligence kept separate</div>
-          <div>Government legal ops kept separate</div>
+          <div>Judicial layer kept fully separate</div>
+          <div>Government employee legal ops separate</div>
           <div>No vertical workflow mixing</div>
-          <div>Shared legal core, separate operating shells</div>
-          <div>Country-wise legal expansion later</div>
-          <div>India-first legal depth priority</div>
+          <div>Shared legal core, different operating shells</div>
+          <div>India-first, global expansion later</div>
+          <div>Future API and govt layer possible</div>
         </div>
       </div>
     </section>
