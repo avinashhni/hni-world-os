@@ -5,32 +5,330 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LEGALNOMICS Corporate Legal Ops</title>
   <style>
-    body{font-family:Arial,sans-serif;background:#05070d;color:#fff;margin:0;padding:28px}
-    .wrap{max-width:1280px;margin:auto}
-    .box,.card{background:#0d1426;border:1px solid #1d2a49;border-radius:20px}
-    .box{padding:28px;margin-bottom:18px;background:linear-gradient(135deg,#1a1020,#1a1738,#0c1228)}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-    .card{padding:18px}
-    h1{margin:0 0 12px 0} p{color:#d1c8ea;line-height:1.7}
-    .tag{display:inline-block;padding:8px 12px;border-radius:999px;background:#241c36;color:#d7b6ff;margin:10px 8px 0 0;font-size:12px}
-    .btn{display:inline-block;padding:10px 14px;border-radius:12px;background:#3a2150;border:1px solid #6d4290;color:#fff;text-decoration:none;font-size:14px;margin-top:12px}
-    a{color:#bba9ff;text-decoration:none}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top right,#241530 0%,#0b0e18 42%,#05070d 100%);
+      color:#fff;
+      min-height:100vh;
+      padding:28px;
+    }
+    .wrap{max-width:1480px;margin:auto}
+    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
+    .hero,.panel,.card,.mini,.sidebar-card,.tablebox{
+      background:rgba(12,16,30,.92);
+      border:1px solid #2a3250;
+      border-radius:22px;
+      box-shadow:0 0 30px rgba(96,54,150,.12);
+    }
+    .hero{
+      padding:30px;
+      margin-bottom:20px;
+      background:linear-gradient(135deg,#301737,#1a2347,#0b1630);
+    }
+    .hero h1{font-size:44px;line-height:1.1;margin-bottom:14px}
+    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1050px}
+    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+    .chip{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      background:#231d38;
+      color:#e0c8ff;
+      font-size:12px;
+      border:1px solid #4a3566;
+    }
+    .layout{
+      display:grid;
+      grid-template-columns:300px 1fr;
+      gap:18px;
+      margin-top:18px;
+    }
+    .sidebar-card{padding:20px;height:fit-content}
+    .sidebar-card h3{font-size:18px;margin-bottom:14px}
+    .navbtn{
+      display:block;
+      width:100%;
+      text-decoration:none;
+      color:#fff;
+      background:#13192c;
+      border:1px solid #334064;
+      border-radius:14px;
+      padding:12px 14px;
+      margin-bottom:10px;
+      font-size:14px;
+    }
+    .navbtn.active{
+      background:linear-gradient(90deg,#4a245f,#2b2f63);
+      border-color:#8f5ed1;
+    }
+    .main{display:grid;gap:18px}
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:18px;
+    }
+    .card{padding:20px}
+    .card h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
+    .value{font-size:34px;font-weight:700}
+    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
+    .panel{padding:22px}
+    .panel h2{font-size:24px;margin-bottom:14px}
+    .panel p.lead{color:#cfc6e7;line-height:1.7;margin-bottom:18px}
+    .actions{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:16px;
+    }
+    .mini{
+      padding:18px;
+      background:linear-gradient(180deg,#12182c,#0d1426);
+    }
+    .mini h4{font-size:18px;margin-bottom:10px}
+    .mini p{color:#c4bddb;line-height:1.65;font-size:14px;margin-bottom:14px}
+    .btn{
+      display:inline-block;
+      padding:10px 14px;
+      border-radius:12px;
+      background:#6b2fa8;
+      border:1px solid #9659d4;
+      color:#fff;
+      text-decoration:none;
+      font-size:14px;
+    }
+    .btn.secondary{
+      background:#1b2340;
+      border-color:#43548c;
+    }
+    .two{
+      display:grid;
+      grid-template-columns:1.05fr .95fr;
+      gap:18px;
+    }
+    .tablebox{padding:18px;overflow:auto}
+    table{width:100%;border-collapse:collapse}
+    th,td{
+      text-align:left;
+      padding:12px 10px;
+      border-bottom:1px solid #2a2140;
+      font-size:14px;
+    }
+    th{color:#d7c5ff}
+    td{color:#f1ebff}
+    .status-badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      background:#1a2340;
+      color:#9dc0ff;
+    }
+    .queue{display:grid;gap:12px}
+    .queueitem{
+      background:#101729;
+      border:1px solid #2d3656;
+      border-radius:16px;
+      padding:14px;
+    }
+    .queueitem strong{display:block;margin-bottom:6px}
+    .queueitem span{color:#c2b8dd;font-size:14px;line-height:1.5}
+    .footergrid{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:18px;
+    }
+    .list div{
+      padding:10px 0;
+      border-bottom:1px solid #2a2140;
+      color:#f0ebff;
+      line-height:1.55;
+    }
+    .list div:last-child{border-bottom:none}
+    @media (max-width:1250px){
+      .layout{grid-template-columns:1fr}
+      .stats,.actions,.footergrid,.two{grid-template-columns:repeat(2,1fr)}
+    }
+    @media (max-width:760px){
+      .stats,.actions,.footergrid,.two{grid-template-columns:1fr}
+      .hero h1{font-size:34px}
+    }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <a href="/legalnomics/">Back to LEGALNOMICS</a>
-  <div class="box">
-    <h1>Corporate Legal Ops</h1>
-    <p>Internal legal operations layer for companies, HR teams and compliance desks handling notices, disputes and escalations.</p>
-    <span class="tag">Corporate</span><span class="tag">Compliance</span><span class="tag">Disputes</span><span class="tag">Escalation</span>
+  <div class="wrap">
+    <a class="toplink" href="/legalnomics/">Back to LEGALNOMICS</a>
+
+    <section class="hero">
+      <h1>Corporate Legal Ops</h1>
+      <p>
+        Internal legal operations layer for companies, HR teams, compliance desks and business leadership handling notices,
+        employee disputes, internal escalations, compliance documentation, legal review and legal-response readiness.
+      </p>
+      <div class="chipbar">
+        <span class="chip">Corporate Legal</span>
+        <span class="chip">HR Disputes</span>
+        <span class="chip">Compliance Drafting</span>
+        <span class="chip">Escalation Desk</span>
+        <span class="chip">Internal Response Engine</span>
+      </div>
+    </section>
+
+    <div class="layout">
+      <aside class="sidebar-card">
+        <h3>Corporate Navigation</h3>
+        <a class="navbtn active" href="/legalnomics/corporate/">Corporate Home</a>
+        <a class="navbtn" href="/legalnomics/corporate/dashboard/">Dashboard</a>
+        <a class="navbtn" href="/legalnomics/corporate/disputes/">Disputes</a>
+        <a class="navbtn" href="/legalnomics/corporate/compliance/">Compliance</a>
+        <a class="navbtn" href="/legalnomics/">Back to Master Legalnomics</a>
+      </aside>
+
+      <main class="main">
+        <section class="stats">
+          <div class="card">
+            <h3>Open Legal Items</h3>
+            <div class="value">21</div>
+            <div class="sub">Current internal legal and HR-sensitive matters under review.</div>
+          </div>
+          <div class="card">
+            <h3>Dispute Queue</h3>
+            <div class="value">08</div>
+            <div class="sub">Employee, vendor and escalation-based legal items active.</div>
+          </div>
+          <div class="card">
+            <h3>Compliance Drafts</h3>
+            <div class="value">14</div>
+            <div class="sub">Policy, response and legal communication drafts pending review.</div>
+          </div>
+          <div class="card">
+            <h3>Ops Status</h3>
+            <div class="value">Live</div>
+            <div class="sub">Corporate legal response and escalation structure active.</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Core Corporate Actions</h2>
+          <p class="lead">
+            This operating layer is designed to help corporates reduce response delays, improve legal control,
+            centralize notice handling, and make legal coordination faster between HR, management and legal teams.
+          </p>
+          <div class="actions">
+            <div class="mini">
+              <h4>Open Dashboard</h4>
+              <p>Track active internal legal workload, status and exposure posture.</p>
+              <a class="btn" href="/legalnomics/corporate/dashboard/">Open Dashboard</a>
+            </div>
+            <div class="mini">
+              <h4>Manage Disputes</h4>
+              <p>Track employee disputes, escalations, legal notices and rebuttal paths.</p>
+              <a class="btn" href="/legalnomics/corporate/disputes/">Open Disputes</a>
+            </div>
+            <div class="mini">
+              <h4>Compliance Desk</h4>
+              <p>Prepare internal compliance drafts, legal communications and documentation.</p>
+              <a class="btn" href="/legalnomics/corporate/compliance/">Open Compliance</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="two">
+          <div class="panel">
+            <h2>Corporate Legal Tracker</h2>
+            <div class="tablebox">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Issue</th>
+                    <th>Department</th>
+                    <th>Stage</th>
+                    <th>Next Action</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Employee legal notice</td>
+                    <td>HR</td>
+                    <td>Review</td>
+                    <td>Draft response</td>
+                    <td><span class="status-badge">Action Due</span></td>
+                  </tr>
+                  <tr>
+                    <td>Vendor dispute</td>
+                    <td>Operations</td>
+                    <td>Escalation</td>
+                    <td>Management review</td>
+                    <td><span class="status-badge">Escalated</span></td>
+                  </tr>
+                  <tr>
+                    <td>Policy revision</td>
+                    <td>Compliance</td>
+                    <td>Drafting</td>
+                    <td>Legal review</td>
+                    <td><span class="status-badge">In Progress</span></td>
+                  </tr>
+                  <tr>
+                    <td>Salary dispute</td>
+                    <td>HR</td>
+                    <td>Response</td>
+                    <td>Issue rebuttal</td>
+                    <td><span class="status-badge">Review</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Current Priority Queue</h2>
+            <div class="queue">
+              <div class="queueitem">
+                <strong>Employee Notice Response</strong>
+                <span>One salary-related dispute requires structured response and compliance review.</span>
+              </div>
+              <div class="queueitem">
+                <strong>Vendor Escalation</strong>
+                <span>Commercial disagreement needs document chronology and legal position note.</span>
+              </div>
+              <div class="queueitem">
+                <strong>Policy Update</strong>
+                <span>Appointment and confidentiality clauses need immediate strengthening and rollout.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="footergrid">
+          <div class="panel">
+            <h2>Legal Response Layer</h2>
+            <div class="list">
+              <div>Notice review and rebuttal support</div>
+              <div>Internal response preparation</div>
+              <div>Escalation-ready communication flow</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Compliance Layer</h2>
+            <div class="list">
+              <div>Policy draft structure</div>
+              <div>Internal legal communication support</div>
+              <div>Corporate governance drafting readiness</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h2>Operations Layer</h2>
+            <div class="list">
+              <div>Case timeline and reminders</div>
+              <div>Document and evidence organization</div>
+              <div>Cross-team legal issue visibility</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
   </div>
-  <div class="grid">
-    <div class="card"><h3>Dashboard</h3><p>Corporate legal overview, queues and legal issue posture.</p><a class="btn" href="/legalnomics/corporate/dashboard/">Open Dashboard</a></div>
-    <div class="card"><h3>Disputes</h3><p>Employee disputes, notice response and rebuttal workflow lane.</p><a class="btn" href="/legalnomics/corporate/disputes/">Open Disputes</a></div>
-    <div class="card"><h3>Compliance</h3><p>Compliance-oriented drafting and internal legal escalation shell.</p><a class="btn" href="/legalnomics/corporate/compliance/">Open Compliance</a></div>
-  </div>
-</div>
 </body>
 </html>
