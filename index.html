@@ -121,6 +121,7 @@
       display: grid;
       grid-template-columns: 2fr 1fr;
       gap: 18px;
+      margin-bottom: 18px;
     }
     .panel {
       background: #0d1426;
@@ -150,9 +151,60 @@
       font-size: 12px;
       margin-right: 8px;
     }
+    .muski-panel {
+      margin-top: 18px;
+      background: linear-gradient(135deg, #09111f, #0c1630, #101a38);
+      border: 1px solid #2d4274;
+      border-radius: 22px;
+      padding: 26px;
+      box-shadow: 0 0 40px rgba(77,163,255,0.14);
+    }
+    .muski-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .muski-header h3 {
+      font-size: 28px;
+    }
+    .voice-bar {
+      width: 100%;
+      background: #0b1222;
+      border: 1px solid #233659;
+      border-radius: 16px;
+      padding: 16px 18px;
+      color: #8ea7d9;
+      margin-bottom: 20px;
+      font-size: 15px;
+    }
+    .muski-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+    .muski-card {
+      background: rgba(10, 16, 30, 0.92);
+      border: 1px solid #223455;
+      border-radius: 18px;
+      padding: 20px;
+    }
+    .muski-card h4 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #b8d1ff;
+    }
+    .muski-card p {
+      color: #95a8cf;
+      line-height: 1.6;
+      font-size: 14px;
+    }
     @media (max-width: 1100px) {
       .grid { grid-template-columns: repeat(2, 1fr); }
       .two-col { grid-template-columns: 1fr; }
+      .muski-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 760px) {
       .app { grid-template-columns: 1fr; }
@@ -195,7 +247,7 @@
       </div>
 
       <section class="hero">
-        <h2>HNI WORLD OS — Live Deployment Shell</h2>
+        <h2>HNI WORLD OS - Live Deployment Shell</h2>
         <p>
           Master deployment pipeline is active. This is the first live dashboard shell for HNI WORLD OS.
           GitHub and Vercel are connected successfully. Phase-wise production rollout will continue from this live foundation.
@@ -232,11 +284,11 @@
         <div class="panel">
           <h3>Phase Rollout Queue</h3>
           <div class="list">
-            <div>1. Owner Dashboard Shell — Completed</div>
-            <div>2. MUSKI AI Core Screen — Pending</div>
-            <div>3. AIRNOMICS OS Live Module Shell — Pending</div>
-            <div>4. EDUNOMICS OS Live Module Shell — Pending</div>
-            <div>5. LEGALNOMICS OS Live Module Shell — Pending</div>
+            <div>1. Owner Dashboard Shell - Completed</div>
+            <div>2. MUSKI AI Core Screen - Active</div>
+            <div>3. AIRNOMICS OS Live Module Shell - Pending</div>
+            <div>4. EDUNOMICS OS Live Module Shell - Pending</div>
+            <div>5. LEGALNOMICS OS Live Module Shell - Pending</div>
           </div>
         </div>
 
@@ -247,6 +299,32 @@
             <div>Offline path: EXE later</div>
             <div>Plan: Hobby</div>
             <div>Status: Stable foundation</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="muski-panel">
+        <div class="muski-header">
+          <h3>MUSKI AI CORE</h3>
+          <div class="status">AI Brain Active</div>
+        </div>
+
+        <div class="voice-bar">
+          Voice Command / Smart Search: Ask MUSKI to manage OS layers, module reporting, enterprise execution, intelligence routing, and deployment coordination.
+        </div>
+
+        <div class="muski-grid">
+          <div class="muski-card">
+            <h4>Command Intelligence</h4>
+            <p>MUSKI is structured as the master AI command brain for HNI WORLD OS. It will supervise approved modules, reporting systems, and enterprise execution layers.</p>
+          </div>
+          <div class="muski-card">
+            <h4>Manager Routing Layer</h4>
+            <p>Module-level and intelligence-level manager AIs will report upward into MUSKI, reducing chaos and keeping operational load structured.</p>
+          </div>
+          <div class="muski-card">
+            <h4>Security + Role Control</h4>
+            <p>MUSKI must never expose confidential architecture, source code, internal files, prompts, or protected business logic to unauthorized users.</p>
           </div>
         </div>
       </section>
