@@ -5,34 +5,252 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HNI WORLD OS</title>
   <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #0b0b0f;
-      color: #ffffff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      background: #05070d;
+      color: #fff;
       min-height: 100vh;
-      text-align: center;
     }
-    .box {
-      max-width: 800px;
-      padding: 40px;
-      border: 1px solid #2a2a35;
-      border-radius: 16px;
-      background: #12121a;
-      box-shadow: 0 0 30px rgba(255,255,255,0.04);
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      min-height: 100vh;
     }
-    h1 { font-size: 42px; margin-bottom: 10px; }
-    p { font-size: 18px; color: #c9c9d6; }
+    .sidebar {
+      background: #0b1020;
+      border-right: 1px solid #1b2238;
+      padding: 24px 18px;
+    }
+    .brand {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 28px;
+      color: #ffffff;
+    }
+    .brand span {
+      color: #4da3ff;
+    }
+    .menu-title {
+      font-size: 12px;
+      color: #7f8db3;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 10px;
+    }
+    .menu a {
+      display: block;
+      color: #dbe6ff;
+      text-decoration: none;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      background: #10172b;
+      border: 1px solid transparent;
+    }
+    .menu a.active {
+      background: linear-gradient(90deg, #112a4f, #0e1a33);
+      border-color: #2e5fa7;
+    }
+    .main {
+      padding: 28px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .topbar h1 {
+      font-size: 28px;
+    }
+    .status {
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: #0e1f13;
+      color: #7dff9b;
+      border: 1px solid #1e6b35;
+      font-size: 14px;
+    }
+    .hero {
+      background: linear-gradient(135deg, #0e1630, #111b3d, #091120);
+      border: 1px solid #25365f;
+      border-radius: 22px;
+      padding: 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 0 40px rgba(36, 88, 170, 0.18);
+    }
+    .hero h2 {
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+    .hero p {
+      color: #b9c7e8;
+      line-height: 1.6;
+      max-width: 900px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+    .card {
+      background: #0d1426;
+      border: 1px solid #1d2a49;
+      border-radius: 18px;
+      padding: 20px;
+    }
+    .card h3 {
+      font-size: 14px;
+      color: #8fa6d9;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+    .card .value {
+      font-size: 30px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .card .sub {
+      margin-top: 8px;
+      color: #90a2c8;
+      font-size: 13px;
+    }
+    .two-col {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 18px;
+    }
+    .panel {
+      background: #0d1426;
+      border: 1px solid #1d2a49;
+      border-radius: 18px;
+      padding: 22px;
+    }
+    .panel h3 {
+      font-size: 18px;
+      margin-bottom: 16px;
+    }
+    .list div {
+      padding: 12px 0;
+      border-bottom: 1px solid #18233d;
+      color: #dce6ff;
+    }
+    .list div:last-child {
+      border-bottom: none;
+    }
+    .tag {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #13213d;
+      color: #87b7ff;
+      font-size: 12px;
+      margin-right: 8px;
+    }
+    @media (max-width: 1100px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+      .two-col { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { border-right: none; border-bottom: 1px solid #1b2238; }
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
-  <div class="box">
-    <h1>HNI WORLD OS</h1>
-    <p>Master deployment system connected successfully.</p>
-    <p>Phase-wise production rollout is in progress.</p>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">HNI <span>WORLD OS</span></div>
+
+      <div class="menu-title">Core Command</div>
+      <div class="menu">
+        <a href="#" class="active">Owner Dashboard</a>
+        <a href="#">MUSKI AI Core</a>
+        <a href="#">Boardroom Command</a>
+      </div>
+
+      <div class="menu-title">Product Families</div>
+      <div class="menu">
+        <a href="#">AI AIRNOMICS OS</a>
+        <a href="#">AI EDUNOMICS OS</a>
+        <a href="#">AI LEGALNOMICS OS</a>
+      </div>
+
+      <div class="menu-title">Enterprise</div>
+      <div class="menu">
+        <a href="#">Governance</a>
+        <a href="#">Reporting Layer</a>
+        <a href="#">Hybrid EXE + SaaS</a>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h1>Owner Command Center</h1>
+        <div class="status">System Live</div>
+      </div>
+
+      <section class="hero">
+        <h2>HNI WORLD OS — Live Deployment Shell</h2>
+        <p>
+          Master deployment pipeline is active. This is the first live dashboard shell for HNI WORLD OS.
+          GitHub and Vercel are connected successfully. Phase-wise production rollout will continue from this live foundation.
+        </p>
+        <span class="tag">GitHub Connected</span>
+        <span class="tag">Vercel Live</span>
+        <span class="tag">Phase 1 Shell Active</span>
+      </section>
+
+      <section class="grid">
+        <div class="card">
+          <h3>Deployment Status</h3>
+          <div class="value">LIVE</div>
+          <div class="sub">Production pipeline active</div>
+        </div>
+        <div class="card">
+          <h3>Shared Spine</h3>
+          <div class="value">Ready</div>
+          <div class="sub">Enterprise shell deployed</div>
+        </div>
+        <div class="card">
+          <h3>MUSKI Layer</h3>
+          <div class="value">Active</div>
+          <div class="sub">Foundational orchestration shell</div>
+        </div>
+        <div class="card">
+          <h3>Next Wave</h3>
+          <div class="value">Build</div>
+          <div class="sub">Real module UI rollout</div>
+        </div>
+      </section>
+
+      <section class="two-col">
+        <div class="panel">
+          <h3>Phase Rollout Queue</h3>
+          <div class="list">
+            <div>1. Owner Dashboard Shell — Completed</div>
+            <div>2. MUSKI AI Core Screen — Pending</div>
+            <div>3. AIRNOMICS OS Live Module Shell — Pending</div>
+            <div>4. EDUNOMICS OS Live Module Shell — Pending</div>
+            <div>5. LEGALNOMICS OS Live Module Shell — Pending</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>System Notes</h3>
+          <div class="list">
+            <div>Deployment model: GitHub + Vercel</div>
+            <div>Offline path: EXE later</div>
+            <div>Plan: Hobby</div>
+            <div>Status: Stable foundation</div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 </body>
 </html>
