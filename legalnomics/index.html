@@ -3,32 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI LEGALNOMICS OS</title>
+  <title>AI LEGALNOMICS OS - Master Structure</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: Arial, sans-serif; background: #05070d; color: #fff; min-height: 100vh; }
     .wrap { max-width: 1540px; margin: auto; padding: 28px; }
-    .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; gap:12px; flex-wrap:wrap; }
-    .pill { padding:10px 14px; border-radius:999px; background:#1b1626; color:#f0b7ff; border:1px solid #5b3c73; font-size:14px; }
-    .hero,.module { background:#0d1426; border:1px solid #1d2a49; border-radius:20px; }
+    .hero,.panel,.card { background:#0d1426; border:1px solid #1d2a49; border-radius:20px; }
     .hero { padding:30px; margin-bottom:22px; background:linear-gradient(135deg,#1a1020,#1a1738,#0c1228); }
     .hero h1 { font-size:34px; margin-bottom:12px; }
     .hero p { color:#d1c8ea; line-height:1.7; }
     .tags span { display:inline-block; margin:14px 10px 0 0; padding:8px 12px; border-radius:999px; background:#241c36; color:#d7b6ff; font-size:12px; }
     .three { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; margin-bottom:22px; }
-    .module { padding:22px; min-height: 220px; }
-    .module h3 { font-size:20px; margin-bottom:12px; color:#f4ddff; }
-    .module p { color:#cbbfe3; line-height:1.7; font-size:14px; margin-bottom:16px; }
-    .btn {
-      display:inline-block;
-      padding:10px 14px;
-      border-radius:12px;
-      background:#3a2150;
-      border:1px solid #6d4290;
-      color:#fff;
-      text-decoration:none;
-      font-size:14px;
-    }
+    .card { padding:22px; }
+    .card h3 { margin-bottom:12px; font-size:20px; color:#f4ddff; }
+    .card p { color:#cbbfe3; line-height:1.7; margin-bottom:16px; }
+    .btn { display:inline-block; padding:10px 14px; border-radius:12px; background:#3a2150; border:1px solid #6d4290; color:#fff; text-decoration:none; font-size:14px; margin:6px 8px 0 0; }
     a.back { color:#bba9ff; text-decoration:none; display:inline-block; margin-bottom:16px; }
     @media (max-width:1100px){ .three{grid-template-columns:repeat(2,1fr);} }
     @media (max-width:760px){ .three{grid-template-columns:1fr;} }
@@ -38,53 +27,64 @@
   <div class="wrap">
     <a class="back" href="/">Back to HNI WORLD OS</a>
 
-    <div class="top">
-      <h2>AI LEGALNOMICS OS</h2>
-      <div class="pill">Deep Wave 5</div>
-    </div>
-
     <section class="hero">
-      <h1>LEGALNOMICS Operating Segments</h1>
+      <h1>AI LEGALNOMICS OS - Master Structure</h1>
       <p>
-        AI LEGALNOMICS OS is now split into three active operating segments:
-        B2C public legal assist, advocate and law-firm workspace, and corporate legal operations.
-        Judicial and government layers remain reserved and separate.
+        LEGALNOMICS is now structured into B2C, Advocate, Corporate, and Shared legal intelligence system layers.
+        Judicial and government verticals remain reserved outside this active structure.
       </p>
       <div class="tags">
-        <span>B2C Segmented</span>
-        <span>Advocate Segmented</span>
-        <span>Corporate Segmented</span>
-        <span>Judicial Reserved</span>
-        <span>Govt Reserved</span>
+        <span>B2C Structured</span>
+        <span>Advocate Structured</span>
+        <span>Corporate Structured</span>
+        <span>Shared Legal Core</span>
       </div>
     </section>
 
     <section class="three">
-      <div class="module">
+      <div class="card">
         <h3>B2C Legal Assist</h3>
-        <p>
-          Public self-service lane for legal notices, replies, voice-note intake, affordable consultation entry,
-          and practical issue-resolution guidance.
-        </p>
-        <a class="btn" href="/legalnomics/b2c/">Open B2C Legal Assist</a>
+        <p>Public-facing notice, reply, consultation, and affordable legal drafting layer.</p>
+        <a class="btn" href="/legalnomics/b2c/notice/">Notice</a>
+        <a class="btn" href="/legalnomics/b2c/reply/">Reply</a>
+        <a class="btn" href="/legalnomics/b2c/consultation/">Consultation</a>
       </div>
 
-      <div class="module">
-        <h3>Advocate and Law Firm Workspace</h3>
-        <p>
-          Drafting studio, matter CRM, junior-to-senior workflow, hearing tracking, case Bible support,
-          and professional legal productivity layer.
-        </p>
-        <a class="btn" href="/legalnomics/advocate/">Open Advocate Workspace</a>
+      <div class="card">
+        <h3>Advocate Workspace</h3>
+        <p>Professional advocate and law-firm operating layer with CRM, drafting, hearing, and dashboard structure.</p>
+        <a class="btn" href="/legalnomics/advocate/dashboard/">Dashboard</a>
+        <a class="btn" href="/legalnomics/advocate/crm/">CRM</a>
+        <a class="btn" href="/legalnomics/advocate/drafting/">Drafting</a>
+        <a class="btn" href="/legalnomics/advocate/hearing/">Hearing</a>
       </div>
 
-      <div class="module">
+      <div class="card">
         <h3>Corporate Legal Ops</h3>
-        <p>
-          Internal legal workflow lane for corporates, employee dispute handling, compliance draft support,
-          notice review, escalation, and structured matter tracking.
-        </p>
-        <a class="btn" href="/legalnomics/corporate/">Open Corporate Legal Ops</a>
+        <p>Internal legal workflow for disputes, compliance, notice handling, and escalation control.</p>
+        <a class="btn" href="/legalnomics/corporate/dashboard/">Dashboard</a>
+        <a class="btn" href="/legalnomics/corporate/disputes/">Disputes</a>
+        <a class="btn" href="/legalnomics/corporate/compliance/">Compliance</a>
+      </div>
+    </section>
+
+    <section class="three">
+      <div class="card">
+        <h3>Shared AI Engine</h3>
+        <p>Reserved shared legal intelligence core for future drafting, reasoning, and workflow automation.</p>
+        <a class="btn" href="/legalnomics/shared/ai-engine/">Open</a>
+      </div>
+
+      <div class="card">
+        <h3>Templates Vault</h3>
+        <p>Reserved structure for legal notice, reply, agreement, and multilingual template systems.</p>
+        <a class="btn" href="/legalnomics/shared/templates/">Open</a>
+      </div>
+
+      <div class="card">
+        <h3>Law Library</h3>
+        <p>Reserved structure for case Bible, acts, clauses, checklists, and legal reference layers.</p>
+        <a class="btn" href="/legalnomics/shared/law-library/">Open</a>
       </div>
     </section>
   </div>
