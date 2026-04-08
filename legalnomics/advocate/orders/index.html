@@ -3,50 +3,72 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advocate Orders</title>
+  <title>AI LEGALNOMICS OS - Verdict Review</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
-<div class="shell-layout">
-<aside class="shell-sidebar">
-  <div class="shell-brand-card"><h2>AI LEGALNOMICS OS</h2><p>Order-copy upload, verdict status and post-order review desk.</p></div>
-  <div class="shell-nav-group">
-    <div class="shell-nav-title">ADVOCATE</div>
-    <a class="shell-nav-link" href="/legalnomics/advocate">Advocate Home</a>
-    <a class="shell-nav-link" href="/legalnomics/advocate/cases">Cases</a>
-    <a class="shell-nav-link" href="/legalnomics/advocate/hearings">Hearings</a>
-    <a class="shell-nav-link active" href="/legalnomics/advocate/orders">Orders</a>
-    <a class="shell-nav-link" href="/legalnomics/advocate/clients">Clients</a>
+  <div class="shell-layout">
+    <aside class="shell-sidebar">
+      <div class="brand-card">
+        <div class="eyebrow">AI LEGALNOMICS OS</div>
+        <h1>Verdict Review</h1>
+        <p>Order copy, judgment stage, post-hearing action and legal outcome visibility for advocates.</p>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-title">ADVOCATE</div>
+        <a class="nav-link" href="/legalnomics/advocate">Advocate Home</a>
+        <a class="nav-link" href="/legalnomics/advocate/cases">Case Queue</a>
+        <a class="nav-link" href="/legalnomics/advocate/hearings">Hearings</a>
+        <a class="nav-link active" href="/legalnomics/advocate/orders">Verdict Review</a>
+        <a class="nav-link" href="/legalnomics/advocate/challenge-queue">Challenge Queue</a>
+      </div>
+    </aside>
+
+    <main class="shell-main">
+      <div class="shell-topbar">
+        <div>
+          <div class="page-title">Verdict and Order Review Layer</div>
+          <div class="page-subtitle">HNI WORLD OS > Legalnomics > Advocate > Orders</div>
+        </div>
+        <div class="top-pills">
+          <span class="pill">Order Copy</span>
+          <span class="pill">Review Ready</span>
+          <span class="pill">Post-Hearing</span>
+        </div>
+      </div>
+
+      <section class="stats-grid four">
+        <div class="metric-card"><span class="metric-label">Awaiting Order Copy</span><strong>12</strong><p>Cases where final copy upload is pending.</p></div>
+        <div class="metric-card"><span class="metric-label">Under Review</span><strong>7</strong><p>Judgments being checked by legal team.</p></div>
+        <div class="metric-card"><span class="metric-label">Closure Ready</span><strong>4</strong><p>Cases ready for closure or settlement wrap-up.</p></div>
+        <div class="metric-card"><span class="metric-label">Challenge Suggested</span><strong>3</strong><p>AI or legal review suggests appeal / challenge.</p></div>
+      </section>
+
+      <section class="content-grid two">
+        <div class="panel-card">
+          <h3>Order Review Checklist</h3>
+          <ul class="bullet-list">
+            <li>Upload order / judgment copy</li>
+            <li>Map matter against pleadings and evidence</li>
+            <li>Review granted vs rejected prayers</li>
+            <li>Check limitation period for appeal / revision</li>
+            <li>Mark closure / compliance / challenge route</li>
+          </ul>
+        </div>
+
+        <div class="panel-card">
+          <h3>AI Legal Review Direction</h3>
+          <ul class="bullet-list">
+            <li>Highlight contradictory findings</li>
+            <li>Flag procedural irregularity</li>
+            <li>Identify missing issue framing</li>
+            <li>Map challenge-ready grounds</li>
+            <li>Escalate to challenge queue if required</li>
+          </ul>
+        </div>
+      </section>
+    </main>
   </div>
-</aside>
-<main class="shell-main">
-  <div class="shell-topbar"><div><h1>Order and Verdict Desk</h1><p>HNI WORLD OS > Legalnomics > Advocate > Orders</p></div><div class="shell-top-actions"><span class="shell-chip">Order Upload</span><span class="shell-chip">Verdict View</span><span class="shell-chip">Challenge Ready</span></div></div>
-  <section class="content-grid two" style="margin-top:22px;">
-    <div class="form-card">
-      <h3>Upload Order Copy</h3>
-      <div class="form-grid two">
-        <input placeholder="Matter Title" />
-        <input placeholder="Court / Forum" />
-        <input placeholder="Order Date" />
-        <input placeholder="Verdict Status" />
-      </div>
-      <textarea rows="5" placeholder="Key order summary, findings, relief granted or denied, next action needed."></textarea>
-      <div class="button-row">
-        <button class="primary-btn">Upload Order</button>
-        <button class="secondary-btn">Send for AI Review</button>
-      </div>
-    </div>
-    <div class="info-card">
-      <h3>Post-Order Workflow</h3>
-      <ul class="info-list">
-        <li>Store order copy and link it to matter history</li>
-        <li>Review whether verdict favours or harms client position</li>
-        <li>Identify whether challenge / appeal review may be needed</li>
-        <li>Escalate serious orders to senior or owner intelligence layer</li>
-      </ul>
-    </div>
-  </section>
-</main>
-</div>
 </body>
 </html>
