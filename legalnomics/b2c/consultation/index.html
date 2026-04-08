@@ -3,52 +3,37 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>B2C Consultation</title>
+  <title>Consultation Funnel</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
-<div class="shell-layout">
-<aside class="shell-sidebar">
-  <div class="shell-brand-card"><h2>AI LEGALNOMICS OS</h2><p>Consumer consultation entry and escalation funnel.</p></div>
-  <div class="shell-nav-group">
-    <div class="shell-nav-title">B2C</div>
-    <a class="shell-nav-link" href="/legalnomics/b2c">B2C Home</a>
-    <a class="shell-nav-link" href="/legalnomics/b2c/notices">Notices</a>
-    <a class="shell-nav-link" href="/legalnomics/b2c/replies">Replies</a>
-    <a class="shell-nav-link active" href="/legalnomics/b2c/consultation">Consultation</a>
-    <a class="shell-nav-link" href="/legalnomics/b2c/notary">Notary</a>
+  <div class="shell-layout">
+    <aside class="shell-sidebar">
+      <div class="shell-brand-card">
+        <h2>AI LEGALNOMICS OS</h2>
+        <p>Legal consultation intake, scheduling and escalation flow.</p>
+      </div>
+      <div class="shell-nav-group">
+        <div class="shell-nav-title">CONSULTATION</div>
+        <a class="shell-nav-link" href="/legalnomics/b2c">B2C Home</a>
+        <a class="shell-nav-link active" href="/legalnomics/b2c/consultation">Consultation Funnel</a>
+        <a class="shell-nav-link" href="/legalnomics/b2c/live">Live Consultation</a>
+      </div>
+    </aside>
+    <main class="shell-main">
+      <div class="shell-topbar">
+        <div><h1>Consultation Funnel</h1><p>HNI WORLD OS > Legalnomics > B2C > Consultation</p></div>
+        <div class="shell-top-actions"><span class="shell-chip">Human Assist</span></div>
+      </div>
+      <section class="hero-card">
+        <h2>Consultation Request and Escalation Pipeline</h2>
+        <p>Move from issue submission to callback, consultation booking, specialist routing and legal service conversion.</p>
+      </section>
+      <section class="module-grid two">
+        <div class="feature-card"><h3>Intake Queue</h3><p>Capture issue category, urgency, preferred timing and consultation mode.</p></div>
+        <div class="feature-card"><h3>Lawyer Routing</h3><p>Send users toward verified advocates, junior support or specialized legal desks.</p></div>
+      </section>
+    </main>
   </div>
-</aside>
-<main class="shell-main">
-  <div class="shell-topbar"><div><h1>Consultation Funnel</h1><p>HNI WORLD OS > Legalnomics > B2C > Consultation</p></div><div class="shell-top-actions"><span class="shell-chip">Free Intro</span><span class="shell-chip">Paid Escalation</span><span class="shell-chip">Nearby Match</span></div></div>
-  <section class="content-grid two" style="margin-top:22px;">
-    <div class="form-card">
-      <h3>Consultation Intake</h3>
-      <div class="form-grid two">
-        <input placeholder="Full Name" />
-        <input placeholder="Mobile Number" />
-        <input placeholder="Issue Type" />
-        <input placeholder="City / State" />
-        <input placeholder="Pincode / Zip" />
-        <input placeholder="Preferred Language" />
-      </div>
-      <textarea rows="6" placeholder="Explain your problem and what kind of legal help you need."></textarea>
-      <div class="button-row">
-        <button class="primary-btn">Request Consultation</button>
-        <button class="secondary-btn">Find Nearby Advocate</button>
-      </div>
-    </div>
-    <div class="info-card">
-      <h3>Consultation Logic</h3>
-      <ul class="info-list">
-        <li>Short intro call can begin as free entry</li>
-        <li>Small matters can be guided by junior or desk</li>
-        <li>Serious matters can be escalated to senior advocate</li>
-        <li>Nearby matching can be used for local legal support</li>
-      </ul>
-    </div>
-  </section>
-</main>
-</div>
 </body>
 </html>
