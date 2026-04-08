@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auth Gateway</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/legalnomics/_shared/runtime-config.js"></script>
+  <script src="/legalnomics/_shared/supabase-client.js"></script>
+  <script src="/legalnomics/_shared/auth.js"></script>
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="shell-sidebar">
+      <div class="shell-brand-card">
+        <h2>AI LEGALNOMICS OS</h2>
+        <p>Authentication gateway for public users, advocates, firms, corporate users and notaries.</p>
+      </div>
+
+      <div class="shell-nav-group">
+        <div class="shell-nav-title">AUTH</div>
+        <a class="shell-nav-link" href="/legalnomics">Legalnomics Home</a>
+        <a class="shell-nav-link active" href="/legalnomics/auth">Auth Gateway</a>
+        <a class="shell-nav-link" href="/legalnomics/b2c">B2C Home</a>
+        <a class="shell-nav-link" href="/legalnomics/advocate">Advocate Home</a>
+      </div>
+    </aside>
+
+    <main class="shell-main">
+      <div class="shell-topbar">
+        <div>
+          <h1>Authentication Gateway</h1>
+          <p>HNI WORLD OS > Legalnomics > Auth</p>
+        </div>
+        <div class="shell-top-actions">
+          <span class="shell-chip">Signup</span>
+          <span class="shell-chip">Login</span>
+          <span class="shell-chip">Role Ready</span>
+        </div>
+      </div>
+
+      <section class="content-grid two" style="margin-top:22px;">
+        <div class="form-card">
+          <h3>Create Account</h3>
+          <div class="form-grid two">
+            <input id="signup_name" placeholder="Full Name" />
+            <input id="signup_email" type="email" placeholder="Email Address" />
+            <input id="signup_password" type="password" placeholder="Password" />
+            <select id="signup_role">
+              <option value="public_user">Public User</option>
+              <option value="advocate">Advocate</option>
+              <option value="law_firm">Law Firm</option>
+              <option value="corporate_user">Corporate User</option>
+              <option value="notary">Notary</option>
+            </select>
+          </div>
+          <div class="button-row">
+            <button class="primary-btn" onclick="legalnomicsSignUp(
+              document.getElementById('signup_email').value,
+              document.getElementById('signup_password').value,
+              document.getElementById('signup_name').value,
+              document.getElementById('signup_role').value
+            )">Create Account</button>
+          </div>
+        </div>
+
+        <div class="form-card">
+          <h3>Login</h3>
+          <div class="form-grid">
+            <input id="signin_email" type="email" placeholder="Email Address" />
+            <input id="signin_password" type="password" placeholder="Password" />
+          </div>
+          <div class="button-row">
+            <button class="primary-btn" onclick="legalnomicsSignIn(
+              document.getElementById('signin_email').value,
+              document.getElementById('signin_password').value
+            )">Login</button>
+            <button class="secondary-btn" onclick="legalnomicsSignOut()">Logout</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,265 +1,77 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LEGALNOMICS Shared Core</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Arial,sans-serif;
-      background:radial-gradient(circle at top right,#20162d 0%,#0a0d16 42%,#05070d 100%);
-      color:#fff;
-      min-height:100vh;
-      padding:28px;
-    }
-    .wrap{max-width:1480px;margin:auto}
-    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
-    .hero,.panel,.card,.mini,.sidebar-card{
-      background:rgba(12,16,30,.92);
-      border:1px solid #2a3250;
-      border-radius:22px;
-      box-shadow:0 0 30px rgba(96,54,150,.12);
-    }
-    .hero{
-      padding:30px;
-      margin-bottom:20px;
-      background:linear-gradient(135deg,#271534,#18203d,#0a1730);
-    }
-    .hero h1{font-size:44px;line-height:1.1;margin-bottom:14px}
-    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1050px}
-    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
-    .chip{
-      display:inline-block;
-      padding:8px 12px;
-      border-radius:999px;
-      background:#231d38;
-      color:#e0c8ff;
-      font-size:12px;
-      border:1px solid #4a3566;
-    }
-    .layout{
-      display:grid;
-      grid-template-columns:300px 1fr;
-      gap:18px;
-      margin-top:18px;
-    }
-    .sidebar-card{padding:20px;height:fit-content}
-    .sidebar-card h3{font-size:18px;margin-bottom:14px}
-    .navbtn{
-      display:block;
-      width:100%;
-      text-decoration:none;
-      color:#fff;
-      background:#13192c;
-      border:1px solid #334064;
-      border-radius:14px;
-      padding:12px 14px;
-      margin-bottom:10px;
-      font-size:14px;
-    }
-    .navbtn.active{
-      background:linear-gradient(90deg,#4a245f,#2b2f63);
-      border-color:#8f5ed1;
-    }
-    .main{display:grid;gap:18px}
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:18px;
-    }
-    .card{padding:20px}
-    .card h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
-    .value{font-size:34px;font-weight:700}
-    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
-    .panel{padding:22px}
-    .panel h2{font-size:24px;margin-bottom:14px}
-    .panel p.lead{color:#cfc6e7;line-height:1.7;margin-bottom:18px}
-    .actions{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:16px;
-    }
-    .mini{
-      padding:18px;
-      background:linear-gradient(180deg,#12182c,#0d1426);
-    }
-    .mini h4{font-size:18px;margin-bottom:10px}
-    .mini p{color:#c4bddb;line-height:1.65;font-size:14px;margin-bottom:14px}
-    .btn{
-      display:inline-block;
-      padding:10px 14px;
-      border-radius:12px;
-      background:#6b2fa8;
-      border:1px solid #9659d4;
-      color:#fff;
-      text-decoration:none;
-      font-size:14px;
-    }
-    .btn.secondary{
-      background:#1b2340;
-      border-color:#43548c;
-    }
-    .two{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:18px;
-    }
-    .footergrid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:18px;
-    }
-    .list div{
-      padding:10px 0;
-      border-bottom:1px solid #2a2140;
-      color:#f0ebff;
-      line-height:1.55;
-    }
-    .list div:last-child{border-bottom:none}
-    @media (max-width:1250px){
-      .layout{grid-template-columns:1fr}
-      .stats,.actions,.footergrid,.two{grid-template-columns:repeat(2,1fr)}
-    }
-    @media (max-width:760px){
-      .stats,.actions,.footergrid,.two{grid-template-columns:1fr}
-      .hero h1{font-size:34px}
-    }
-  </style>
+  <title>Shared Legal Core</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
-  <div class="wrap">
-    <a class="toplink" href="/legalnomics/">Back to LEGALNOMICS</a>
-
-    <section class="hero">
-      <h1>Shared Legal Core</h1>
-      <p>
-        Shared intelligence and knowledge spine for AI LEGALNOMICS OS.
-        This layer is designed to power future legal drafting intelligence, template systems,
-        law references, reusable checklists, multilingual legal output and case-Bible logic.
-      </p>
-      <div class="chipbar">
-        <span class="chip">AI Engine</span>
-        <span class="chip">Templates Vault</span>
-        <span class="chip">Law Library</span>
-        <span class="chip">Case Bible</span>
-        <span class="chip">Shared Intelligence Spine</span>
+  <div class="shell-layout">
+    <aside class="shell-sidebar">
+      <div class="shell-brand-card">
+        <h2>AI LEGALNOMICS OS</h2>
+        <p>Reusable legal intelligence spine for templates, clauses, law references and future AI legal reasoning.</p>
       </div>
-    </section>
 
-    <div class="layout">
-      <aside class="sidebar-card">
-        <h3>Shared Core Navigation</h3>
-        <a class="navbtn active" href="/legalnomics/shared/">Shared Core Home</a>
-        <a class="navbtn" href="/legalnomics/shared/ai-engine/">AI Engine</a>
-        <a class="navbtn" href="/legalnomics/shared/templates/">Templates Vault</a>
-        <a class="navbtn" href="/legalnomics/shared/law-library/">Law Library</a>
-        <a class="navbtn" href="/legalnomics/">Back to Master Legalnomics</a>
-      </aside>
+      <div class="shell-nav-group">
+        <div class="shell-nav-title">SHARED CORE</div>
+        <a class="shell-nav-link" href="/legalnomics">Legalnomics Home</a>
+        <a class="shell-nav-link active" href="/legalnomics/shared">Shared Core</a>
+        <a class="shell-nav-link" href="/legalnomics/intelligence">Intelligence Hub</a>
+        <a class="shell-nav-link" href="/legalnomics/system-flow">System Flow</a>
+      </div>
 
-      <main class="main">
-        <section class="stats">
-          <div class="card">
-            <h3>AI Drafting Core</h3>
-            <div class="value">Ready</div>
-            <div class="sub">Reserved shared logic layer for future drafting and reasoning.</div>
-          </div>
-          <div class="card">
-            <h3>Templates</h3>
-            <div class="value">Ready</div>
-            <div class="sub">Reusable legal notice, reply and agreement structure layer.</div>
-          </div>
-          <div class="card">
-            <h3>Law Library</h3>
-            <div class="value">Ready</div>
-            <div class="sub">Acts, clauses, checklists and legal reference structure.</div>
-          </div>
-          <div class="card">
-            <h3>Shared Reach</h3>
-            <div class="value">All</div>
-            <div class="sub">Supports B2C, Advocate and Corporate legal flows together.</div>
-          </div>
-        </section>
+      <div class="shell-nav-group">
+        <div class="shell-nav-title">CONNECTED MODULES</div>
+        <a class="shell-nav-link" href="/legalnomics/b2c">B2C Legal Assist</a>
+        <a class="shell-nav-link" href="/legalnomics/advocate">Advocate Workspace</a>
+        <a class="shell-nav-link" href="/legalnomics/corporate">Corporate Legal Ops</a>
+      </div>
+    </aside>
 
-        <section class="panel">
-          <h2>Core Shared Systems</h2>
-          <p class="lead">
-            This is the reusable legal spine that allows multiple LEGALNOMICS verticals to share the same
-            drafting logic, knowledge references and structured legal intelligence without mixing their operating workflows.
-          </p>
-          <div class="actions">
-            <div class="mini">
-              <h4>AI Engine</h4>
-              <p>Future legal reasoning, classification, drafting assistance and workflow support layer.</p>
-              <a class="btn" href="/legalnomics/shared/ai-engine/">Open AI Engine</a>
-            </div>
-            <div class="mini">
-              <h4>Templates Vault</h4>
-              <p>Template control layer for notices, replies, agreements and multilingual legal formats.</p>
-              <a class="btn" href="/legalnomics/shared/templates/">Open Templates</a>
-            </div>
-            <div class="mini">
-              <h4>Law Library</h4>
-              <p>Acts, clauses, checklists, legal references and structured case-Bible foundations.</p>
-              <a class="btn" href="/legalnomics/shared/law-library/">Open Law Library</a>
-            </div>
-          </div>
-        </section>
+    <main class="shell-main">
+      <div class="shell-topbar">
+        <div>
+          <h1>Shared Legal Core</h1>
+          <p>HNI WORLD OS > Legalnomics > Shared Legal Core</p>
+        </div>
+        <div class="shell-top-actions">
+          <span class="shell-chip">Reusable</span>
+          <span class="shell-chip">AI Spine</span>
+          <span class="shell-chip">Draft Support</span>
+        </div>
+      </div>
 
-        <section class="two">
-          <div class="panel">
-            <h2>Shared Intelligence Role</h2>
-            <div class="list">
-              <div>Powers public legal drafting support</div>
-              <div>Supports advocate workflow and document generation</div>
-              <div>Supports corporate notice and compliance workflow</div>
-              <div>Keeps legal knowledge reusable across verticals</div>
-              <div>Prepares the base for future AI-assisted legal operations</div>
-            </div>
-          </div>
+      <section class="hero-card">
+        <h2>Reusable Legal Intelligence Spine</h2>
+        <p>This layer is the reusable foundation for templates, clauses, law references, structured issue intelligence and future deep AI legal assistance across all Legalnomics roles.</p>
+        <div class="hero-tags">
+          <span>Law References</span>
+          <span>Clause Logic</span>
+          <span>Templates</span>
+          <span>Case Memory</span>
+          <span>AI Ready</span>
+        </div>
+      </section>
 
-          <div class="panel">
-            <h2>Future Expansion Direction</h2>
-            <div class="list">
-              <div>Case-Bible engine per matter</div>
-              <div>Clause-to-argument suggestion layer</div>
-              <div>Multilingual drafting intelligence</div>
-              <div>Searchable legal reference and template system</div>
-              <div>Jurisdiction-aware future legal expansion</div>
-            </div>
-          </div>
-        </section>
+      <section class="module-grid three">
+        <div class="feature-card">
+          <h3>Law Reference Layer</h3>
+          <p>Acts, sections, landmark references and legal issue indexing support.</p>
+        </div>
 
-        <section class="footergrid">
-          <div class="panel">
-            <h2>Template Layer</h2>
-            <div class="list">
-              <div>Notice templates</div>
-              <div>Reply templates</div>
-              <div>Agreement templates</div>
-            </div>
-          </div>
+        <div class="feature-card">
+          <h3>Clause and Draft Logic</h3>
+          <p>Reusable structured paragraphs, rebuttal language and issue-specific draft blocks.</p>
+        </div>
 
-          <div class="panel">
-            <h2>Knowledge Layer</h2>
-            <div class="list">
-              <div>Acts and sections structure</div>
-              <div>Checklist and chronology support</div>
-              <div>Case-Bible reference logic</div>
-            </div>
-          </div>
-
-          <div class="panel">
-            <h2>AI Layer</h2>
-            <div class="list">
-              <div>Future legal drafting support</div>
-              <div>Future classification and routing</div>
-              <div>Future voice-to-legal-structure conversion</div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+        <div class="feature-card">
+          <h3>Template Intelligence</h3>
+          <p>Common legal format logic reusable across B2C, advocate and corporate workflows.</p>
+        </div>
+      </section>
+    </main>
   </div>
 </body>
 </html>
