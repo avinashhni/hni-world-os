@@ -1,328 +1,54 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Consultation Intake - LEGALNOMICS</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{
-      font-family:Arial,sans-serif;
-      background:radial-gradient(circle at top right,#241530 0%,#0b0e18 42%,#05070d 100%);
-      color:#fff;
-      min-height:100vh;
-      padding:28px;
-    }
-    .wrap{max-width:1600px;margin:auto}
-    .toplink{color:#d2b8ff;text-decoration:none;display:inline-block;margin-bottom:18px}
-    .hero,.panel,.metric,.box{
-      background:rgba(12,16,30,.92);
-      border:1px solid #2a3250;
-      border-radius:22px;
-      box-shadow:0 0 30px rgba(96,54,150,.10);
-    }
-    .hero{
-      padding:30px;
-      margin-bottom:20px;
-      background:linear-gradient(135deg,#31183b,#1a2147,#0a1730);
-    }
-    .hero h1{font-size:42px;margin-bottom:12px}
-    .hero p{color:#ddd2f0;line-height:1.75;font-size:17px;max-width:1100px}
-    .chipbar{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
-    .chip{
-      display:inline-block;
-      padding:8px 12px;
-      border-radius:999px;
-      background:#231d38;
-      color:#e0c8ff;
-      font-size:12px;
-      border:1px solid #4a3566;
-    }
-    .metrics{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:18px;
-      margin-bottom:20px;
-    }
-    .metric{padding:20px}
-    .metric h3{font-size:14px;color:#d3c0f7;margin-bottom:10px}
-    .value{font-size:34px;font-weight:700}
-    .sub{margin-top:8px;color:#ab9fc8;font-size:13px;line-height:1.55}
-    .layout{
-      display:grid;
-      grid-template-columns:1.15fr .85fr;
-      gap:20px;
-    }
-    .panel,.box{padding:24px}
-    .section-title{
-      font-size:26px;
-      margin-bottom:18px;
-    }
-    .grid2{
-      display:grid;
-      grid-template-columns:repeat(2,1fr);
-      gap:16px;
-    }
-    .grid3{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:16px;
-    }
-    label{
-      display:block;
-      font-size:13px;
-      color:#c8b8e6;
-      margin-bottom:8px;
-    }
-    input,select,textarea{
-      width:100%;
-      padding:14px 14px;
-      border-radius:14px;
-      border:1px solid #344063;
-      background:#0f1526;
-      color:#fff;
-      font-size:14px;
-      outline:none;
-    }
-    textarea{min-height:130px;resize:vertical}
-    .btnrow{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:18px;
-    }
-    .btn{
-      display:inline-block;
-      padding:13px 18px;
-      border-radius:14px;
-      background:#6b2fa8;
-      border:1px solid #9659d4;
-      color:#fff;
-      text-decoration:none;
-      font-size:14px;
-      font-weight:700;
-    }
-    .btn.secondary{
-      background:#1b2340;
-      border-color:#43548c;
-    }
-    .btn.green{
-      background:#0f5d3c;
-      border-color:#2ea56f;
-    }
-    .list div{
-      padding:12px 0;
-      border-bottom:1px solid #2a2140;
-      color:#f0ebff;
-      line-height:1.55;
-      font-size:14px;
-    }
-    .list div:last-child{border-bottom:none}
-    .status{
-      display:inline-block;
-      padding:7px 12px;
-      border-radius:999px;
-      background:#20304f;
-      border:1px solid #506b9d;
-      color:#d7e4ff;
-      font-size:12px;
-      margin-right:8px;
-      margin-bottom:8px;
-    }
-    @media (max-width:1280px){
-      .layout{grid-template-columns:1fr}
-      .metrics{grid-template-columns:repeat(2,1fr)}
-      .grid2,.grid3{grid-template-columns:1fr}
-    }
-    @media (max-width:760px){
-      .metrics{grid-template-columns:1fr}
-      .hero h1{font-size:34px}
-    }
-  </style>
+  <title>B2C Consultation</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
-  <div class="wrap">
-    <a class="toplink" href="/legalnomics/b2c/">Back to B2C Legal Assist</a>
-
-    <section class="hero">
-      <h1>Consultation Intake and Escalation Funnel</h1>
-      <p>
-        This screen converts self-service users into structured legal consultation, advocate review or premium case support.
-        It is the bridge between AI drafting and real human legal escalation.
-      </p>
-      <div class="chipbar">
-        <span class="chip">Consultation Intake</span>
-        <span class="chip">Escalation Funnel</span>
-        <span class="chip">Voice-Ready</span>
-        <span class="chip">Monetization Layer</span>
-      </div>
-    </section>
-
-    <section class="metrics">
-      <div class="metric">
-        <h3>Conversion Lane</h3>
-        <div class="value">Live</div>
-        <div class="sub">Turns self-service users into paid legal consultation flow.</div>
-      </div>
-      <div class="metric">
-        <h3>Base Pricing</h3>
-        <div class="value">INR 299</div>
-        <div class="sub">Entry consultation and legal triage pricing layer.</div>
-      </div>
-      <div class="metric">
-        <h3>Human Support</h3>
-        <div class="value">Ready</div>
-        <div class="sub">Can later route to junior staff, advocate or senior review.</div>
-      </div>
-      <div class="metric">
-        <h3>Escalation</h3>
-        <div class="value">High</div>
-        <div class="sub">Critical monetization and trust-conversion screen.</div>
-      </div>
-    </section>
-
-    <div class="layout">
-      <section class="panel">
-        <h2 class="section-title">Consultation Intake Form</h2>
-
-        <div class="grid2">
-          <div>
-            <label>Full Name</label>
-            <input type="text" placeholder="Enter client full name" />
-          </div>
-          <div>
-            <label>Mobile Number</label>
-            <input type="text" placeholder="Enter mobile number" />
-          </div>
-        </div>
-
-        <div class="grid2" style="margin-top:16px;">
-          <div>
-            <label>Email Address</label>
-            <input type="email" placeholder="Enter email address" />
-          </div>
-          <div>
-            <label>City / State</label>
-            <input type="text" placeholder="Example: Ahmedabad, Gujarat" />
-          </div>
-        </div>
-
-        <div class="grid3" style="margin-top:16px;">
-          <div>
-            <label>Matter Type</label>
-            <select>
-              <option>Employment / HR</option>
-              <option>Payment / Recovery</option>
-              <option>Property / Rent</option>
-              <option>Consumer / Service</option>
-              <option>Defamation / Harassment</option>
-              <option>Contract / Breach</option>
-            </select>
-          </div>
-          <div>
-            <label>Urgency</label>
-            <select>
-              <option>Normal</option>
-              <option>Urgent</option>
-              <option>Very Urgent</option>
-            </select>
-          </div>
-          <div>
-            <label>Preferred Language</label>
-            <select>
-              <option>English</option>
-              <option>Hindi</option>
-              <option>Gujarati</option>
-              <option>English + Hindi</option>
-              <option>English + Gujarati</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="grid2" style="margin-top:16px;">
-          <div>
-            <label>Consultation Preference</label>
-            <select>
-              <option>AI + Written Guidance</option>
-              <option>Junior Legal Team Review</option>
-              <option>Advocate Escalation</option>
-              <option>Premium Strategy Support</option>
-            </select>
-          </div>
-          <div>
-            <label>Current Stage</label>
-            <select>
-              <option>Need legal notice</option>
-              <option>Need reply to notice</option>
-              <option>Need consultation only</option>
-              <option>Already in dispute</option>
-              <option>Preparing for court</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="margin-top:16px;">
-          <label>Case Summary / What Happened</label>
-          <textarea placeholder="Explain your situation, timeline, what happened, what problem you are facing, what documents you have and what kind of help you want."></textarea>
-        </div>
-
-        <div style="margin-top:16px;">
-          <label>Upload Notice / Documents</label>
-          <input type="file" />
-        </div>
-
-        <div style="margin-top:16px;">
-          <label>Voice Note Intake (Future Ready Placeholder)</label>
-          <input type="text" placeholder="Voice-note upload integration can be connected later" />
-        </div>
-
-        <div class="btnrow">
-          <a class="btn" href="#">Submit Consultation</a>
-          <a class="btn secondary" href="#">Save Intake</a>
-          <a class="btn green" href="#">Escalate to Advocate</a>
-        </div>
-      </section>
-
-      <section class="box">
-        <h2 class="section-title">AI Triage and Conversion Panel</h2>
-
-        <span class="status">AI Triage: Medium Risk</span>
-        <span class="status">Human Review: Recommended</span>
-        <span class="status">Consultation Lane: Active</span>
-
-        <div class="box" style="margin-top:16px;">
-          <h3 style="margin-bottom:12px;">What this screen will do</h3>
-          <div class="list">
-            <div>Assess whether the user can solve the issue diplomatically</div>
-            <div>Route stronger matters into advocate or staff escalation</div>
-            <div>Capture paid consultation leads with structured intake</div>
-            <div>Prepare future case tracking and reminder workflows</div>
-          </div>
-        </div>
-
-        <div class="box" style="margin-top:16px;">
-          <h3 style="margin-bottom:12px;">Recommended Packages</h3>
-          <div class="list">
-            <div>Quick Consultation Intake - INR 299</div>
-            <div>Priority Legal Review - INR 699</div>
-            <div>Advocate Review Routing - INR 1499</div>
-            <div>Premium Case Strategy - INR 2999</div>
-          </div>
-        </div>
-
-        <div class="box" style="margin-top:16px;">
-          <h3 style="margin-bottom:12px;">Future Upgrade Flow</h3>
-          <div class="list">
-            <div>Schedule callback or consultation slot</div>
-            <div>Auto-route matter to junior legal executive</div>
-            <div>Escalate to senior advocate if risk is high</div>
-            <div>Create full case-tracking profile</div>
-          </div>
-        </div>
-      </section>
-    </div>
+<div class="shell-layout">
+<aside class="shell-sidebar">
+  <div class="shell-brand-card"><h2>AI LEGALNOMICS OS</h2><p>Consumer consultation entry and escalation funnel.</p></div>
+  <div class="shell-nav-group">
+    <div class="shell-nav-title">B2C</div>
+    <a class="shell-nav-link" href="/legalnomics/b2c">B2C Home</a>
+    <a class="shell-nav-link" href="/legalnomics/b2c/notices">Notices</a>
+    <a class="shell-nav-link" href="/legalnomics/b2c/replies">Replies</a>
+    <a class="shell-nav-link active" href="/legalnomics/b2c/consultation">Consultation</a>
+    <a class="shell-nav-link" href="/legalnomics/b2c/notary">Notary</a>
   </div>
+</aside>
+<main class="shell-main">
+  <div class="shell-topbar"><div><h1>Consultation Funnel</h1><p>HNI WORLD OS > Legalnomics > B2C > Consultation</p></div><div class="shell-top-actions"><span class="shell-chip">Free Intro</span><span class="shell-chip">Paid Escalation</span><span class="shell-chip">Nearby Match</span></div></div>
+  <section class="content-grid two" style="margin-top:22px;">
+    <div class="form-card">
+      <h3>Consultation Intake</h3>
+      <div class="form-grid two">
+        <input placeholder="Full Name" />
+        <input placeholder="Mobile Number" />
+        <input placeholder="Issue Type" />
+        <input placeholder="City / State" />
+        <input placeholder="Pincode / Zip" />
+        <input placeholder="Preferred Language" />
+      </div>
+      <textarea rows="6" placeholder="Explain your problem and what kind of legal help you need."></textarea>
+      <div class="button-row">
+        <button class="primary-btn">Request Consultation</button>
+        <button class="secondary-btn">Find Nearby Advocate</button>
+      </div>
+    </div>
+    <div class="info-card">
+      <h3>Consultation Logic</h3>
+      <ul class="info-list">
+        <li>Short intro call can begin as free entry</li>
+        <li>Small matters can be guided by junior or desk</li>
+        <li>Serious matters can be escalated to senior advocate</li>
+        <li>Nearby matching can be used for local legal support</li>
+      </ul>
+    </div>
+  </section>
+</main>
+</div>
 </body>
 </html>
-
-
