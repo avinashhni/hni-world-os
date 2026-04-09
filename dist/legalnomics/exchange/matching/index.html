@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Geo Matching Engine</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div class="shell-layout">
+    <aside class="shell-sidebar">
+      <div class="shell-brand-card">
+        <h2>AI LEGALNOMICS OS</h2>
+        <p>Pincode, zip code and nearby-radius matching for advocates, firms and notary services.</p>
+      </div>
+      <div class="shell-nav-group">
+        <div class="shell-nav-title">LEAD EXCHANGE</div>
+        <a class="shell-nav-link" href="/legalnomics/exchange">Exchange Home</a>
+        <a class="shell-nav-link" href="/legalnomics/exchange/marketplace">Marketplace</a>
+        <a class="shell-nav-link active" href="/legalnomics/exchange/matching">Geo Matching</a>
+        <a class="shell-nav-link" href="/legalnomics/exchange/assignment">Assignment</a>
+      </div>
+    </aside>
+
+    <main class="shell-main">
+      <div class="shell-topbar">
+        <div>
+          <h1>Geo Matching Engine</h1>
+          <p>HNI WORLD OS > Legalnomics > Exchange > Geo Matching</p>
+        </div>
+        <div class="shell-top-actions">
+          <span class="shell-chip">Pincode</span>
+          <span class="shell-chip">Nearby 3 KM</span>
+          <span class="shell-chip">Global ZIP Ready</span>
+        </div>
+      </div>
+
+      <section class="hero-card">
+        <h2>Nearby Legal Discovery Logic</h2>
+        <p>This engine helps route legal demand to nearby advocates, junior lawyers, law firms and notary desks using pincode-first discovery, service radius and future global zip-code support.</p>
+        <div class="hero-tags">
+          <span>Pincode Match</span>
+          <span>3 KM Radius</span>
+          <span>5 KM Fallback</span>
+          <span>Zip Code Ready</span>
+          <span>Nearby Advocate</span>
+          <span>Nearby Notary</span>
+        </div>
+      </section>
+
+      <section class="content-grid two">
+        <div class="form-card">
+          <h3>Geo Search Input</h3>
+          <div class="form-grid two">
+            <input placeholder="Pincode / Zip Code" />
+            <input placeholder="City / State" />
+            <input placeholder="Practice Area" />
+            <input placeholder="Service Radius Preference" />
+          </div>
+          <textarea rows="4" placeholder="Optional geo notes, urgency, local office preference, video consultation fallback."></textarea>
+          <div class="button-row">
+            <button class="primary-btn">Find Nearby Advocate</button>
+            <button class="secondary-btn">Find Notary</button>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <h3>Matching Rules</h3>
+          <ul class="info-list">
+            <li>First priority: same pincode / zip code</li>
+            <li>Second priority: within 3 KM radius</li>
+            <li>Third priority: city-wide matching</li>
+            <li>Fallback: online consultation match</li>
+            <li>Premium cases can override distance for specialization</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

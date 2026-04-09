@@ -1,0 +1,221 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Case Timeline - AI LEGALNOMICS OS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top left,#0b1633 0%,#050816 55%,#02040b 100%);
+      color:#fff;
+      padding:20px;
+    }
+    a{text-decoration:none;color:#c9b3ff}
+    .shell{max-width:1600px;margin:0 auto}
+    .hero,.panel,.stat,.card{
+      background:rgba(8,15,40,.94);
+      border:1px solid rgba(120,140,255,.18);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 0 18px rgba(0,0,0,.18);
+    }
+    .hero{
+      background:linear-gradient(135deg,rgba(88,44,130,.30),rgba(17,61,115,.35));
+      border:1px solid rgba(180,120,255,.25);
+      padding:28px;
+      margin-bottom:22px;
+      box-shadow:0 0 30px rgba(76,36,120,.15);
+    }
+    .hero h1{font-size:34px;margin-bottom:14px}
+    .hero p{font-size:16px;line-height:1.8;max-width:1200px;color:#e9e9f4}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .chip{
+      background:rgba(122,66,188,.18);
+      border:1px solid rgba(189,136,255,.25);
+      color:#f1d8ff;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:13px;
+    }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+    .stat .label{font-size:15px;color:#c9b7ff;margin-bottom:10px}
+    .stat .value{font-size:28px;font-weight:700;margin-bottom:10px}
+    .stat .sub{font-size:15px;color:#d8dbe7;line-height:1.7}
+    .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:18px}
+    .timeline{
+      display:grid;
+      gap:16px;
+    }
+    .step{
+      display:grid;
+      grid-template-columns:80px 1fr;
+      gap:14px;
+      align-items:start;
+      background:rgba(255,255,255,.02);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:20px;
+      padding:18px;
+    }
+    .datebox{
+      border-radius:16px;
+      background:#13224d;
+      border:1px solid rgba(255,255,255,.08);
+      padding:12px;
+      text-align:center;
+      font-size:13px;
+      color:#dce7ff;
+      line-height:1.5;
+    }
+    .step h3{font-size:18px;margin-bottom:8px}
+    .step p{font-size:14px;line-height:1.75;color:#e2e6f2}
+    .list div{
+      padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      line-height:1.7;
+      color:#e5e7f2;
+      font-size:15px;
+    }
+    .list div:last-child{border-bottom:none}
+    .badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      margin-right:8px;
+      background:#173d73;
+      color:#d9e9ff;
+      border:1px solid #3967a6;
+    }
+    .btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .btn{
+      display:inline-block;
+      padding:12px 18px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.12);
+      background:#6d3cc7;
+      color:#fff;
+    }
+    .btn.alt{background:#13224d}
+    .btn.green{background:#0c7c46}
+    @media(max-width:1200px){
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .grid2{grid-template-columns:1fr}
+    }
+    @media(max-width:700px){
+      .stats{grid-template-columns:1fr}
+      .hero h1{font-size:28px}
+      .step{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div style="margin-bottom:16px;">
+      <a href="/legalnomics/advocate/">Back to Advocate Workspace</a>
+    </div>
+
+    <section class="hero">
+      <h1>Case Timeline System</h1>
+      <p>
+        Matter lifecycle tracking layer for every legal case from first consultation to drafting, reply, hearing,
+        escalation, settlement and closure. This creates real continuity across the whole legal operating flow.
+      </p>
+      <div class="chips">
+        <span class="chip">Lifecycle Tracking</span>
+        <span class="chip">Stage Movement</span>
+        <span class="chip">Deadline Visibility</span>
+        <span class="chip">Hearing Linkage</span>
+        <span class="chip">Closure Readiness</span>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="label">Tracked Cases</div>
+        <div class="value">42</div>
+        <div class="sub">Open matters moving through structured lifecycle stages.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Time-Critical Cases</div>
+        <div class="value">11</div>
+        <div class="sub">Cases with urgent response, filing or hearing deadlines.</div>
+      </div>
+      <div class="stat">
+        <div class="label">In Hearing Stage</div>
+        <div class="value">6</div>
+        <div class="sub">Matters that already require active court preparation.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Settlements / Closures</div>
+        <div class="value">9</div>
+        <div class="sub">Cases approaching closure, settlement or final billing.</div>
+      </div>
+    </section>
+
+    <section class="grid2">
+      <section class="panel">
+        <h2 style="margin-bottom:18px;">Sample Matter Timeline</h2>
+        <div class="timeline">
+          <div class="step">
+            <div class="datebox">04 APR<br>2026</div>
+            <div>
+              <h3>Consultation Intake</h3>
+              <p>Client matter created through consultation funnel. Initial facts collected and basic risk assessed.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="datebox">05 APR<br>2026</div>
+            <div>
+              <h3>Drafting Started</h3>
+              <p>Legal notice or reply assigned to junior drafting desk with initial instructions and document set.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="datebox">06 APR<br>2026</div>
+            <div>
+              <h3>Senior Review</h3>
+              <p>Draft reviewed, corrected and approved for dispatch or filing preparation.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="datebox">12 APR<br>2026</div>
+            <div>
+              <h3>Hearing Preparation</h3>
+              <p>Arguments, chronology, annexures and rebuttal notes moved to hearing preparation board.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="datebox">20 APR<br>2026</div>
+            <div>
+              <h3>Billing and Closure</h3>
+              <p>Post-action billing triggered, follow-up complete, matter moves to settlement or closure stage.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="btnrow">
+          <a href="/legalnomics/advocate/crm/" class="btn">Advance Case Stage</a>
+          <a href="/legalnomics/advocate/vault/" class="btn alt">View Matter History</a>
+          <a href="/legalnomics/advocate/hearing/" class="btn green">Mark for Hearing</a>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <h2 style="margin-bottom:18px;">Timeline Control Features</h2>
+        <div class="list">
+          <div><span class="badge">Stage</span> Intake ? Drafting ? Review ? Hearing ? Settlement ? Closure</div>
+          <div><span class="badge">Deadlines</span> Reply due dates, hearing dates and filing dates stay visible.</div>
+          <div><span class="badge">Escalation</span> High-risk matters can move from junior desk to senior review.</div>
+          <div><span class="badge">Continuity</span> Connects consultation, CRM, drafting, vault, hearing and billing.</div>
+          <div><span class="badge">Audit Trail</span> Future-ready structure for full matter history logging.</div>
+        </div>
+      </aside>
+    </section>
+  </div>
+</body>
+</html>
+

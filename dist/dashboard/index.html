@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HNI WORLD OS - Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #05070d; color: #fff; min-height: 100vh; }
+    .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+    .sidebar { background: #0b1020; border-right: 1px solid #1b2238; padding: 24px 18px; }
+    .brand { font-size: 24px; font-weight: 700; margin-bottom: 28px; color: #fff; }
+    .brand span { color: #4da3ff; }
+    .menu-title { font-size: 12px; color: #7f8db3; text-transform: uppercase; letter-spacing: 1px; margin: 20px 0 10px; }
+    .menu a { display: block; color: #dbe6ff; text-decoration: none; padding: 12px 14px; border-radius: 12px; margin-bottom: 8px; background: #10172b; }
+    .menu a.active { background: linear-gradient(90deg,#112a4f,#0e1a33); border: 1px solid #2e5fa7; }
+    .main { padding: 28px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; }
+    .status { padding:10px 14px; border-radius:999px; background:#0e1f13; color:#7dff9b; border:1px solid #1e6b35; font-size:14px; }
+    .hero,.panel,.card { background:#0d1426; border:1px solid #1d2a49; border-radius:18px; }
+    .hero { padding:28px; margin-bottom:24px; background:linear-gradient(135deg,#0e1630,#111b3d,#091120); }
+    .hero h2 { font-size:30px; margin-bottom:10px; }
+    .hero p { color:#b9c7e8; line-height:1.6; }
+    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-bottom:24px; }
+    .card { padding:20px; }
+    .card h3 { font-size:14px; color:#8fa6d9; margin-bottom:10px; }
+    .value { font-size:30px; font-weight:700; }
+    .sub { margin-top:8px; color:#90a2c8; font-size:13px; }
+    .two-col { display:grid; grid-template-columns:2fr 1fr; gap:18px; }
+    .panel { padding:22px; }
+    .panel h3 { margin-bottom:16px; }
+    .list div { padding:12px 0; border-bottom:1px solid #18233d; color:#dce6ff; }
+    .list div:last-child { border-bottom:none; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">HNI <span>WORLD OS</span></div>
+    <div class="menu-title">Core Command</div>
+    <div class="menu">
+      <a href="/dashboard/" class="active">Owner Dashboard</a>
+      <a href="/muski/">MUSKI AI Core</a>
+      <a href="#">Boardroom Command</a>
+    </div>
+    <div class="menu-title">Product Families</div>
+    <div class="menu">
+      <a href="/airnomics/">AI AIRNOMICS OS</a>
+      <a href="/edunomics/">AI EDUNOMICS OS</a>
+      <a href="/legalnomics/">AI LEGALNOMICS OS</a>
+    </div>
+  </aside>
+  <main class="main">
+    <div class="topbar"><h1>Owner Command Center</h1><div class="status">System Live</div></div>
+    <section class="hero">
+      <h2>HNI WORLD OS - Dashboard</h2>
+      <p>Multi-page operating system shell is now active. Core navigation has been separated into real live routes.</p>
+    </section>
+    <section class="grid">
+      <div class="card"><h3>Deployment</h3><div class="value">LIVE</div><div class="sub">Vercel active</div></div>
+      <div class="card"><h3>Shared Spine</h3><div class="value">Ready</div><div class="sub">Enterprise shell</div></div>
+      <div class="card"><h3>MUSKI</h3><div class="value">Active</div><div class="sub">Core page live</div></div>
+      <div class="card"><h3>Routing</h3><div class="value">ON</div><div class="sub">Multi-page structure</div></div>
+    </section>
+    <section class="two-col">
+      <div class="panel"><h3>Phase Queue</h3><div class="list">
+        <div>1. Dashboard Route - Active</div>
+        <div>2. MUSKI Route - Active</div>
+        <div>3. AIRNOMICS Route - Active</div>
+        <div>4. EDUNOMICS Route - Active</div>
+        <div>5. LEGALNOMICS Route - Active</div>
+      </div></div>
+      <div class="panel"><h3>System Notes</h3><div class="list">
+        <div>Mode: Multi-page OS</div>
+        <div>Plan: Hobby</div>
+        <div>Status: Stable</div>
+      </div></div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

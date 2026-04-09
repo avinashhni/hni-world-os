@@ -1,0 +1,208 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Consultation Leads - AI LEGALNOMICS OS</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:Arial,sans-serif;
+      background:radial-gradient(circle at top left,#0b1633 0%,#050816 55%,#02040b 100%);
+      color:#fff;
+      padding:20px;
+    }
+    a{text-decoration:none;color:#c9b3ff}
+    .shell{max-width:1600px;margin:0 auto}
+    .hero,.panel,.stat,.card{
+      background:rgba(8,15,40,.94);
+      border:1px solid rgba(120,140,255,.18);
+      border-radius:24px;
+      padding:22px;
+      box-shadow:0 0 18px rgba(0,0,0,.18);
+    }
+    .hero{
+      background:linear-gradient(135deg,rgba(88,44,130,.30),rgba(17,61,115,.35));
+      border:1px solid rgba(180,120,255,.25);
+      padding:28px;
+      margin-bottom:22px;
+      box-shadow:0 0 30px rgba(76,36,120,.15);
+    }
+    .hero h1{font-size:34px;margin-bottom:14px}
+    .hero p{font-size:16px;line-height:1.8;max-width:1200px;color:#e9e9f4}
+    .chips{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .chip{
+      background:rgba(122,66,188,.18);
+      border:1px solid rgba(189,136,255,.25);
+      color:#f1d8ff;
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:13px;
+    }
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px}
+    .stat .label{font-size:15px;color:#c9b7ff;margin-bottom:10px}
+    .stat .value{font-size:28px;font-weight:700;margin-bottom:10px}
+    .stat .sub{font-size:15px;color:#d8dbe7;line-height:1.7}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+    .card h3{font-size:18px;margin-bottom:16px}
+    .list div{
+      padding:12px 0;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      line-height:1.7;
+      color:#e5e7f2;
+      font-size:15px;
+    }
+    .list div:last-child{border-bottom:none}
+    .badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      margin-right:8px;
+      background:#173d73;
+      color:#d9e9ff;
+      border:1px solid #3967a6;
+    }
+    .toolbar{
+      display:grid;
+      grid-template-columns:1.2fr .8fr .8fr .8fr;
+      gap:14px;
+      margin-bottom:18px;
+    }
+    input,select{
+      width:100%;
+      padding:13px 14px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background:#0d1731;
+      color:#fff;
+      font-size:14px;
+      outline:none;
+    }
+    .btnrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:18px}
+    .btn{
+      display:inline-block;
+      padding:12px 18px;
+      border-radius:14px;
+      font-size:14px;
+      font-weight:700;
+      border:1px solid rgba(255,255,255,.12);
+      background:#6d3cc7;
+      color:#fff;
+    }
+    .btn.alt{background:#13224d}
+    .btn.green{background:#0c7c46}
+    @media(max-width:1200px){
+      .stats,.grid2{grid-template-columns:repeat(2,1fr)}
+      .toolbar{grid-template-columns:1fr 1fr}
+    }
+    @media(max-width:700px){
+      .stats,.grid2,.toolbar{grid-template-columns:1fr}
+      .hero h1{font-size:28px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <div style="margin-bottom:16px;">
+      <a href="/legalnomics/advocate/">Back to Advocate Workspace</a>
+    </div>
+
+    <section class="hero">
+      <h1>Consultation Leads Pipeline</h1>
+      <p>
+        Lead-to-client conversion layer for consultation requests, urgent legal queries, callback follow-ups,
+        advocate assignments and premium case strategy upgrades. This is the revenue bridge between B2C and B2B.
+      </p>
+      <div class="chips">
+        <span class="chip">Lead Intake</span>
+        <span class="chip">Callback Queue</span>
+        <span class="chip">Conversion Tracking</span>
+        <span class="chip">Assignment Routing</span>
+        <span class="chip">Upsell Layer</span>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="stat">
+        <div class="label">New Leads</div>
+        <div class="value">27</div>
+        <div class="sub">Fresh consultation entries from B2C funnel awaiting action.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Callback Due</div>
+        <div class="value">12</div>
+        <div class="sub">Leads needing immediate staff or advocate response.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Converted Clients</div>
+        <div class="value">9</div>
+        <div class="sub">Leads that already moved into CRM and matter creation.</div>
+      </div>
+      <div class="stat">
+        <div class="label">Premium Potential</div>
+        <div class="value">6</div>
+        <div class="sub">High-value leads eligible for advocate review or strategy package.</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 style="margin-bottom:18px;">Lead Filters and Queue</h2>
+      <div class="toolbar">
+        <input type="text" placeholder="Search lead by name, city, issue or mobile" />
+        <select>
+          <option>All Lead Types</option>
+          <option>Quick Consultation</option>
+          <option>Priority Review</option>
+          <option>Advocate Routing</option>
+          <option>Premium Strategy</option>
+        </select>
+        <select>
+          <option>All Status</option>
+          <option>New</option>
+          <option>Called</option>
+          <option>Converted</option>
+          <option>Dropped</option>
+        </select>
+        <select>
+          <option>All Priority</option>
+          <option>Normal</option>
+          <option>Urgent</option>
+          <option>High Value</option>
+        </select>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h3>Live Lead Queue</h3>
+          <div class="list">
+            <div><span class="badge">New</span> Rohan Mehta - Employment dispute - Ahmedabad - Need legal notice</div>
+            <div><span class="badge">Urgent</span> Priya Shah - Received legal notice - Vadodara - Callback today</div>
+            <div><span class="badge">High Value</span> Corporate HR lead - Internal employee issue - Escalation requested</div>
+            <div><span class="badge">Called</span> Mehul Trivedi - Consumer complaint - Awaiting document upload</div>
+            <div><span class="badge">Converted</span> ABC Manufacturing - Moved into CRM and drafting</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Lead Conversion Logic</h3>
+          <div class="list">
+            <div>Quick Consultation - INR 299 entry lane</div>
+            <div>Priority Review - INR 699 conversion lane</div>
+            <div>Advocate Review Routing - INR 1499 escalation lane</div>
+            <div>Premium Strategy - INR 2999 high-value package</div>
+            <div>Converted leads auto-move into Client and Matter CRM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <a href="/legalnomics/advocate/dashboard/" class="btn">Assign Lead</a>
+        <a href="/legalnomics/advocate/crm/" class="btn alt">Create Matter from Lead</a>
+        <a href="/legalnomics/advocate/crm/" class="btn green">Mark Converted</a>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
+
