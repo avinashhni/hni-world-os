@@ -1,34 +1,38 @@
 async function runHealthCheck() {
-  const res = await fetch("/api/health");
-  const data = await res.json();
-  alert("MUSKI STATUS: " + data.status);
+  try {
+    const res = await fetch("http://localhost:3000/health");
+    const data = await res.json();
+    alert("MUSKI STATUS: " + data.status);
+  } catch (e) {
+    alert("Backend not running");
+  }
 }
 
 async function createTask() {
-  const payload = {
-    title: "Run live MUSKI task",
-    description: "Triggered from dashboard",
-    priority: "high",
-    requestedBy: "OWNER",
-    targetAgent: "OPS_MANAGER_AI"
-  };
+  try {
+    const res = await fetch("http://localhost:3000/task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: "Run live MUSKI task",
+        description: "Triggered from dashboard",
+        priority: "high",
+        requestedBy: "OWNER",
+        targetAgent: "OPS_MANAGER_AI"
+      })
+    });
 
-  const res = await fetch("/api/task", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  });
-
-  const data = await res.json();
-  alert("TASK CREATED: " + (data.success ? "YES" : "NO"));
+    const data = await res.json();
+    alert("TASK CREATED: " + (data.success ? "YES" : "NO"));
+  } catch (e) {
+    alert("Backend not running");
+  }
 }
 
 async function dispatchTask() {
-  alert("Dispatch triggered (backend wiring next)");
+  alert("Dispatch API next step");
 }
 
 async function viewLogs() {
-  alert("Logs viewer coming next");
+  alert("Logs API next step");
 }
