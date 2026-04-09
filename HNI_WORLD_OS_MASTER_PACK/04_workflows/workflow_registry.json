@@ -1,0 +1,16 @@
+{
+  "workflow_types": [
+    "approval_workflow",
+    "sales_workflow",
+    "procurement_workflow",
+    "finance_workflow",
+    "hr_workflow",
+    "case_workflow",
+    "ai_workflow",
+    "project_workflow",
+    "compliance_workflow",
+    "deployment_workflow",
+    "franchise_workflow",
+    "document_workflow"
+  ]
+}

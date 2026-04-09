@@ -1,0 +1,30 @@
+{
+  "roles": [
+    "OWNER",
+    "SUPER_ADMIN",
+    "MANAGEMENT",
+    "STAFF",
+    "INTERNAL_AI",
+    "EXTERNAL_AI",
+    "B2B_USER",
+    "B2C_USER",
+    "CORPORATE_USER",
+    "VENDOR",
+    "FRANCHISE_USER",
+    "BRANCH_USER"
+  ],
+  "permission_areas": [
+    "master_architecture",
+    "module_management",
+    "ai_hierarchy_management",
+    "deployment_control",
+    "brand_control",
+    "organization_control",
+    "confidential_records",
+    "workflow_override",
+    "analytics_access",
+    "public_content",
+    "external_integration_control",
+    "audit_logs_access"
+  ]
+}

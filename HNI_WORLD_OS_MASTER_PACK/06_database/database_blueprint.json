@@ -1,0 +1,141 @@
+{
+  "standards": {
+    "primary_key": "id UUID PRIMARY KEY",
+    "tenant_key": "tenant_id UUID NOT NULL",
+    "soft_delete": "deleted_at TIMESTAMPTZ NULL",
+    "audit_fields": [
+      "created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()",
+      "created_by UUID NULL",
+      "updated_at TIMESTAMPTZ NULL",
+      "updated_by UUID NULL"
+    ],
+    "naming": {
+      "tables": "snake_case",
+      "primary_key": "id",
+      "foreign_key": "<referenced_table>_id",
+      "code_field": "<entity>_code"
+    }
+  },
+  "schemas": {
+    "core": [
+      "tenants",
+      "brands",
+      "os_products",
+      "modules",
+      "submodules",
+      "dashboards",
+      "settings",
+      "reference_codes",
+      "status_groups",
+      "statuses",
+      "status_transitions"
+    ],
+    "iam": [
+      "users",
+      "roles",
+      "permissions",
+      "role_permissions",
+      "user_roles",
+      "access_policies",
+      "auth_sessions",
+      "field_access_rules",
+      "geography_access_rules"
+    ],
+    "org": [
+      "organizations",
+      "legal_entities",
+      "countries",
+      "regions",
+      "states",
+      "cities",
+      "zones",
+      "branches",
+      "franchises",
+      "subsidiaries",
+      "business_units",
+      "departments",
+      "teams",
+      "user_org_assignments"
+    ],
+    "intelligence": [
+      "intelligence_categories",
+      "intelligences",
+      "intelligence_modules",
+      "intelligence_dashboards",
+      "intelligence_owners",
+      "intelligence_outputs"
+    ],
+    "ai": [
+      "ai_agents",
+      "ai_roles",
+      "ai_reporting_lines",
+      "ai_tasks",
+      "ai_task_logs",
+      "ai_memory",
+      "ai_decisions",
+      "ai_escalations",
+      "ai_command_logs",
+      "ai_performance_logs",
+      "ai_interactions"
+    ],
+    "workflow": [
+      "workflow_definitions",
+      "workflow_steps",
+      "workflow_instances",
+      "workflow_actions",
+      "automation_jobs",
+      "scheduled_jobs",
+      "event_triggers",
+      "retry_queue",
+      "execution_states"
+    ],
+    "business": [
+      "parties",
+      "contacts",
+      "accounts",
+      "leads",
+      "opportunities",
+      "products",
+      "price_lists",
+      "quotes",
+      "sales_orders",
+      "invoices",
+      "payments",
+      "projects",
+      "tasks",
+      "documents"
+    ],
+    "security": [
+      "confidentiality_levels",
+      "protected_objects",
+      "approval_overrides",
+      "security_logs",
+      "firewall_access_classes",
+      "privileged_access_logs",
+      "legal_hold_records"
+    ],
+    "deployment": [
+      "environments",
+      "deployments",
+      "release_logs",
+      "rollback_logs",
+      "feature_flags",
+      "service_registry",
+      "api_registry",
+      "environment_configs"
+    ],
+    "analytics": [
+      "kpi_definitions",
+      "kpi_targets",
+      "kpi_results",
+      "report_definitions",
+      "report_runs",
+      "report_snapshots",
+      "audit_logs",
+      "change_history",
+      "alerts",
+      "escalation_ladders",
+      "sla_rules"
+    ]
+  }
+}
