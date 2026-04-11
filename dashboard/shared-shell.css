@@ -71,3 +71,27 @@ a{text-decoration:none;color:inherit}
 @media(max-width:1320px){.stats-grid.four{grid-template-columns:repeat(2,1fr)} .module-grid.three{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:1100px){.shell-layout{grid-template-columns:1fr}.shell-sidebar{position:relative;height:auto;border-right:none;border-bottom:1px solid rgba(130,160,255,.14)}}
 @media(max-width:720px){.stats-grid.four,.module-grid.three,.content-grid.two{grid-template-columns:1fr}.hero-card h2{font-size:26px}}
+
+.muski-nav-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.muski-nav-item{padding:14px;border-radius:14px;border:1px solid rgba(130,160,255,.16);background:rgba(16,27,59,.85);font-size:13px;color:#d6e2ff}
+.muski-nav-item strong{display:block;font-size:14px;color:#fff;margin-bottom:5px}
+.muski-table-wrap{margin-top:14px;overflow:auto;border-radius:12px;border:1px solid rgba(130,160,255,.14)}
+.muski-table{width:100%;border-collapse:collapse;font-size:13px}
+.muski-table th,.muski-table td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(130,160,255,.12)}
+.muski-table th{background:rgba(13,23,50,.95);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:#aac1f3}
+.muski-table tr:last-child td{border-bottom:none}
+.muski-badge{display:inline-block;padding:4px 8px;border-radius:999px;font-size:11px;border:1px solid rgba(255,255,255,.16)}
+.muski-badge.pending{background:rgba(203,151,17,.18);color:#ffd98a}
+.muski-badge.approved{background:rgba(38,143,87,.24);color:#bbffd9}
+.muski-badge.escalated{background:rgba(171,73,195,.21);color:#f1bcff}
+.muski-badge.dispatched{background:rgba(65,122,232,.24);color:#c8deff}
+.muski-badge.blocked{background:rgba(179,51,51,.25);color:#ffc6c6}
+.muski-hierarchy{display:grid;gap:8px;margin-top:12px}
+.muski-node{padding:11px 12px;border-radius:12px;background:rgba(17,31,66,.9);border:1px solid rgba(130,160,255,.18)}
+.muski-node small{display:block;color:#a8bde8;margin-top:4px}
+.muski-log-list{margin-top:12px;display:grid;gap:8px;max-height:260px;overflow:auto}
+.muski-log-item{padding:10px 12px;border-radius:10px;background:rgba(13,23,49,.9);border:1px solid rgba(130,160,255,.16);font-size:12px;line-height:1.5}
+.muski-muted{margin-top:12px;color:#b8c8ea;font-size:14px}
+
+@media(max-width:1320px){.muski-nav-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:720px){.muski-nav-grid{grid-template-columns:1fr}}
