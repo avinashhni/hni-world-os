@@ -4,127 +4,48 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MUSKI AI Core</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; background: #05070d; color: #fff; min-height: 100vh; }
-    .wrap { max-width: 1350px; margin: auto; padding: 28px; }
-    .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:22px; }
-    .pill { padding:10px 14px; border-radius:999px; background:#0e1f13; color:#7dff9b; border:1px solid #1e6b35; font-size:14px; }
-    .hero,.panel,.card { background:#0d1426; border:1px solid #1d2a49; border-radius:20px; }
-    .hero { padding:30px; margin-bottom:22px; background:linear-gradient(135deg,#091120,#101a38,#08101f); }
-    .hero h1 { font-size:34px; margin-bottom:12px; }
-    .hero p { color:#bdd0f0; line-height:1.7; }
-    .tags span { display:inline-block; margin:14px 10px 0 0; padding:8px 12px; border-radius:999px; background:#13213d; color:#87b7ff; font-size:12px; }
-    .voice { margin-top:18px; background:#091120; border:1px solid #223455; border-radius:16px; padding:16px; color:#97add8; }
-    .grid { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin:22px 0; }
-    .card { padding:20px; }
-    .card h3 { font-size:15px; color:#a9bff0; margin-bottom:10px; }
-    .value { font-size:30px; font-weight:700; }
-    .sub { margin-top:8px; color:#97a8cd; font-size:13px; }
-    .three { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
-    .panel { padding:22px; }
-    .panel h3 { font-size:20px; margin-bottom:14px; }
-    .list div { padding:11px 0; border-bottom:1px solid #18233d; color:#dce6ff; }
-    .list div:last-child { border-bottom:none; }
-    a.back { color:#8cb7ff; text-decoration:none; display:inline-block; margin-bottom:16px; }
-    @media (max-width:1100px){ .grid,.three{grid-template-columns:repeat(2,1fr);} }
-    @media (max-width:760px){ .grid,.three{grid-template-columns:1fr;} .top{flex-direction:column;align-items:flex-start;gap:12px;} }
-  </style>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
-  <div class="wrap">
-    <a class="back" href="/">Back to HNI WORLD OS</a>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/muski/',
+      title: 'MUSKI AI Core',
+      breadcrumb: ['HNI WORLD OS', 'Owner Dashboard', 'MUSKI AI'],
+      status: 'Master AI Brain Live',
+      chips: ['Orchestration Layer', 'Security Boundary'],
+      backHref: '/dashboard/',
+      backLabel: 'Back to Owner Dashboard',
+      contentHtml: `
+        <section class="hero-card">
+          <h2>MUSKI - Multi-Universal Strategic Knowledge Intelligence</h2>
+          <p>MUSKI supervises module-level AI managers, reporting systems, role-safe escalation, and enterprise execution priorities under a controlled governance shell.</p>
+          <div class="hero-tags"><span>Master Brain</span><span>Manager Routing</span><span>Enterprise Command</span></div>
+        </section>
 
-    <div class="top">
-      <h2>MUSKI AI Core</h2>
-      <div class="pill">Master AI Brain Live</div>
-    </div>
+        <section class="stats-grid four">
+          <article class="stat-card"><h4>Brain Status</h4><div class="stat-number">ACTIVE</div><p>Master orchestration shell online.</p></article>
+          <article class="stat-card"><h4>Manager AI Layer</h4><div class="stat-number">READY</div><p>Structured upward reporting model.</p></article>
+          <article class="stat-card"><h4>Security Boundary</h4><div class="stat-number">LOCKED</div><p>Protected internal logic exposure.</p></article>
+          <article class="stat-card"><h4>Next Expansion</h4><div class="stat-number">DEEPEN</div><p>Execution and module actions.</p></article>
+        </section>
 
-    <section class="hero">
-      <h1>MUSKI - Multi-Universal Strategic Knowledge Intelligence</h1>
-      <p>
-        MUSKI is the master AI command brain for the HNI WORLD ecosystem.
-        It is designed to supervise approved modules, manager AIs, reporting systems,
-        enterprise routing, security boundaries, and strategic execution flows.
-      </p>
-      <div class="tags">
-        <span>Master Brain</span>
-        <span>Manager Routing</span>
-        <span>Role Control</span>
-        <span>Enterprise Command</span>
-      </div>
-      <div class="voice">
-        Voice Command / Smart Search: Ask MUSKI to review deployment status, route module intelligence, inspect governance posture, and escalate execution priorities.
-      </div>
-    </section>
-
-    <section class="grid">
-      <div class="card">
-        <h3>Brain Status</h3>
-        <div class="value">ACTIVE</div>
-        <div class="sub">Master orchestration shell online</div>
-      </div>
-      <div class="card">
-        <h3>Manager AI Layer</h3>
-        <div class="value">Ready</div>
-        <div class="sub">Structured upward reporting model</div>
-      </div>
-      <div class="card">
-        <h3>Security Boundary</h3>
-        <div class="value">Locked</div>
-        <div class="sub">Protected internal logic exposure</div>
-      </div>
-      <div class="card">
-        <h3>Next Expansion</h3>
-        <div class="value">Deepen</div>
-        <div class="sub">Execution + reporting + module actions</div>
-      </div>
-    </section>
-
-    <section class="three">
-      <div class="panel">
-        <h3>Command Intelligence</h3>
-        <div class="list">
-          <div>Owner-level OS supervision</div>
-          <div>Module-level intelligence review</div>
-          <div>Strategic execution prioritization</div>
-          <div>Cross-OS monitoring layer</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Manager Routing Model</h3>
-        <div class="list">
-          <div>Module AI ? Manager AI</div>
-          <div>Manager AI ? MUSKI</div>
-          <div>Reduced overload and chaos</div>
-          <div>Role-safe escalation structure</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h3>Security and Role Control</h3>
-        <div class="list">
-          <div>No source-code exposure</div>
-          <div>No protected document leakage</div>
-          <div>No prompt/system disclosure</div>
-          <div>Role-based intelligence boundary</div>
-        </div>
-      </div>
-    </section>
-  </div>
-<script src="./app.js"></script>
-
-<section class="panel" style="margin-top:22px;">
-  <h3>Live MUSKI Actions</h3>
-  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;">
-    <button onclick="runHealthCheck()" style="padding:10px 16px;border:none;border-radius:12px;background:#0e5bd7;color:#fff;cursor:pointer;">Health Check</button>
-    <button onclick="createTask()" style="padding:10px 16px;border:none;border-radius:12px;background:#138a4b;color:#fff;cursor:pointer;">Create Task</button>
-    <button onclick="dispatchTask()" style="padding:10px 16px;border:none;border-radius:12px;background:#8a5a13;color:#fff;cursor:pointer;">Dispatch Task</button>
-    <button onclick="viewLogs()" style="padding:10px 16px;border:none;border-radius:12px;background:#5b2ca0;color:#fff;cursor:pointer;">View Logs</button>
-  </div>
-</section>
+        <section class="content-grid two">
+          <article class="info-card"><h3>Command Intelligence</h3><ul class="info-list"><li>Owner-level OS supervision</li><li>Module intelligence review</li><li>Strategic execution prioritization</li><li>Cross-OS monitoring</li></ul></article>
+          <article class="info-card"><h3>Live MUSKI Actions</h3>
+            <div class="button-row">
+              <button class="primary-btn" onclick="runHealthCheck()">Health Check</button>
+              <button class="secondary-btn" onclick="createTask()">Create Task</button>
+              <button class="secondary-btn" onclick="dispatchTask()">Dispatch Task</button>
+              <button class="secondary-btn" onclick="viewLogs()">View Logs</button>
+            </div>
+          </article>
+        </section>
+      `
+    });
+  </script>
+  <script src="./app.js"></script>
 </body>
 </html>
-
-

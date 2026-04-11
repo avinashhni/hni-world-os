@@ -4,156 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>HNI WORLD OS</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, sans-serif;
-      background: radial-gradient(circle at top right, #12214a 0%, #05070d 45%, #03050a 100%);
-      color: #fff;
-      min-height: 100vh;
-      padding: 40px 24px;
-    }
-    .wrap { max-width: 1250px; margin: auto; }
-    .hero {
-      background: rgba(9, 16, 32, 0.88);
-      border: 1px solid #22365d;
-      border-radius: 24px;
-      padding: 36px;
-      margin-bottom: 28px;
-      box-shadow: 0 0 40px rgba(77, 163, 255, 0.12);
-    }
-    .hero h1 { font-size: 42px; margin-bottom: 12px; }
-    .hero p {
-      color: #c2d1f0;
-      line-height: 1.7;
-      max-width: 980px;
-      font-size: 17px;
-    }
-    .tags span {
-      display: inline-block;
-      margin: 14px 10px 0 0;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #12213d;
-      color: #8fb8ff;
-      font-size: 13px;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
-      margin-bottom: 28px;
-    }
-    .cardlink { text-decoration: none; color: inherit; }
-    .card {
-      background: rgba(9, 16, 32, 0.92);
-      border: 1px solid #22365d;
-      border-radius: 20px;
-      padding: 22px;
-      transition: transform .18s ease, border-color .18s ease;
-      min-height: 120px;
-    }
-    .card:hover {
-      transform: translateY(-3px);
-      border-color: #4da3ff;
-    }
-    .card h3 {
-      font-size: 20px;
-      margin-bottom: 10px;
-    }
-    .card p {
-      color: #a9badf;
-      line-height: 1.6;
-      font-size: 14px;
-    }
-    .footer {
-      background: rgba(9, 16, 32, 0.88);
-      border: 1px solid #22365d;
-      border-radius: 20px;
-      padding: 24px;
-    }
-    .footer h3 {
-      margin-bottom: 14px;
-      font-size: 20px;
-    }
-    .footer ul {
-      padding-left: 20px;
-      color: #c9d6f0;
-      line-height: 1.8;
-    }
-    @media (max-width: 1100px) {
-      .grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 700px) {
-      .grid { grid-template-columns: 1fr; }
-      .hero h1 { font-size: 34px; }
-    }
-  </style>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
-  <div class="wrap">
-    <section class="hero">
-      <h1>HNI WORLD OS</h1>
-      <p>
-        This is the live operating system entry point for the HNI WORLD ecosystem.
-        Core deployment is active, routing is live, and module families are now being expanded
-        into structured enterprise-grade operating screens.
-      </p>
-      <div class="tags">
-        <span>GitHub Connected</span>
-        <span>Vercel Live</span>
-        <span>MUSKI Active</span>
-        <span>Multi-Page OS Structure</span>
-      </div>
-    </section>
-
-    <section class="grid">
-      <a class="cardlink" href="/dashboard/">
-        <div class="card">
-          <h3>Owner Dashboard</h3>
-          <p>Main HNI WORLD OS command center and live operating shell.</p>
-        </div>
-      </a>
-
-      <a class="cardlink" href="/muski/">
-        <div class="card">
-          <h3>MUSKI AI Core</h3>
-          <p>Master AI command brain and orchestration control layer.</p>
-        </div>
-      </a>
-
-      <a class="cardlink" href="/airnomics/">
-        <div class="card">
-          <h3>AI AIRNOMICS OS</h3>
-          <p>Air and travel execution structure under the shared enterprise spine.</p>
-        </div>
-      </a>
-
-      <a class="cardlink" href="/edunomics/">
-        <div class="card">
-          <h3>AI EDUNOMICS OS</h3>
-          <p>Education intelligence and admissions ecosystem structure.</p>
-        </div>
-      </a>
-
-      <a class="cardlink" href="/legalnomics/">
-        <div class="card">
-          <h3>AI LEGALNOMICS OS</h3>
-          <p>Legal intelligence, drafting, and case operations system shell.</p>
-        </div>
-      </a>
-    </section>
-
-    <section class="footer">
-      <h3>Current Live Deployment Notes</h3>
-      <ul>
-        <li>Wave 1: Live dashboard shell completed</li>
-        <li>Wave 2: MUSKI AI Core section completed</li>
-        <li>Wave 3: Multi-page OS structure completed</li>
-        <li>Wave 4: Route pages for MUSKI, AIRNOMICS, EDUNOMICS and LEGALNOMICS completed</li>
-        <li>Next: Deeper module screens and internal workflow routing</li>
-      </ul>
-    </section>
-  </div>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/dashboard/',
+      title: 'HNI WORLD OS Entry Command',
+      breadcrumb: ['HNI WORLD OS', 'Entry Route'],
+      status: 'Owner Dashboard is Primary',
+      chips: ['No Isolated Landing', 'Operating Dashboard Mode'],
+      contentHtml: `
+        <section class="hero-card">
+          <h2>Master Shell Active</h2>
+          <p>The platform now boots into the same locked enterprise shell used across module dashboards. Continue to the Owner Dashboard command center.</p>
+          <div class="button-row">
+            <a class="primary-btn" href="/dashboard/">Open Owner Dashboard</a>
+          </div>
+        </section>
+      `
+    });
+  </script>
 </body>
 </html>
