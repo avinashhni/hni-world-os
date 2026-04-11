@@ -2,6 +2,9 @@
   "version": 2,
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/", "destination": "/dashboard/" }
+    { "source": "/", "destination": "/dashboard/" },
+    { "source": "/legalnomics", "destination": "/legalnomics/" },
+    { "source": "/edunomics", "destination": "/edunomics/" },
+    { "source": "/airnomics", "destination": "/airnomics/" }
   ]
 }
