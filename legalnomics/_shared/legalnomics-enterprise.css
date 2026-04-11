@@ -1,3 +1,6 @@
+.route-tabs{display:flex;gap:8px;flex-wrap:wrap}
+.route-tab{padding:8px 12px;border-radius:999px;border:1px solid rgba(130,160,255,.24);color:#c7d6ff;text-decoration:none;font-size:12px}
+.route-tab.active{background:rgba(84,122,220,.24);border-color:rgba(140,175,255,.52);color:#fff}
 .legal-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .legal-input,.legal-select{background:#0e1a3b;border:1px solid rgba(130,160,255,.22);color:#e9f0ff;padding:10px 12px;border-radius:10px;min-width:150px}
 .legal-input{min-width:220px}
