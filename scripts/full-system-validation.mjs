@@ -31,6 +31,16 @@ function runCommand(cmd, args) {
   return (result.stdout || '').trim();
 }
 
+function median(values) {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const midpoint = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 === 0) {
+    return (sorted[midpoint - 1] + sorted[midpoint]) / 2;
+  }
+  return sorted[midpoint];
+}
+
 function walkDir(dir, visitor) {
   for (const entry of readdirSync(dir)) {
     const absolute = join(dir, entry);
@@ -124,6 +134,39 @@ async function checkUiLoads() {
   return `${paths.length} routes returned 200 and valid HTML`;
 }
 
+async function checkUiPerformance() {
+  const { server, port } = await startStaticServer(join(root, "dist"), 4174);
+  const paths = collectHtmlRoutes(join(root, "dist"));
+  const durations = [];
+
+  try {
+    for (const path of paths) {
+      const start = process.hrtime.bigint();
+      await new Promise((resolve, reject) => {
+        http.get({ hostname: "127.0.0.1", port, path }, (res) => {
+          res.resume();
+          res.on("end", resolve);
+          res.on("error", reject);
+        }).on("error", reject);
+      });
+      const elapsedMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+      durations.push(elapsedMs);
+    }
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+
+  const avgMs = durations.reduce((acc, item) => acc + item, 0) / durations.length;
+  const p95Index = Math.max(0, Math.ceil(durations.length * 0.95) - 1);
+  const p95 = [...durations].sort((a, b) => a - b)[p95Index];
+  const medianMs = median(durations);
+
+  assert(Number.isFinite(avgMs), "Average route load time could not be computed");
+  assert(p95 < 250, `Route load p95 too high (${p95.toFixed(2)}ms)`);
+
+  return `${paths.length} routes benchmarked (avg ${avgMs.toFixed(2)}ms, median ${medianMs.toFixed(2)}ms, p95 ${p95.toFixed(2)}ms)`;
+}
+
 function checkRouteIntegrity() {
   const distRoot = join(root, 'dist');
   const routes = collectHtmlRoutes(distRoot);
@@ -206,6 +249,57 @@ function checkDeploymentReadiness() {
   return `${required.length} deployment artifacts present`;
 }
 
+function checkRoleAndPermissionModel() {
+  const matrixPath = join(root, "HNI_WORLD_OS_MASTER_PACK/03_security/permission_matrix.json");
+  assert(existsSync(matrixPath), "Missing permission matrix definition");
+  const matrix = JSON.parse(readFileSync(matrixPath, "utf8"));
+
+  const requiredRoles = ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "STAFF", "INTERNAL_AI", "EXTERNAL_AI"];
+  const missingRoles = requiredRoles.filter((role) => !matrix.roles.includes(role));
+  assert(missingRoles.length === 0, `Missing required roles: ${missingRoles.join(", ")}`);
+
+  const requiredAreas = ["module_management", "deployment_control", "workflow_override", "audit_logs_access"];
+  const missingAreas = requiredAreas.filter((item) => !matrix.permission_areas.includes(item));
+  assert(missingAreas.length === 0, `Missing permission areas: ${missingAreas.join(", ")}`);
+
+  const approvalService = readFileSync(join(root, "backend/apps/muski-core-runtime/src/services/approval.service.ts"), "utf8");
+  assert(/requestedBy/.test(approvalService), "Approval service missing requestedBy actor");
+  assert(/decidedBy/.test(approvalService), "Approval service missing decidedBy actor");
+
+  return `${requiredRoles.length} critical roles and ${requiredAreas.length} permission areas validated`;
+}
+
+function checkSecurityBoundaries() {
+  const schemaSql = readFileSync(join(root, "supabase/001_schema.sql"), "utf8");
+  const policySql = readFileSync(join(root, "supabase/002_policies.sql"), "utf8");
+
+  const tables = Array.from(schemaSql.matchAll(/create table if not exists public\.([a-z0-9_]+)/gi)).map((match) => match[1]);
+  const rlsEnabled = Array.from(policySql.matchAll(/alter table public\.([a-z0-9_]+) enable row level security;/gi)).map((match) => match[1]);
+  const policies = Array.from(policySql.matchAll(/create policy "[^"]+" on public\.([a-z0-9_]+)/gi)).map((match) => match[1]);
+
+  const missingRls = tables.filter((table) => !rlsEnabled.includes(table));
+  assert(missingRls.length === 0, `Tables missing RLS: ${missingRls.join(", ")}`);
+
+  const tablesWithoutPolicies = tables.filter((table) => !policies.includes(table));
+  assert(tablesWithoutPolicies.length === 0, `Tables missing policy rules: ${tablesWithoutPolicies.join(", ")}`);
+  assert(/auth\.uid\(\)/.test(policySql), "No auth.uid() ownership boundaries found in policies");
+
+  return `${tables.length} tables protected by RLS with policy coverage`;
+}
+
+function checkMonitoringReadiness() {
+  const healthRouteFile = readFileSync(join(root, "backend/apps/muski-core-runtime/src/routes/health.route.ts"), "utf8");
+  const loggerServiceFile = readFileSync(join(root, "backend/apps/muski-core-runtime/src/services/execution-logger.service.ts"), "utf8");
+  const runtimeFile = readFileSync(join(root, "backend/apps/muski-core-runtime/src/index.ts"), "utf8");
+
+  assert(/status:\s*"ok"/.test(healthRouteFile), "Health route missing operational status signal");
+  assert(/timestamp:\s*new Date\(\)\.toISOString\(\)/.test(healthRouteFile), "Health route missing timestamp");
+  assert(/log\(/.test(loggerServiceFile), "Execution logger missing log method");
+  assert(/executionLogger\.log\(/.test(runtimeFile), "Runtime bootstrap missing execution log usage");
+
+  return "Health endpoint and execution logging instrumentation confirmed";
+}
+
 async function main() {
   runCheck('Module structure health', () => {
     const critical = ['legalnomics', 'dashboard', 'muski', 'airnomics', 'edunomics', 'backend'];
@@ -221,6 +315,9 @@ async function main() {
   });
 
   runCheck('API contract checks', checkApiContracts);
+  runCheck("Role & permission checks", checkRoleAndPermissionModel);
+  runCheck("Security boundary checks", checkSecurityBoundaries);
+  runCheck("Monitoring readiness", checkMonitoringReadiness);
   runCheck('Deployment readiness audit', checkDeploymentReadiness);
   runCheck('Route integrity audit', checkRouteIntegrity);
 
@@ -231,6 +328,15 @@ async function main() {
     const message = error instanceof Error ? error.message : String(error);
     checks.push({ name: 'UI loading verification', status: 'FAIL', details: message });
     failures.push({ name: 'UI loading verification', message });
+  }
+
+  try {
+    const performanceDetails = await checkUiPerformance();
+    checks.push({ name: "Performance checks", status: "PASS", details: performanceDetails });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    checks.push({ name: "Performance checks", status: "FAIL", details: message });
+    failures.push({ name: "Performance checks", message });
   }
 
   const reportLines = [
