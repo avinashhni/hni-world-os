@@ -62,6 +62,25 @@
     }
   ];
 
+  const FAMILY_ROUTE_ROOTS = {
+    core: ['/dashboard/'],
+    governance: ['/dashboard/'],
+    muski: ['/muski/'],
+    legalnomics: ['/legalnomics/'],
+    airnomics: ['/airnomics/'],
+    edunomics: ['/edunomics/']
+  };
+
+  const FAMILY_DEFAULT_ROUTES = {
+    core: '/dashboard/',
+    governance: '/dashboard/',
+    muski: '/muski/',
+    legalnomics: '/legalnomics/',
+    airnomics: '/airnomics/',
+    edunomics: '/edunomics/'
+  };
+
+
   function normalizeRoute(route, fallback = '/') {
     if (!route || typeof route !== 'string') return fallback;
     const [pathOnly, queryHash = ''] = route.split(/(?=[?#])/);
@@ -136,6 +155,16 @@
     }
   }
 
+
+
+  function getStableFamilyRoute(family, fallback) {
+    const defaultRoute = FAMILY_DEFAULT_ROUTES[family] || fallback || '/dashboard/';
+    const continuityCandidate = normalizeRoute(getContinuityRoute(family, defaultRoute), defaultRoute);
+    const allowedPrefixes = FAMILY_ROUTE_ROOTS[family] || [defaultRoute];
+    const isAllowed = allowedPrefixes.some((prefix) => continuityCandidate.startsWith(prefix));
+    return isAllowed ? continuityCandidate : defaultRoute;
+  }
+
   function renderRoleSelector(currentRole) {
     const options = Object.entries(ROLE_PERMISSIONS)
       .map(([key, role]) => `<option value="${key}" ${key === currentRole ? 'selected' : ''}>${role.label}</option>`)
@@ -155,7 +184,7 @@
         .filter((item) => rolePolicy.canAccess.includes(item.key))
         .map((route) => {
           const active = (route.matchPrefixes || [route.href]).some((prefix) => normalizedCurrentRoute.startsWith(prefix)) ? 'active' : '';
-          const continuityHref = normalizeRoute(getContinuityRoute(route.family, route.href), route.href);
+          const continuityHref = getStableFamilyRoute(route.family, route.href);
           return `<a class="shell-nav-link ${active}" data-family="${route.family}" href="${continuityHref}">${route.label}</a>`;
         })
         .join('');
@@ -189,8 +218,11 @@
     const rolePolicy = ROLE_PERMISSIONS[currentRole];
     const activeFamily = config.activeFamily || readStorage(STORAGE_KEYS.family, 'core');
     const identity = getIdentity(currentRole);
-    const currentRoute = normalizeRoute(config.currentRoute, '/');
-    setRouteContinuity(currentRoute, activeFamily);
+    const familyFallbackRoute = FAMILY_DEFAULT_ROUTES[activeFamily] || '/dashboard/';
+    const currentRoute = normalizeRoute(config.currentRoute, familyFallbackRoute);
+    const routePrefixes = FAMILY_ROUTE_ROOTS[activeFamily] || [familyFallbackRoute];
+    const routeInFamily = routePrefixes.some((prefix) => currentRoute.startsWith(prefix));
+    setRouteContinuity(routeInFamily ? currentRoute : familyFallbackRoute, activeFamily);
 
     const breadcrumb = renderBreadcrumbs(config.breadcrumb || []);
     const chips = (config.chips || []).map((chip) => `<span class="shell-chip">${chip}</span>`).join('');
