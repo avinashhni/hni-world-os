@@ -23,6 +23,11 @@ create policy "partner_profiles_select_all" on public.partner_profiles
 for select to authenticated
 using (true);
 
+drop policy if exists "organizations_select_all" on public.organizations;
+create policy "organizations_select_all" on public.organizations
+for select to authenticated
+using (true);
+
 drop policy if exists "b2c_intakes_insert_own" on public.b2c_intakes;
 create policy "b2c_intakes_insert_own" on public.b2c_intakes
 for insert to authenticated
