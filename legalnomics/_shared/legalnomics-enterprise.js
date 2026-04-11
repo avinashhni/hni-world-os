@@ -69,6 +69,43 @@
       { id: 'al-4', type: 'verdict review pending', severity: 'high', linkedId: 'ver-500', owner: 'Review Cell 1', dueDate: '2026-04-13', status: 'open' },
       { id: 'al-5', type: 'challenge filing deadline', severity: 'high', linkedId: 'ch-700', owner: 'Appellate Desk', dueDate: '2026-04-14', status: 'open' },
       { id: 'al-6', type: 'compliance deadline', severity: 'medium', linkedId: 'corp-10', owner: 'Corp Cell 2', dueDate: '2026-04-20', status: 'open' }
+    ],
+    advocateNetwork: [
+      { id: 'adv-01', advocate: 'Adv. R. Sharma', specialization: 'Labour + Employment', city: 'Mumbai', jurisdiction: 'Bombay High Court', verificationState: 'verified', activeLoad: 9, hearingLoad: 4, verdictReviewLoad: 2, assignedCases: 12, availability: 'Overloaded' },
+      { id: 'adv-02', advocate: 'Adv. V. Iyer', specialization: 'Consumer + Civil Recovery', city: 'Delhi', jurisdiction: 'Delhi High Court', verificationState: 'verified', activeLoad: 7, hearingLoad: 3, verdictReviewLoad: 1, assignedCases: 10, availability: 'Near Capacity' },
+      { id: 'adv-03', advocate: 'Adv. K. Menon', specialization: 'Compliance + Regulatory', city: 'Bengaluru', jurisdiction: 'Karnataka High Court', verificationState: 'pending_review', activeLoad: 4, hearingLoad: 2, verdictReviewLoad: 0, assignedCases: 5, availability: 'Available' },
+      { id: 'adv-04', advocate: 'Adv. A. Khan', specialization: 'Arbitration + Commercial', city: 'Hyderabad', jurisdiction: 'Telangana High Court', verificationState: 'deficient', activeLoad: 3, hearingLoad: 1, verdictReviewLoad: 1, assignedCases: 4, availability: 'Verification Hold' }
+    ],
+    partnerLawFirms: [
+      { id: 'firm-11', partnerName: 'Lex Axis LLP', partnerType: 'Law Firm', onboardingState: 'approved', verificationPipeline: 'compliance_passed', regionMap: 'West / MH', jurisdictionMap: 'Bombay High Court', contact: 'ops@lexaxis.in', status: 'Active', assignmentHistory: 42, productivity: '91%' },
+      { id: 'firm-12', partnerName: 'Aegis Legal Partners', partnerType: 'Law Firm', onboardingState: 'pending_review', verificationPipeline: 'documents_under_review', regionMap: 'North / DL', jurisdictionMap: 'Delhi High Court', contact: 'network@aegislegal.in', status: 'Onboarding', assignmentHistory: 11, productivity: '74%' }
+    ],
+    partnerIndependents: [
+      { id: 'ind-31', partnerName: 'Adv. Sneha Rao', partnerType: 'Independent Advocate', onboardingState: 'approved', verificationPipeline: 'verified', regionMap: 'South / KA', jurisdictionMap: 'Karnataka High Court', contact: 'srao@barmail.com', status: 'Active', assignmentHistory: 26, productivity: '88%' },
+      { id: 'ind-32', partnerName: 'Adv. D. Sethi', partnerType: 'Independent Advocate', onboardingState: 'rejected', verificationPipeline: 'bar_council_mismatch', regionMap: 'North / PB', jurisdictionMap: 'Punjab & Haryana High Court', contact: 'dsethi@barmail.com', status: 'Blocked', assignmentHistory: 0, productivity: '0%' }
+    ],
+    corporatePipeline: [
+      { id: 'mat-901', corporateClient: 'HNI Industries', bucket: 'Notice', matterPipeline: 'intake_triage', assignedCounsel: 'Adv. R. Sharma', dueDate: '2026-04-20', riskScore: 87, nextAction: 'Draft reply to labour notice', status: 'open' },
+      { id: 'mat-902', corporateClient: 'HNI Logistics', bucket: 'Dispute', matterPipeline: 'evidence_packaging', assignedCounsel: 'Adv. V. Iyer', dueDate: '2026-04-18', riskScore: 64, nextAction: 'File response affidavit', status: 'open' },
+      { id: 'mat-903', corporateClient: 'HNI Ventures', bucket: 'Compliance', matterPipeline: 'final_review', assignedCounsel: 'Adv. K. Menon', dueDate: '2026-04-14', riskScore: 42, nextAction: 'Submit quarterly compliance report', status: 'resolved' }
+    ],
+    leadExchange: [
+      { id: 'lead-801', intakePool: 'B2B Portal', jurisdiction: 'Maharashtra', specializationNeed: 'Compliance', routingStatus: 'assigned', lane: 'assigned', assignedTo: 'Lex Axis LLP', escalated: 'No', commercialBand: 'Tier A' },
+      { id: 'lead-802', intakePool: 'Owner Escalation', jurisdiction: 'Delhi', specializationNeed: 'Employment', routingStatus: 'escalated', lane: 'escalated', assignedTo: 'Escalation Desk', escalated: 'Yes', commercialBand: 'Tier A+' },
+      { id: 'lead-803', intakePool: 'Website Intake', jurisdiction: 'Karnataka', specializationNeed: 'Commercial Dispute', routingStatus: 'unassigned', lane: 'unassigned', assignedTo: '-', escalated: 'No', commercialBand: 'Tier B' }
+    ],
+    onboardingFlow: [
+      { id: 'onb-101', entityType: 'New Advocate', entity: 'Adv. K. Menon', documentVerification: 'pending_review', complianceVerification: 'pending_review', reviewState: 'pending_review' },
+      { id: 'onb-102', entityType: 'Law Firm', entity: 'Aegis Legal Partners', documentVerification: 'approved', complianceVerification: 'pending_review', reviewState: 'pending_review' },
+      { id: 'onb-103', entityType: 'Corporate Client', entity: 'HNI Logistics', documentVerification: 'approved', complianceVerification: 'approved', reviewState: 'approved' },
+      { id: 'onb-104', entityType: 'Independent Advocate', entity: 'Adv. D. Sethi', documentVerification: 'rejected', complianceVerification: 'rejected', reviewState: 'rejected' }
+    ],
+    muskiOwnerSignals: [
+      { id: 'sig-1', signal: 'Advocate overload risks', severity: 'high', owner: 'Owner Desk', value: '2 advocates above 85% capacity', status: 'open' },
+      { id: 'sig-2', signal: 'Partner readiness', severity: 'medium', owner: 'Partner Ops', value: '1 firm pending compliance gate', status: 'watch' },
+      { id: 'sig-3', signal: 'Routing congestion', severity: 'high', owner: 'Lead Exchange', value: '1 escalated / 1 unassigned lead', status: 'open' },
+      { id: 'sig-4', signal: 'Corporate matter risk', severity: 'high', owner: 'Corporate Cell', value: '1 matter risk score > 80', status: 'open' },
+      { id: 'sig-5', signal: 'Verification bottlenecks', severity: 'medium', owner: 'Verification Ops', value: '2 entities pending review > 24h', status: 'watch' }
     ]
   };
 
@@ -86,7 +123,9 @@
     { label: 'Intake', href: '/legalnomics/intake/' },
     { label: 'B2C', href: '/legalnomics/b2c/' },
     { label: 'Advocate', href: '/legalnomics/advocate/' },
+    { label: 'Partners', href: '/legalnomics/partners/' },
     { label: 'Corporate', href: '/legalnomics/corporate/' },
+    { label: 'Lead Exchange', href: '/legalnomics/lead-exchange/' },
     { label: 'Hearings', href: '/legalnomics/hearings/' },
     { label: 'Verdicts', href: '/legalnomics/verdicts/' },
     { label: 'Challenges', href: '/legalnomics/challenges/' },
@@ -99,6 +138,55 @@
   function daysTo(dateString) { return Math.ceil((new Date(dateString).getTime() - Date.now()) / 86400000); }
 
   function screenConfig(screen) {
+    if (screen === 'advocate') {
+      return {
+        columns: ['id', 'advocate', 'specialization', 'city', 'jurisdiction', 'verificationState', 'activeLoad', 'hearingLoad', 'verdictReviewLoad', 'assignedCases', 'availability'],
+        rows: DATA.advocateNetwork,
+        summary: [
+          ['Network advocates', DATA.advocateNetwork.length],
+          ['Verified advocates', DATA.advocateNetwork.filter((x) => x.verificationState === 'verified').length],
+          ['Near/over capacity', DATA.advocateNetwork.filter((x) => x.activeLoad >= 7).length],
+          ['Pending verification', DATA.advocateNetwork.filter((x) => x.verificationState !== 'verified').length]
+        ]
+      };
+    }
+    if (screen === 'partners') {
+      const partnerRows = [...DATA.partnerLawFirms, ...DATA.partnerIndependents];
+      return {
+        columns: ['id', 'partnerName', 'partnerType', 'onboardingState', 'verificationPipeline', 'regionMap', 'jurisdictionMap', 'contact', 'status', 'assignmentHistory', 'productivity'],
+        rows: partnerRows,
+        summary: [
+          ['Law firms', DATA.partnerLawFirms.length],
+          ['Independent advocates', DATA.partnerIndependents.length],
+          ['Onboarding pending', partnerRows.filter((x) => x.onboardingState === 'pending_review').length],
+          ['Approved partners', partnerRows.filter((x) => x.onboardingState === 'approved').length]
+        ]
+      };
+    }
+    if (screen === 'corporate') {
+      return {
+        columns: ['id', 'corporateClient', 'bucket', 'matterPipeline', 'assignedCounsel', 'dueDate', 'riskScore', 'nextAction', 'status'],
+        rows: DATA.corporatePipeline,
+        summary: [
+          ['Open matters', DATA.corporatePipeline.filter((x) => x.status === 'open').length],
+          ['Resolved matters', DATA.corporatePipeline.filter((x) => x.status === 'resolved').length],
+          ['High risk matters', DATA.corporatePipeline.filter((x) => x.riskScore >= 75).length],
+          ['Compliance bucket', DATA.corporatePipeline.filter((x) => x.bucket === 'Compliance').length]
+        ]
+      };
+    }
+    if (screen === 'leadExchange') {
+      return {
+        columns: ['id', 'intakePool', 'jurisdiction', 'specializationNeed', 'routingStatus', 'lane', 'assignedTo', 'escalated', 'commercialBand'],
+        rows: DATA.leadExchange,
+        summary: [
+          ['Lead intake pool', DATA.leadExchange.length],
+          ['Assigned', DATA.leadExchange.filter((x) => x.lane === 'assigned').length],
+          ['Unassigned', DATA.leadExchange.filter((x) => x.lane === 'unassigned').length],
+          ['Escalated', DATA.leadExchange.filter((x) => x.lane === 'escalated').length]
+        ]
+      };
+    }
     if (screen === 'documents') {
       return {
         columns: ['id', 'docType', 'classification', 'caseId', 'matterId', 'corporate', 'uploader', 'reviewer', 'verificationState', 'lifecycleState', 'uploadDate', 'dueDate', 'renewalDate'],
@@ -150,6 +238,20 @@
   }
 
   function additionalPanels(screen) {
+    if (screen === 'advocate') {
+      return `<section class="module-grid two"><article class="table-card"><h3>Case Assignment Summary</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Advocate</th><th>Active Load</th><th>Hearing Load</th><th>Verdict Review</th><th>Capacity State</th></tr></thead><tbody>${DATA.advocateNetwork.map((row) => `<tr><td>${row.advocate}</td><td>${row.activeLoad}</td><td>${row.hearingLoad}</td><td>${row.verdictReviewLoad}</td><td>${row.availability}</td></tr>`).join('')}</tbody></table></div></article><article class="info-card"><h3>Availability + Capacity Indicator</h3><p><strong>Overloaded:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Overloaded').length}</p><p><strong>Near capacity:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Near Capacity').length}</p><p><strong>Available:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Available').length}</p><p><strong>Verification hold:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Verification Hold').length}</p></article></section><section class="table-card"><h3>Onboarding + Verification Flow States</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>ID</th><th>Entity Type</th><th>Entity</th><th>Document Verification</th><th>Compliance Verification</th><th>Review State</th></tr></thead><tbody>${DATA.onboardingFlow.map((flow) => `<tr><td>${flow.id}</td><td>${flow.entityType}</td><td>${flow.entity}</td><td>${flow.documentVerification}</td><td>${flow.complianceVerification}</td><td>${flow.reviewState}</td></tr>`).join('')}</tbody></table></div></section>`;
+    }
+    if (screen === 'partners') {
+      return `<section class="module-grid two"><article class="table-card"><h3>Law Firm Network</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>ID</th><th>Law Firm</th><th>Onboarding</th><th>Verification Pipeline</th><th>Region/Jurisdiction</th><th>Status</th><th>Assignments</th><th>Productivity</th></tr></thead><tbody>${DATA.partnerLawFirms.map((firm) => `<tr><td>${firm.id}</td><td>${firm.partnerName}</td><td>${firm.onboardingState}</td><td>${firm.verificationPipeline}</td><td>${firm.regionMap} · ${firm.jurisdictionMap}</td><td>${firm.status}</td><td>${firm.assignmentHistory}</td><td>${firm.productivity}</td></tr>`).join('')}</tbody></table></div></article><article class="table-card"><h3>Independent Advocate Network</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>ID</th><th>Advocate</th><th>Onboarding</th><th>Verification Pipeline</th><th>Region/Jurisdiction</th><th>Status</th><th>Assignments</th><th>Productivity</th></tr></thead><tbody>${DATA.partnerIndependents.map((adv) => `<tr><td>${adv.id}</td><td>${adv.partnerName}</td><td>${adv.onboardingState}</td><td>${adv.verificationPipeline}</td><td>${adv.regionMap} · ${adv.jurisdictionMap}</td><td>${adv.status}</td><td>${adv.assignmentHistory}</td><td>${adv.productivity}</td></tr>`).join('')}</tbody></table></div></article></section><section class="table-card"><h3>Verification + Assignment History</h3><p class="legal-mini">Pipeline visibility includes pending review, approved, and rejected states with partner productivity snapshots and assignment history.</p></section>`;
+    }
+    if (screen === 'corporate') {
+      const openCount = DATA.corporatePipeline.filter((x) => x.status === 'open').length;
+      const resolvedCount = DATA.corporatePipeline.filter((x) => x.status === 'resolved').length;
+      return `<section class="module-grid two"><article class="info-card"><h3>Corporate Client Summary Cards</h3><p><strong>Open matters:</strong> ${openCount}</p><p><strong>Resolved matters:</strong> ${resolvedCount}</p><p><strong>Notice bucket:</strong> ${DATA.corporatePipeline.filter((x) => x.bucket === 'Notice').length}</p><p><strong>Dispute bucket:</strong> ${DATA.corporatePipeline.filter((x) => x.bucket === 'Dispute').length}</p><p><strong>Compliance bucket:</strong> ${DATA.corporatePipeline.filter((x) => x.bucket === 'Compliance').length}</p></article><article class="table-card"><h3>Matter Pipeline Buckets</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Bucket</th><th>Matters</th><th>High Risk</th></tr></thead><tbody><tr><td>Notices</td><td>${DATA.corporatePipeline.filter((x) => x.bucket === 'Notice').length}</td><td>${DATA.corporatePipeline.filter((x) => x.bucket === 'Notice' && x.riskScore >= 75).length}</td></tr><tr><td>Disputes</td><td>${DATA.corporatePipeline.filter((x) => x.bucket === 'Dispute').length}</td><td>${DATA.corporatePipeline.filter((x) => x.bucket === 'Dispute' && x.riskScore >= 75).length}</td></tr><tr><td>Compliance</td><td>${DATA.corporatePipeline.filter((x) => x.bucket === 'Compliance').length}</td><td>${DATA.corporatePipeline.filter((x) => x.bucket === 'Compliance' && x.riskScore >= 75).length}</td></tr></tbody></table></div></article></section>`;
+    }
+    if (screen === 'leadExchange') {
+      return `<section class="module-grid two"><article class="table-card"><h3>Routing Buckets</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Bucket</th><th>Count</th><th>Action</th></tr></thead><tbody><tr><td>Assigned</td><td>${DATA.leadExchange.filter((x) => x.lane === 'assigned').length}</td><td>Monitor execution</td></tr><tr><td>Unassigned</td><td>${DATA.leadExchange.filter((x) => x.lane === 'unassigned').length}</td><td>Run matching engine</td></tr><tr><td>Escalated</td><td>${DATA.leadExchange.filter((x) => x.lane === 'escalated').length}</td><td>Owner + MUSKI escalation</td></tr></tbody></table></div></article><article class="table-card"><h3>Advocate/Partner Matching Logic UI</h3><p><strong>Matching fields:</strong> jurisdiction, specialization need, verification state, active capacity, partner readiness, commercial band.</p><p><strong>Jurisdiction-aware routing:</strong> Court and city compatibility must match before assignment.</p><p><strong>Monetization placeholder:</strong> Tiered commercial bands (A+, A, B) prepared for future revenue routing policy.</p></article></section><section class="table-card"><h3>Owner + MUSKI Integrated Signals</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>ID</th><th>Signal</th><th>Severity</th><th>Owner</th><th>Current Value</th><th>Status</th></tr></thead><tbody>${DATA.muskiOwnerSignals.map((signal) => `<tr><td>${signal.id}</td><td>${signal.signal}</td><td>${signal.severity}</td><td>${signal.owner}</td><td>${signal.value}</td><td>${signal.status}</td></tr>`).join('')}</tbody></table></div></section>`;
+    }
     if (screen === 'documents') {
       return `<section class="module-grid two"><article class="table-card"><h3>Case File Stack</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Case/Matter</th><th>Pleadings</th><th>Evidence</th><th>Notices</th><th>Contracts</th><th>Orders</th><th>Judgments/Verdicts</th><th>Appeal Papers</th><th>Internal Review Notes</th></tr></thead><tbody>${DATA.caseFileStack.map((row) => `<tr><td>${row.caseOrMatterId}</td><td>${row.pleadings}</td><td>${row.evidence}</td><td>${row.notices}</td><td>${row.contracts}</td><td>${row.orders}</td><td>${row.judgmentsVerdicts}</td><td>${row.appealPapers}</td><td>${row.internalReviewNotes}</td></tr>`).join('')}</tbody></table></div></article><article class="table-card"><h3>Procedural Checklist Engine</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Case/Matter</th><th>Filing</th><th>Document readiness</th><th>Hearing prep</th><th>Verdict review</th><th>Challenge/Appeal</th></tr></thead><tbody>${DATA.proceduralChecklist.map((row) => `<tr><td>${row.caseOrMatterId}</td><td>${row.filingChecklist}</td><td>${row.documentReadiness}</td><td>${row.hearingPreparation}</td><td>${row.verdictReview}</td><td>${row.challengeAppeal}</td></tr>`).join('')}</tbody></table></div></article></section>`;
     }
