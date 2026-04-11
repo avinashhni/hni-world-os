@@ -3,89 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Advocate Partner Network</title>
+  <title>Partner Network Operations</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/legalnomics/_shared/legalnomics-enterprise.css" />
 </head>
 <body>
-  <div class="shell-layout">
-    <aside class="shell-sidebar">
-      <div class="shell-brand-card">
-        <h2>AI LEGALNOMICS OS</h2>
-        <p>Advocate onboarding, partner verification, geo-discovery and legal growth layer.</p>
-      </div>
-
-      <div class="shell-nav-group">
-        <div class="shell-nav-title">CORE</div>
-        <a class="shell-nav-link" href="/legalnomics">Legalnomics Home</a>
-        <a class="shell-nav-link active" href="/legalnomics/partners">Partner Network</a>
-        <a class="shell-nav-link" href="/legalnomics/exchange">Lead Exchange</a>
-        <a class="shell-nav-link" href="/legalnomics/consult-live">Live Consultation</a>
-        <a class="shell-nav-link" href="/legalnomics/notary">Notary Network</a>
-        <a class="shell-nav-link" href="/legalnomics/system-flow">System Flow</a>
-        <a class="shell-nav-link" href="/legalnomics/global-ready">Global Ready</a>
-      </div>
-
-      <div class="shell-nav-group">
-        <div class="shell-nav-title">PARTNER MODULES</div>
-        <a class="shell-nav-link" href="/legalnomics/partners/registration">Registration</a>
-        <a class="shell-nav-link" href="/legalnomics/partners/verification">Verification</a>
-        <a class="shell-nav-link" href="/legalnomics/partners/staff-management">Staff Management</a>
-      </div>
-    </aside>
-
-    <main class="shell-main">
-      <div class="shell-topbar">
-        <div>
-          <h1>Advocate Partner Network</h1>
-          <p>HNI WORLD OS > Legalnomics > Advocate Partner Network</p>
-        </div>
-        <div class="shell-top-actions">
-          <span class="shell-chip">India First</span>
-          <span class="shell-chip">Pincode Ready</span>
-          <span class="shell-chip">Law Firm SaaS</span>
-        </div>
-      </div>
-
-      <section class="hero-card">
-        <h2>Advocate and Law Firm Partner Layer</h2>
-        <p>This layer is designed to onboard individual advocates, junior lawyers, law firms, notary professionals and legal service providers into the Legalnomics network. It supports lead discovery, specialization routing, geo-based visibility and SaaS account onboarding.</p>
-        <div class="hero-tags">
-          <span>Advocate Registration</span>
-          <span>Geo Discovery</span>
-          <span>Lead Buying</span>
-          <span>Verification</span>
-          <span>Junior Opportunity</span>
-          <span>Law Firm Staff Login</span>
-        </div>
-      </section>
-
-      <section class="stats-grid four">
-        <div class="stat-card"><h4>Registered Partners</h4><div class="stat-number">214</div><p>Individual advocates, firms and legal specialists onboarded.</p></div>
-        <div class="stat-card"><h4>Junior Advocates</h4><div class="stat-number">61</div><p>Eligible for starter consultation and entry-level case handling.</p></div>
-        <div class="stat-card"><h4>Verified Profiles</h4><div class="stat-number">143</div><p>Bar Council and document-verified professionals.</p></div>
-        <div class="stat-card"><h4>Geo Active Pins</h4><div class="stat-number">87</div><p>Pincode-mapped legal service visibility zones.</p></div>
-      </section>
-
-      <section class="module-grid three">
-        <div class="feature-card">
-          <h3>Partner Registration</h3>
-          <p>Onboard advocates, law firms, junior lawyers and specialty desks with structured professional profiles.</p>
-          <a class="primary-btn" href="/legalnomics/partners/registration">Open Registration</a>
-        </div>
-
-        <div class="feature-card">
-          <h3>Verification Layer</h3>
-          <p>Track Bar Council membership, practice proof, years of experience and professional qualification checks.</p>
-          <a class="primary-btn" href="/legalnomics/partners/verification">Open Verification</a>
-        </div>
-
-        <div class="feature-card">
-          <h3>Staff Management</h3>
-          <p>Allow law firms to create junior, associate, front desk and consultation staff login access.</p>
-          <a class="primary-btn" href="/legalnomics/partners/staff-management">Open Staff Layer</a>
-        </div>
-      </section>
-    </main>
-  </div>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script src="/legalnomics/_shared/legalnomics-enterprise.js"></script>
+  <script>
+    HNIWorldLegalnomicsEnterprise.mount({
+      currentRoute: '/legalnomics/partners/',
+      screen: 'partners',
+      title: 'Partner Network Operations',
+      heading: 'Partner Network + Verification Operations',
+      description: 'Law firm and independent advocate onboarding, verification pipeline controls, jurisdiction mapping, assignment history, and readiness tracking.',
+      tableTitle: 'Partner Network Master Registry',
+      breadcrumb: ['HNI WORLD OS', 'Legalnomics', 'Partner Network Operations']
+    });
+  </script>
 </body>
 </html>
