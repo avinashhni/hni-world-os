@@ -1,81 +1,26 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Legalnomics Intelligence Hub</title>
+  <title>Legal Intelligence Center</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/legalnomics/_shared/legalnomics-enterprise.css" />
 </head>
 <body>
-  <div class="shell-layout">
-    <aside class="shell-sidebar">
-      <div class="shell-brand-card">
-        <h2>AI LEGALNOMICS OS</h2>
-        <p>Master intelligence routing layer for legal demand, hearings, verdicts, challenge readiness and OS visibility.</p>
-      </div>
-
-      <div class="shell-nav-group">
-        <div class="shell-nav-title">INTELLIGENCE</div>
-        <a class="shell-nav-link" href="/legalnomics">Legalnomics Home</a>
-        <a class="shell-nav-link" href="/legalnomics/shared-core">Shared Core</a>
-        <a class="shell-nav-link active" href="/legalnomics/intelligence">Intelligence Hub</a>
-        <a class="shell-nav-link" href="/legalnomics/intelligence/review-engine">Review Engine</a>
-        <a class="shell-nav-link" href="/legalnomics/owner/dashboard">Owner Dashboard</a>
-        <a class="shell-nav-link" href="/legalnomics/continuity">Continuity Layer</a>
-      </div>
-
-      <div class="shell-nav-group">
-        <div class="shell-nav-title">CONNECTED MODULES</div>
-        <a class="shell-nav-link" href="/legalnomics/advocate">Advocate Workspace</a>
-        <a class="shell-nav-link" href="/legalnomics/corporate">Corporate Legal Ops</a>
-        <a class="shell-nav-link" href="/legalnomics/exchange">Lead Exchange</a>
-      </div>
-    </aside>
-
-    <main class="shell-main">
-      <div class="shell-topbar">
-        <div>
-          <h1>Legal Intelligence Hub</h1>
-          <p>HNI WORLD OS > Legalnomics > Intelligence Hub</p>
-        </div>
-        <div class="shell-top-actions">
-          <span class="shell-chip">Routing Ready</span>
-          <span class="shell-chip">AI Expandable</span>
-          <span class="shell-chip">Owner Sync</span>
-        </div>
-      </div>
-
-      <section class="hero-card">
-        <h2>Operational Legal Intelligence and Visibility Spine</h2>
-        <p>This hub is the master routing layer for legal workflow visibility across demand, hearings, order readiness, challenge queue, advocate productivity and commercial legal flow.</p>
-      </section>
-
-      <section class="stats-grid four">
-        <div class="stat-card"><h4>Open Signals</h4><div class="stat-value">58</div><p>Pending legal activity signals across modules.</p></div>
-        <div class="stat-card"><h4>Hearing Watch</h4><div class="stat-value">17</div><p>Upcoming hearings requiring workflow visibility.</p></div>
-        <div class="stat-card"><h4>Verdict Watch</h4><div class="stat-value">9</div><p>Orders or verdict-linked legal review items.</p></div>
-        <div class="stat-card"><h4>Challenge Queue</h4><div class="stat-value">6</div><p>Cases eligible for rebuttal or escalation review.</p></div>
-      </section>
-
-      <section class="module-grid three">
-        <div class="feature-card">
-          <h3>Hearing Intelligence</h3>
-          <p>Track next hearing dates, assigned advocate visibility and urgency routing.</p>
-        </div>
-        <div class="feature-card">
-          <h3>Verdict Review Signals</h3>
-          <p>Flag cases awaiting order copy review, legal summary and challenge suitability.</p>
-        </div>
-        <div class="feature-card">
-          <h3>Demand Intelligence</h3>
-          <p>Monitor incoming public demand, partner routing and monetization readiness.</p>
-        </div>
-        <div class="feature-card">
-          <h3>AI Review Engine</h3>
-          <p>Run risk scoring, precedent checks and verdict challenge recommendations.</p><a class="primary-btn" href="/legalnomics/intelligence/review-engine">Open Review Engine</a>
-        </div>
-      </section>
-    </main>
-  </div>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script src="/legalnomics/_shared/legalnomics-enterprise.js"></script>
+  <script>
+    HNIWorldLegalnomicsEnterprise.mount({
+      currentRoute: '/legalnomics/intelligence/',
+      screen: 'intelligence',
+      title: 'Legal Intelligence Center',
+      heading: 'Owner + Intelligence Dashboard',
+      description: 'Operational bottleneck detection, high-priority routing signals, and legal intelligence note center.',
+      tableTitle: 'Intelligence Signals',
+      breadcrumb: ['HNI WORLD OS', 'Legalnomics', 'Owner + Intelligence Dashboard']
+    });
+  </script>
 </body>
 </html>
