@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "module": "LEGALNOMICS",
+  "personas": [
+    {"id": "B2C", "permissions": ["case_create", "document_upload", "view_own_case"]},
+    {"id": "ADVOCATE", "permissions": ["case_manage", "hearing_update", "verdict_review", "challenge_draft"]},
+    {"id": "CORPORATE", "permissions": ["matter_assign", "compliance_approve", "budget_approve", "external_counsel_route"]},
+    {"id": "OWNER", "permissions": ["global_visibility", "high_risk_approve", "governance_override", "audit_export"]}
+  ],
+  "caseLifecycle": {
+    "states": [
+      "INTAKE_DRAFT",
+      "INTAKE_SUBMITTED",
+      "TRIAGE_AI_REVIEW",
+      "CONFLICT_CHECK",
+      "ADVOCATE_ASSIGNED",
+      "DOCUMENT_LOCKED",
+      "HEARING_PREP",
+      "HEARING_COMPLETED",
+      "VERDICT_RECORDED",
+      "CHALLENGE_DECISION",
+      "APPEAL_FILED",
+      "CASE_CLOSED"
+    ],
+    "transitions": [
+      {"from": "INTAKE_SUBMITTED", "to": "TRIAGE_AI_REVIEW", "actor": "SYSTEM"},
+      {"from": "TRIAGE_AI_REVIEW", "to": "CONFLICT_CHECK", "actor": "ADVOCATE"},
+      {"from": "VERDICT_RECORDED", "to": "CHALLENGE_DECISION", "actor": "ADVOCATE"},
+      {"from": "CHALLENGE_DECISION", "to": "APPEAL_FILED", "actor": "OWNER"},
+      {"from": "CHALLENGE_DECISION", "to": "CASE_CLOSED", "actor": "OWNER"}
+    ]
+  },
+  "approvalRouting": {
+    "levels": [
+      {"name": "L1_CASE", "approver": "ADVOCATE"},
+      {"name": "L2_COMMERCIAL", "approver": "CORPORATE"},
+      {"name": "L3_GOVERNANCE", "approver": "OWNER"}
+    ],
+    "autoEscalation": ["deadline_risk", "policy_conflict", "high_value_exposure"]
+  },
+  "documents": {
+    "vaultModes": ["LITIGATION", "CONTRACT", "EVIDENCE"],
+    "compliance": ["retention_policy", "chain_of_custody", "privacy_masking"],
+    "audit": ["created_by", "updated_by", "exported_by", "hash_checksum"]
+  },
+  "aiReviewHooks": [
+    "intake_risk_score",
+    "draft_contradiction_scan",
+    "hearing_outcome_prediction",
+    "verdict_challenge_recommendation"
+  ],
+  "muskiIntegration": {
+    "queue": "MUSKI_DECISION_QUEUE",
+    "events": ["LEGAL_APPROVAL_ESCALATED", "LEGAL_POLICY_EXCEPTION", "HIGH_RISK_CASE_REVIEW"],
+    "auditSink": "MUSKI_AUDIT_LEDGER"
+  }
+}
