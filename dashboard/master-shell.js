@@ -1,15 +1,15 @@
 (function () {
   const MODULE_ROUTES = [
-    { href: '/dashboard/', label: 'Owner Dashboard' },
-    { href: '/muski/', label: 'MUSKI AI' },
-    { href: '/legalnomics/', label: 'AI LEGALNOMICS OS' },
-    { href: '/airnomics/', label: 'AI AIRNOMICS OS' },
-    { href: '/edunomics/', label: 'AI EDUNOMICS OS' }
+    { href: '/dashboard/', label: 'Owner Dashboard', matchPrefixes: ['/dashboard/'] },
+    { href: '/muski/', label: 'MUSKI AI', matchPrefixes: ['/muski/'] },
+    { href: '/legalnomics/', label: 'AI LEGALNOMICS OS', matchPrefixes: ['/legalnomics/'] },
+    { href: '/airnomics/', label: 'AI AIRNOMICS OS', matchPrefixes: ['/airnomics/'] },
+    { href: '/edunomics/', label: 'AI EDUNOMICS OS', matchPrefixes: ['/edunomics/'] }
   ];
 
   function renderNav(currentRoute) {
     return MODULE_ROUTES.map((route) => {
-      const active = currentRoute === route.href ? 'active' : '';
+      const active = (route.matchPrefixes || [route.href]).some((prefix) => currentRoute.startsWith(prefix)) ? 'active' : '';
       return `<a class="shell-nav-link ${active}" href="${route.href}">${route.label}</a>`;
     }).join('');
   }

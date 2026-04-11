@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Counselling & CRM Layer - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/counselling-crm/',
+      title: 'Counselling & CRM Layer',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Counselling & CRM Layer'],
+      status: 'CRM Pipeline Active',
+      chips: ["Communication Cadence", "Counsellor Workspace", "Engagement Scoring"],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: `
+<section class='hero-card'><h2>Counselling & CRM Layer</h2><p>Communication intelligence layer managing counselling sessions, reminders, follow-ups, and lead nurturing until enrolment conversion.</p><div class='hero-tags'><span>Counsellor Portal</span><span>Engagement Timeline</span><span>Automation</span></div></section>
+<section class='content-grid two'>
+<article class='table-card'><h3>Workflows Implemented</h3><ul class='info-list'><li>Counsellor task board with callback and milestone obligations.</li><li>Outbound communication cadence via email, call, and messaging tracks.</li><li>Session notes and concern tagging to personalize recommendations.</li><li>No-response and disengagement triggers for retention reactivation.</li></ul></article>
+<article class='table-card'><h3>Testable</h3><ul class='info-list'><li>Navigate to CRM module and verify communication workflow definitions.</li><li>Validate visual consistency with enterprise shell components.</li><li>Check route-level back navigation to Edunomics home.</li></ul></article>
+</section>
+`
+    });
+  </script>
+</body>
+</html>

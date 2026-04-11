@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analytics & Reporting - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/analytics-reporting/',
+      title: 'Analytics & Reporting',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Analytics & Reporting'],
+      status: 'Analytics Stack Live',
+      chips: ["Conversion Intelligence", "Partner Analytics", "Forecasting"],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: `
+<section class='hero-card'><h2>Analytics & Reporting</h2><p>Executive intelligence layer surfacing conversion funnels, partner outcomes, compliance health, counsellor productivity, and growth forecasts.</p><div class='hero-tags'><span>Executive Reports</span><span>KPI Governance</span><span>Forecast Engine</span></div></section>
+<section class='content-grid two'>
+<article class='table-card'><h3>Workflows Implemented</h3><ul class='info-list'><li>Funnel analysis from enquiry to enrolment by geography and intake season.</li><li>Partner performance and admit-rate benchmarking reports.</li><li>Compliance exception analytics with ageing and closure rates.</li><li>MUSKI intelligence hooks for predictive demand and intervention signals.</li></ul></article>
+<article class='table-card'><h3>Testable</h3><ul class='info-list'><li>Open analytics module and inspect reporting workflow definitions.</li><li>Verify route and breadcrumb rendering under /edunomics/ namespace.</li><li>Confirm easy navigation to other Edunomics modules via sidebar.</li></ul></article>
+</section>
+`
+    });
+  </script>
+</body>
+</html>
