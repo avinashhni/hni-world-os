@@ -62,6 +62,20 @@
     }
   ];
 
+  function normalizeRoute(route, fallback = '/') {
+    if (!route || typeof route !== 'string') return fallback;
+    const [pathOnly, queryHash = ''] = route.split(/(?=[?#])/);
+    let normalized = pathOnly.trim();
+    if (!normalized.startsWith('/')) normalized = `/${normalized}`;
+    normalized = normalized.replace(/\/index\.html$/i, '/');
+    normalized = normalized.replace(/\/{2,}/g, '/');
+    if (!normalized.endsWith('/')) {
+      const lastSegment = normalized.split('/').filter(Boolean).pop() || '';
+      if (!lastSegment.includes('.')) normalized = `${normalized}/`;
+    }
+    return `${normalized}${queryHash}`;
+  }
+
   function readStorage(key, fallback) {
     try {
       return localStorage.getItem(key) || fallback;
@@ -135,12 +149,13 @@
   }
 
   function renderNav(currentRoute, rolePolicy) {
+    const normalizedCurrentRoute = normalizeRoute(currentRoute, '/');
     return NAV_SECTIONS.map((section) => {
       const links = section.items
         .filter((item) => rolePolicy.canAccess.includes(item.key))
         .map((route) => {
-          const active = (route.matchPrefixes || [route.href]).some((prefix) => currentRoute.startsWith(prefix)) ? 'active' : '';
-          const continuityHref = getContinuityRoute(route.family, route.href);
+          const active = (route.matchPrefixes || [route.href]).some((prefix) => normalizedCurrentRoute.startsWith(prefix)) ? 'active' : '';
+          const continuityHref = normalizeRoute(getContinuityRoute(route.family, route.href), route.href);
           return `<a class="shell-nav-link ${active}" data-family="${route.family}" href="${continuityHref}">${route.label}</a>`;
         })
         .join('');
@@ -148,6 +163,22 @@
       if (!links) return '';
       return `<div class="shell-nav-group"><div class="shell-nav-title">${section.title}</div>${links}</div>`;
     }).join('');
+  }
+
+  function renderBreadcrumbs(breadcrumb) {
+    if (!Array.isArray(breadcrumb) || breadcrumb.length === 0) return '';
+    const items = breadcrumb.map((entry) => (typeof entry === 'string' ? { label: entry } : entry));
+    return items
+      .map((entry, index) => {
+        const isLast = index === items.length - 1;
+        const safeLabel = entry.label || `Step ${index + 1}`;
+        const safeHref = entry.href ? normalizeRoute(entry.href, '/') : '';
+        const node = safeHref && !isLast
+          ? `<a class="shell-breadcrumb-link" href="${safeHref}">${safeLabel}</a>`
+          : `<span>${safeLabel}</span>`;
+        return `${node}${!isLast ? '<span class="shell-breadcrumb-sep">›</span>' : ''}`;
+      })
+      .join('');
   }
 
   function mount(config) {
@@ -158,12 +189,13 @@
     const rolePolicy = ROLE_PERMISSIONS[currentRole];
     const activeFamily = config.activeFamily || readStorage(STORAGE_KEYS.family, 'core');
     const identity = getIdentity(currentRole);
-    setRouteContinuity(config.currentRoute, activeFamily);
+    const currentRoute = normalizeRoute(config.currentRoute, '/');
+    setRouteContinuity(currentRoute, activeFamily);
 
-    const breadcrumb = (config.breadcrumb || []).join(' > ');
+    const breadcrumb = renderBreadcrumbs(config.breadcrumb || []);
     const chips = (config.chips || []).map((chip) => `<span class="shell-chip">${chip}</span>`).join('');
     const backLink = config.backHref
-      ? `<a class="shell-back-link" href="${config.backHref}">← ${config.backLabel || 'Back'}</a>`
+      ? `<a class="shell-back-link" href="${normalizeRoute(config.backHref, '/')}">← ${config.backLabel || 'Back'}</a>`
       : '';
 
     target.innerHTML = `
@@ -178,14 +210,14 @@
             </div>
             ${renderRoleSelector(currentRole)}
           </div>
-          ${renderNav(config.currentRoute || '/', rolePolicy)}
+          ${renderNav(currentRoute, rolePolicy)}
         </aside>
 
         <main class="shell-main">
           <header class="shell-topbar">
             <div>
               <h1>${config.title}</h1>
-              <p>${breadcrumb}</p>
+              <nav class="shell-breadcrumbs" aria-label="Breadcrumb">${breadcrumb}</nav>
             </div>
             <div class="shell-top-actions">
               ${config.status ? `<span class="shell-chip shell-chip-status">${config.status}</span>` : ''}
