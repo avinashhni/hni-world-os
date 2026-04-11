@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eligibility Engine - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/eligibility-engine/',
+      title: 'Eligibility Engine',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Eligibility Engine'],
+      status: 'Eligibility Rules Ready',
+      chips: ["Program Match", "Policy Rules", "Decision Explainability"],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: `
+<section class='hero-card'><h2>Eligibility Engine</h2><p>Decisioning engine for academic fit, budget fit, language score thresholds, and visa compatibility across destination countries and universities.</p><div class='hero-tags'><span>Rule Matrix</span><span>Explainable Decisions</span><span>Offer Probability</span></div></section>
+<section class='content-grid two'>
+<article class='table-card'><h3>Workflows Implemented</h3><ul class='info-list'><li>Academic qualification gate with country-specific requirements.</li><li>Financial readiness checks against tuition and cost-of-living bands.</li><li>Document sufficiency pre-check before admissions submission.</li><li>Reason-coded ineligible outcomes for counsellor remediation.</li></ul></article>
+<article class='table-card'><h3>Testable</h3><ul class='info-list'><li>Validate eligibility module route and shell state rendering.</li><li>Inspect rule categories and decision output narratives.</li><li>Ensure users can return to main Edunomics dashboard.</li></ul></article>
+</section>
+`
+    });
+  </script>
+</body>
+</html>

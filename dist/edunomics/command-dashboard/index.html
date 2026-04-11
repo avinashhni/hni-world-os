@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Education Command Dashboard - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/command-dashboard/',
+      title: 'Education Command Dashboard',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Education Command Dashboard'],
+      status: 'Global Education Command',
+      chips: ["Lifecycle Visibility", "Intervention Queue", "MUSKI Hooked"],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: `
+<section class='hero-card'><h2>Education Command Dashboard</h2><p>Mission control for global student operations with lead velocity, offer conversion, visa readiness, and partner SLA breaches in one live grid.</p><div class='hero-tags'><span>Command Grid</span><span>Escalations</span><span>Owner KPIs</span></div></section>
+<section class='content-grid two'>
+<article class='table-card'><h3>Operational Workflows Implemented</h3><ul class='info-list'><li>Daily command standup pipeline with automated critical-risk snapshot.</li><li>Lifecycle cohort tracking: Prospect → Applied → Offer → Visa → Enrolled.</li><li>MUSKI anomaly feed for low conversion, delayed docs, and partner bottlenecks.</li><li>Priority queue for high-value students requiring immediate intervention.</li></ul></article>
+<article class='table-card'><h3>What Is Testable</h3><ul class='info-list'><li>Open all Edunomics modules through command tiles.</li><li>Verify consistent shell navigation and breadcrumb routing.</li><li>Validate module KPI cards and workflow definition rendering.</li><li>Confirm back-navigation to AI EDUNOMICS OS root.</li></ul></article>
+</section>
+`
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document & Compliance Engine - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/document-compliance/',
+      title: 'Document & Compliance Engine',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Document & Compliance Engine'],
+      status: 'Compliance Enforcement On',
+      chips: ["Verification Workflow", "Audit Trail", "Risk Flags"],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: `
+<section class='hero-card'><h2>Document & Compliance Engine</h2><p>Compliance-first document vault governing collection, validation, verification, and policy auditability for admissions and visa readiness.</p><div class='hero-tags'><span>Document Vault</span><span>KYC + Academic Verify</span><span>Audit Layer</span></div></section>
+<section class='content-grid two'>
+<article class='table-card'><h3>Workflows Implemented</h3><ul class='info-list'><li>Document checklist by destination and institution requirement profile.</li><li>Verification states: pending, verified, rejected, re-upload required.</li><li>Fraud-risk and mismatch flags for identity and academic records.</li><li>Compliance trail anchors for regulatory audits and client disputes.</li></ul></article>
+<article class='table-card'><h3>Testable</h3><ul class='info-list'><li>Access document-compliance route from root module grid.</li><li>Review verification state workflow text and risk controls.</li><li>Check shell active-route behavior on sub-routes.</li></ul></article>
+</section>
+`
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Student Intake & Pipeline - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/student-pipeline/',
+      title: 'Student Intake & Pipeline',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Student Intake & Pipeline'],
+      status: 'Lifecycle Engine Active',
+      chips: ["Lead Intake", "Stage Automation", "Role Portals"],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: `
+<section class='hero-card'><h2>Student Intake & Pipeline</h2><p>Unified lifecycle engine that converts enquiries into enrolled students with stage transitions, ownership, and SLA timers.</p><div class='hero-tags'><span>Prospect Intake</span><span>Lifecycle Stages</span><span>Counsellor Assignment</span></div></section>
+<section class='content-grid two'>
+<article class='table-card'><h3>Workflows Implemented</h3><ul class='info-list'><li>Omni-channel intake capture: web form, partner upload, counsellor entry.</li><li>Stage transitions with mandatory completion criteria at each checkpoint.</li><li>Risk flagging for dropout probability and stale pipeline candidates.</li><li>Role-based access assumptions for owner, manager, counsellor, and operations.</li></ul></article>
+<article class='table-card'><h3>Testable</h3><ul class='info-list'><li>Navigate from root module to intake module and back.</li><li>Review pipeline stage definitions and lifecycle sequencing.</li><li>Validate rendered role-responsibility mappings in the content block.</li></ul></article>
+</section>
+`
+    });
+  </script>
+</body>
+</html>
