@@ -3,34 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI LEGALNOMICS OS</title>
+  <title>AI LEGALNOMICS OS · Command</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/legalnomics/_shared/legalnomics-enterprise.css" />
 </head>
 <body>
   <div id="app"></div>
   <script src="/dashboard/master-shell.js"></script>
+  <script src="/legalnomics/_shared/legalnomics-enterprise.js"></script>
   <script>
-    HNIWorldShell.mount({
+    HNIWorldLegalnomicsEnterprise.mount({
       currentRoute: '/legalnomics/',
-      activeFamily: 'legalnomics',
-      title: 'AI LEGALNOMICS OS',
-      breadcrumb: ['HNI WORLD OS', 'Legalnomics'],
-      status: 'Legalnomics Enterprise Stack Live',
-      chips: ['B2C', 'Advocate', 'Corporate', 'Owner', 'MUSKI Governance'],
-      backHref: '/dashboard/',
-      backLabel: 'Back to HNI WORLD OS',
-      contentHtml: `
-        <section class="hero-card"><h2>Unified Legal Command and Commercial Operating Layer</h2><p>Legalnomics covers B2C public entry, advocate operations, corporate legal workflows, lead exchange, and owner intelligence through a shared locked shell.</p><div class="hero-tags"><span>B2C Assist</span><span>Advocate Workspace</span><span>Corporate Ops</span></div></section>
-        <section class="module-grid three">
-          <article class="feature-card"><h3>Legal Command Center</h3><p>Cross-persona legal operations, approvals, AI review and governance.</p><a class="primary-btn" href="/legalnomics/command-center">Open Command Center</a></article>
-          <article class="feature-card"><h3>B2C Legal Assist</h3><p>Public notices, replies, consultations and notary support.</p><a class="primary-btn" href="/legalnomics/b2c">Open B2C</a></article>
-          <article class="feature-card"><h3>Advocate Workspace</h3><p>Cases, hearings, orders and challenge review operations.</p><a class="primary-btn" href="/legalnomics/advocate">Open Advocate</a></article>
-          <article class="feature-card"><h3>Corporate Legal Ops</h3><p>Compliance, disputes and counsel discovery command routes.</p><a class="primary-btn" href="/legalnomics/corporate">Open Corporate</a></article>
-          <article class="feature-card"><h3>Partner Network</h3><p>Onboarding, verification and staff management control.</p><a class="primary-btn" href="/legalnomics/partners">Open Partners</a></article>
-          <article class="feature-card"><h3>Lead Exchange</h3><p>Marketplace, matching and assignment monetization routes.</p><a class="primary-btn" href="/legalnomics/exchange">Open Exchange</a></article>
-          <article class="feature-card"><h3>Owner + Intelligence</h3><p>Hearings, verdicts, challenge queue and legal AI signals.</p><a class="primary-btn" href="/legalnomics/owner/dashboard">Open Owner Command</a></article>
-        </section>
-      `
+      screen: 'home',
+      title: 'AI LEGALNOMICS OS · Command',
+      heading: 'Legalnomics Home',
+      description: 'Real-time legal operations command summary, routing, capacity and workflow visibility for B2C, advocate, corporate, hearings, verdicts, challenge and owner intelligence.',
+      tableTitle: 'Command Summary',
+      breadcrumb: ['HNI WORLD OS', 'Legalnomics', 'Legalnomics Home']
     });
   </script>
 </body>
