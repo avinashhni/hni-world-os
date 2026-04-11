@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>MUSKI AI Core</title>
+  <title>MUSKI Enterprise Command Center</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
 </head>
 <body>
@@ -12,35 +12,82 @@
   <script>
     HNIWorldShell.mount({
       currentRoute: '/muski/',
-      title: 'MUSKI AI Core',
-      breadcrumb: ['HNI WORLD OS', 'Owner Dashboard', 'MUSKI AI'],
-      status: 'Master AI Brain Live',
-      chips: ['Orchestration Layer', 'Security Boundary'],
+      title: 'MUSKI Enterprise AI Command Center',
+      breadcrumb: ['HNI WORLD OS', 'Owner Dashboard', 'MUSKI Command Center'],
+      status: 'Governed Orchestration Active',
+      chips: ['Module AI → Manager AI → MUSKI', 'Approval & Escalation Mesh', 'Cross-OS Control Plane'],
       backHref: '/dashboard/',
       backLabel: 'Back to Owner Dashboard',
       contentHtml: `
         <section class="hero-card">
-          <h2>MUSKI - Multi-Universal Strategic Knowledge Intelligence</h2>
-          <p>MUSKI supervises module-level AI managers, reporting systems, role-safe escalation, and enterprise execution priorities under a controlled governance shell.</p>
-          <div class="hero-tags"><span>Master Brain</span><span>Manager Routing</span><span>Enterprise Command</span></div>
+          <h2>MUSKI Master Command & Governance Brain</h2>
+          <p>Enterprise shell for orchestration, governed execution, role-safe approvals, escalation routing, and cross-OS command visibility.</p>
+          <div class="hero-tags"><span>Global Command Center</span><span>Execution Monitor</span><span>Audit-First Governance</span></div>
         </section>
 
-        <section class="stats-grid four">
-          <article class="stat-card"><h4>Brain Status</h4><div class="stat-number">ACTIVE</div><p>Master orchestration shell online.</p></article>
-          <article class="stat-card"><h4>Manager AI Layer</h4><div class="stat-number">READY</div><p>Structured upward reporting model.</p></article>
-          <article class="stat-card"><h4>Security Boundary</h4><div class="stat-number">LOCKED</div><p>Protected internal logic exposure.</p></article>
-          <article class="stat-card"><h4>Next Expansion</h4><div class="stat-number">DEEPEN</div><p>Execution and module actions.</p></article>
+        <section class="muski-nav-grid" id="muskiNavGrid"></section>
+
+        <section class="stats-grid four" id="muskiKpiGrid"></section>
+
+        <section class="content-grid two">
+          <article class="info-card">
+            <h3>Task & Decision Queue</h3>
+            <p>Approval, rejection, and escalation decisions flow through governance policy before execution dispatch.</p>
+            <div class="button-row">
+              <button class="primary-btn" onclick="muskiCreateTask()">Create Command Task</button>
+              <button class="secondary-btn" onclick="muskiApproveFirstPending()">Approve First Pending</button>
+              <button class="secondary-btn" onclick="muskiEscalateFirstPending()">Escalate First Pending</button>
+            </div>
+            <div class="muski-table-wrap">
+              <table class="muski-table" id="taskQueueTable"></table>
+            </div>
+          </article>
+
+          <article class="info-card">
+            <h3>Agent Hierarchy Visualizer</h3>
+            <p>Module AI agents report to Manager AI nodes, which are governed and coordinated by MUSKI.</p>
+            <div id="agentHierarchy"></div>
+          </article>
         </section>
 
         <section class="content-grid two">
-          <article class="info-card"><h3>Command Intelligence</h3><ul class="info-list"><li>Owner-level OS supervision</li><li>Module intelligence review</li><li>Strategic execution prioritization</li><li>Cross-OS monitoring</li></ul></article>
-          <article class="info-card"><h3>Live MUSKI Actions</h3>
+          <article class="info-card">
+            <h3>Live Execution Monitor</h3>
+            <p>Shows in-flight command execution, queue depth, and outcome lifecycle across orchestration stages.</p>
             <div class="button-row">
-              <button class="primary-btn" onclick="runHealthCheck()">Health Check</button>
-              <button class="secondary-btn" onclick="createTask()">Create Task</button>
-              <button class="secondary-btn" onclick="dispatchTask()">Dispatch Task</button>
-              <button class="secondary-btn" onclick="viewLogs()">View Logs</button>
+              <button class="secondary-btn" onclick="muskiDispatchNext()">Dispatch Next Approved</button>
+              <button class="secondary-btn" onclick="muskiRefresh()">Refresh Monitor</button>
             </div>
+            <div class="muski-table-wrap">
+              <table class="muski-table" id="executionTable"></table>
+            </div>
+          </article>
+
+          <article class="info-card">
+            <h3>Cross-OS Telemetry View</h3>
+            <p>Operational health, alerts, and throughput from legalnomics, edunomics, airnomics, and core runtime domains.</p>
+            <div class="muski-table-wrap">
+              <table class="muski-table" id="telemetryTable"></table>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-grid two">
+          <article class="info-card">
+            <h3>Role-Based Control Panel</h3>
+            <p>Switch execution persona to preview command rights and visibility scope for each enterprise role.</p>
+            <div class="button-row" id="roleButtons"></div>
+            <p id="roleSummary" class="muski-muted"></p>
+          </article>
+
+          <article class="info-card">
+            <h3>Audit & Governance Logs</h3>
+            <p>Immutable-style event feed for approvals, escalations, dispatches, and policy checks.</p>
+            <div class="button-row">
+              <button class="secondary-btn" onclick="muskiRunSafetyCheck()">Run Safety Boundary Check</button>
+              <button class="secondary-btn" onclick="muskiClearLogs()">Clear Session Logs</button>
+            </div>
+            <div class="muski-log-list" id="auditLogList"></div>
           </article>
         </section>
       `
