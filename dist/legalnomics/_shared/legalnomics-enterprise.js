@@ -57,10 +57,12 @@
       { caseOrMatterId: 'corp-10', filingChecklist: '2/5', documentReadiness: '4/8', hearingPreparation: '1/7', verdictReview: '0/3', challengeAppeal: '0/4' }
     ],
     verdict: [
-      { id: 'ver-500', status: 'AI_review_pending', priority: 'high', owner: 'Review Cell 1', createdAt: now, updatedAt: now, tags: ['appeal_risk'], source: 'upload_portal', notes: 'Adverse order, likely challenge.', attachments: ['doc-2901'], caseId: 'case-302', recommendation: 'challenge_recommended', reviewer: 'Senior Counsel A' }
+      { id: 'ver-500', status: 'AI_review_pending', priority: 'high', owner: 'Review Cell 1', createdAt: now, updatedAt: now, tags: ['appeal_risk'], source: 'upload_portal', notes: 'Certified copy indicates material findings ignored cross-examination record.', attachments: ['doc-2901'], caseId: 'case-302', verdictUploadDate: '2026-04-10', reviewingAdvocate: 'Adv. V. Iyer', reviewer: 'Senior Counsel A', recommendation: 'challenge_recommended', urgencyClock: '72h', nextLegalAction: 'Finalize grounds and affidavit pack', challengeStatus: 'candidate_open', hearingHistory: 'hear-881: Arguments completed; order uploaded', keyDocuments: 'doc-2901, doc-2006', verdictSummary: 'Consumer bench imposed liability despite admitted limitation objection and missing ledger proof.', challengeGrounds: 'Limitation misapplied; evidence appreciation error; procedural non-consideration of rejoinder annexures.', proceduralRiskFlags: 'Service record ambiguity; certified annexure pagination mismatch.', deadlineUrgency: 'File challenge by 2026-04-14', ownerReviewNote: 'Escalate if grounds vetting slips beyond 2026-04-12.', escalatedTo: 'MUSKI + Owner Desk' },
+      { id: 'ver-501', status: 'owner_review_pending', priority: 'high', owner: 'Review Cell 2', createdAt: now, updatedAt: now, tags: ['limitation_watch'], source: 'court_upload', notes: 'Adverse labour order with immediate compliance exposure.', attachments: ['doc-4001'], caseId: 'corp-10', verdictUploadDate: '2026-04-11', reviewingAdvocate: 'Adv. R. Sharma', reviewer: 'Appellate Counsel Desk', recommendation: 'challenge_recommended', urgencyClock: '48h', nextLegalAction: 'Issue stay strategy note to owner command', challengeStatus: 'strategy_review', hearingHistory: 'hear-882: Adjourned with compliance direction', keyDocuments: 'doc-4001, doc-2002', verdictSummary: 'Labour court accepted claimant relief while overlooking payroll reconciliation evidence.', challengeGrounds: 'Natural justice breach on rebuttal window; misreading of payroll exhibits; non-speaking findings.', proceduralRiskFlags: 'Certified copy pending seal; witness statement notarization gap.', deadlineUrgency: 'Appeal preparation window closes 2026-04-13', ownerReviewNote: 'Owner approval required for emergency stay filing cost center release.', escalatedTo: 'Owner Desk' }
     ],
     challengeReview: [
-      { id: 'ch-700', status: 'legal_strategy_review', priority: 'high', owner: 'Appellate Desk', createdAt: now, updatedAt: now, tags: ['deadline_72h'], source: 'ver-500', notes: 'Grounds prepared. Await owner sign-off.', attachments: ['doc-2901'], verdictId: 'ver-500', filingDeadline: '2026-04-14', priorityScore: 94 }
+      { id: 'ch-700', status: 'legal_strategy_review', priority: 'high', owner: 'Appellate Desk', createdAt: now, updatedAt: now, tags: ['deadline_72h'], source: 'ver-500', notes: 'Grounds prepared. Await owner sign-off.', attachments: ['doc-2901'], verdictId: 'ver-500', challengeCandidate: 'case-302 liability reversal petition', recommendationStatus: 'recommended', appealStrategyReview: 'File limitation-first challenge with alternate merits grounds.', rebuttalPrep: 'Affidavit draft + indexed ledger annexures ready', filingDeadline: '2026-04-14', approveState: 'approve', escalationState: 'escalate_to_owner', deadlineUrgencyScore: 96, caseImportanceScore: 88, legalRiskScore: 91, potentialUpsideScore: 86, operationalReadinessScore: 83, priorityScore: 91 },
+      { id: 'ch-701', status: 'rebuttal_preparation', priority: 'high', owner: 'Corporate Appellate Cell', createdAt: now, updatedAt: now, tags: ['deadline_48h'], source: 'ver-501', notes: 'Need affidavit attestation before escalation gate.', attachments: ['doc-4001'], verdictId: 'ver-501', challengeCandidate: 'corp-10 compliance stay + appeal', recommendationStatus: 'conditional_recommend', appealStrategyReview: 'Dual track: immediate stay plus structured appeal memo.', rebuttalPrep: 'Payroll audit certificate pending legal stamping', filingDeadline: '2026-04-13', approveState: 'pending_owner_approval', escalationState: 'escalate_to_muski', deadlineUrgencyScore: 99, caseImportanceScore: 94, legalRiskScore: 89, potentialUpsideScore: 92, operationalReadinessScore: 71, priorityScore: 89 }
     ],
     legalAlert: [
       { id: 'al-1', type: 'hearing due', severity: 'high', linkedId: 'hear-880', owner: 'Adv. Sharma', dueDate: '2026-04-16', status: 'open' },
@@ -211,15 +213,39 @@
         ]
       };
     }
+    if (screen === 'verdicts') {
+      return {
+        columns: ['id', 'caseId', 'verdictUploadDate', 'reviewingAdvocate', 'reviewer', 'status', 'recommendation', 'urgencyClock', 'nextLegalAction', 'challengeStatus'],
+        rows: DATA.verdict,
+        summary: [
+          ['Uploaded verdicts', DATA.verdict.length],
+          ['Awaiting reviewer action', DATA.verdict.filter((x) => String(x.status).includes('pending')).length],
+          ['Challenge recommended', DATA.verdict.filter((x) => x.recommendation === 'challenge_recommended').length],
+          ['Urgent < 72h clocks', DATA.verdict.filter((x) => Number.parseInt(x.urgencyClock, 10) <= 72).length]
+        ]
+      };
+    }
+    if (screen === 'challenges') {
+      return {
+        columns: ['id', 'challengeCandidate', 'verdictId', 'recommendationStatus', 'appealStrategyReview', 'rebuttalPrep', 'filingDeadline', 'approveState', 'escalationState', 'priorityScore'],
+        rows: DATA.challengeReview,
+        summary: [
+          ['Challenge candidates', DATA.challengeReview.length],
+          ['Recommended/conditional', DATA.challengeReview.filter((x) => ['recommended', 'conditional_recommend'].includes(x.recommendationStatus)).length],
+          ['Deadlines <= 3 days', DATA.challengeReview.filter((x) => daysTo(x.filingDeadline) <= 3).length],
+          ['Escalated to owner/MUSKI', DATA.challengeReview.filter((x) => String(x.escalationState).includes('escalate')).length]
+        ]
+      };
+    }
     if (screen === 'owner') {
       return {
-        columns: ['id', 'type', 'severity', 'linkedId', 'owner', 'dueDate', 'status'],
-        rows: DATA.legalAlert,
+        columns: ['id', 'challengeCandidate', 'verdictId', 'owner', 'filingDeadline', 'priorityScore', 'recommendationStatus', 'approveState', 'escalationState'],
+        rows: DATA.challengeReview,
         summary: [
-          ['Documents pending verification', DATA.legalDocument.filter((x) => x.verificationState !== 'verified').length],
-          ['Hearings this week', DATA.hearing.filter((x) => daysTo(x.hearingDate) <= 7 && daysTo(x.hearingDate) >= 0).length],
-          ['Orders awaiting upload', DATA.caseFileStack.filter((x) => x.orders === 0).length],
-          ['Verdict backlog', DATA.verdict.filter((x) => String(x.status).includes('pending')).length]
+          ['Verdicts awaiting review', DATA.verdict.filter((x) => String(x.status).includes('pending')).length],
+          ['Challenge candidates', DATA.challengeReview.length],
+          ['Appeal deadlines <= 3 days', DATA.challengeReview.filter((x) => daysTo(x.filingDeadline) <= 3).length],
+          ['High-priority cases', DATA.challengeReview.filter((x) => x.priorityScore >= 90).length]
         ]
       };
     }
@@ -260,9 +286,16 @@
       const weekCount = DATA.hearing.filter((x) => daysTo(x.hearingDate) <= 7 && daysTo(x.hearingDate) >= 0).length;
       return `<section class="module-grid two"><article class="table-card"><h3>Hearing Timeline View</h3><div class="timeline-stack">${timeline.map((item) => `<div class="timeline-item"><div><strong>${item.hearingDate}</strong> · ${item.id}</div><div>${item.caseId !== '-' ? item.caseId : item.matterId} · ${item.advocate} · ${item.status}</div><div class="legal-mini">Next action: ${item.nextAction}</div></div>`).join('')}</div></article><article class="info-card"><h3>Calendar Summary Panel</h3><p><strong>This week:</strong> ${weekCount} hearings</p><p><strong>Order awaited:</strong> ${DATA.hearing.filter((x) => x.status === 'order-awaited').length}</p><p><strong>Next action tracker:</strong> ${DATA.hearing.filter((x) => x.nextAction).length} hearings with assigned action</p><p><strong>Jurisdictions active:</strong> ${new Set(DATA.hearing.map((x) => x.jurisdiction)).size}</p></article></section><section class="table-card"><h3>Checklist by Hearing Linkage</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Case/Matter</th><th>Filing</th><th>Document readiness</th><th>Hearing prep</th><th>Verdict review</th><th>Challenge/Appeal</th></tr></thead><tbody>${DATA.proceduralChecklist.map((row) => `<tr><td>${row.caseOrMatterId}</td><td>${row.filingChecklist}</td><td>${row.documentReadiness}</td><td>${row.hearingPreparation}</td><td>${row.verdictReview}</td><td>${row.challengeAppeal}</td></tr>`).join('')}</tbody></table></div></section>`;
     }
+    if (screen === 'verdicts') {
+      return `<section class="module-grid two"><article class="table-card"><h3>Case-to-Verdict Linkage Matrix</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Verdict</th><th>Case</th><th>Advocate</th><th>Hearing History</th><th>Key Documents</th><th>Challenge Status</th></tr></thead><tbody>${DATA.verdict.map((row) => `<tr><td>${row.id}</td><td>${row.caseId}</td><td>${row.reviewingAdvocate}</td><td>${row.hearingHistory}</td><td>${row.keyDocuments}</td><td>${row.challengeStatus}</td></tr>`).join('')}</tbody></table></div></article><article class="table-card"><h3>AI Review Panels</h3><div class="timeline-stack">${DATA.verdict.map((row) => `<div class="timeline-item"><div><strong>${row.id}</strong> · ${row.deadlineUrgency}</div><div><strong>Summary:</strong> ${row.verdictSummary}</div><div><strong>Potential challenge grounds:</strong> ${row.challengeGrounds}</div><div><strong>Procedural risk flags:</strong> ${row.proceduralRiskFlags}</div><div><strong>Owner review note:</strong> ${row.ownerReviewNote}</div><div class="legal-mini"><strong>Escalation:</strong> ${row.escalatedTo}</div></div>`).join('')}</div></article></section>`;
+    }
+    if (screen === 'challenges') {
+      return `<section class="module-grid two"><article class="table-card"><h3>Challenge Prioritization Grid</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Challenge ID</th><th>Deadline Urgency</th><th>Case Importance</th><th>Legal Risk</th><th>Potential Upside</th><th>Operational Readiness</th><th>Priority Score</th></tr></thead><tbody>${DATA.challengeReview.map((row) => `<tr><td>${row.id}</td><td>${row.deadlineUrgencyScore}</td><td>${row.caseImportanceScore}</td><td>${row.legalRiskScore}</td><td>${row.potentialUpsideScore}</td><td>${row.operationalReadinessScore}</td><td>${row.priorityScore}</td></tr>`).join('')}</tbody></table></div></article><article class="table-card"><h3>Appeal Command Actions</h3><div class="timeline-stack">${DATA.challengeReview.map((row) => `<div class="timeline-item"><div><strong>${row.id}</strong> · Filing deadline ${row.filingDeadline}</div><div><strong>Strategy review:</strong> ${row.appealStrategyReview}</div><div><strong>Rebuttal prep:</strong> ${row.rebuttalPrep}</div><div><strong>Action states:</strong> ${row.approveState} / reject / ${row.escalationState}</div></div>`).join('')}</div></article></section>`;
+    }
     if (screen === 'owner') {
       const overloaded = [{ advocate: 'Adv. Sharma', queue: 9 }, { advocate: 'Adv. Iyer', queue: 7 }, { advocate: 'Adv. Nair', queue: 6 }];
-      return `<section class="module-grid two"><article class="info-card"><h3>Owner Priority Visibility</h3><p>Documents pending verification: ${DATA.legalDocument.filter((x) => x.verificationState !== 'verified').length}</p><p>Hearings approaching this week: ${DATA.hearing.filter((x) => daysTo(x.hearingDate) <= 7 && daysTo(x.hearingDate) >= 0).length}</p><p>Orders awaiting upload: ${DATA.caseFileStack.filter((x) => x.orders === 0).length}</p><p>Verdict backlog: ${DATA.verdict.filter((x) => x.status.includes('pending')).length}</p><p>Challenge deadlines at risk: ${DATA.challengeReview.filter((x) => daysTo(x.filingDeadline) <= 3).length}</p></article><article class="table-card"><h3>Top Overloaded Advocates / Queues</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Advocate</th><th>Open Queue</th><th>State</th></tr></thead><tbody>${overloaded.map((x) => `<tr><td>${x.advocate}</td><td>${x.queue}</td><td>${x.queue >= 8 ? 'Critical' : 'Watch'}</td></tr>`).join('')}</tbody></table></div></article></section>`;
+      const escalatedCount = DATA.challengeReview.filter((x) => String(x.escalationState).includes('escalate')).length;
+      return `<section class="module-grid two"><article class="info-card"><h3>Owner Legal Strategy Command</h3><p>Verdicts awaiting review: ${DATA.verdict.filter((x) => x.status.includes('pending')).length}</p><p>Challenge candidates: ${DATA.challengeReview.length}</p><p>Appeal deadlines at risk (<=3 days): ${DATA.challengeReview.filter((x) => daysTo(x.filingDeadline) <= 3).length}</p><p>Escalated legal strategy items: ${escalatedCount}</p><p>High-priority cases (score >=90): ${DATA.challengeReview.filter((x) => x.priorityScore >= 90).length}</p></article><article class="table-card"><h3>Top Overloaded Advocates / Queues</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Advocate</th><th>Open Queue</th><th>State</th></tr></thead><tbody>${overloaded.map((x) => `<tr><td>${x.advocate}</td><td>${x.queue}</td><td>${x.queue >= 8 ? 'Critical' : 'Watch'}</td></tr>`).join('')}</tbody></table></div></article></section><section class="table-card"><h3>Escalated Verdict + Challenge Items</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Verdict</th><th>Challenge</th><th>Owner Note</th><th>Escalation Channel</th><th>Deadline</th></tr></thead><tbody>${DATA.challengeReview.map((row) => { const verdict = DATA.verdict.find((ver) => ver.id === row.verdictId) || {}; return `<tr><td>${row.verdictId}</td><td>${row.challengeCandidate}</td><td>${verdict.ownerReviewNote || '-'}</td><td>${row.escalationState}</td><td>${row.filingDeadline}</td></tr>`; }).join('')}</tbody></table></div></section>`;
     }
     return '';
   }
