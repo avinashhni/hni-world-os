@@ -135,6 +135,45 @@
     { label: 'Owner', href: '/legalnomics/owner/' }
   ];
 
+  const SCREEN_PRIMARY_ACTIONS = {
+    home: { label: 'Open Command Detail', enabled: true },
+    intake: { label: 'Open Intake Detail', enabled: true },
+    intelligence: { label: 'Open Intelligence Detail', enabled: true },
+    advocate: { label: 'Open Advocate Profile', enabled: true },
+    partners: { label: 'Open Partner Profile', enabled: true },
+    corporate: { label: 'Open Matter Detail', enabled: true },
+    leadExchange: { label: 'Open Routing Detail', enabled: true },
+    documents: { label: 'Open Document Detail', enabled: true },
+    hearings: { label: 'Open Hearing Detail', enabled: true },
+    verdicts: { label: 'Open Verdict Detail', enabled: true },
+    challenges: { label: 'Review Challenge Detail', enabled: true },
+    owner: { label: 'Open Escalation Detail', enabled: true }
+  };
+
+  function screenPrimaryAction(screen) {
+    return SCREEN_PRIMARY_ACTIONS[screen] || { label: 'Open Detail', enabled: false, reason: 'Action is pending backend integration.' };
+  }
+
+  function normalizeBreadcrumb(rawBreadcrumb, currentRoute) {
+    const fallback = [
+      { label: 'HNI WORLD OS', href: '/dashboard/' },
+      { label: 'Legalnomics', href: '/legalnomics/' }
+    ];
+    if (!Array.isArray(rawBreadcrumb) || rawBreadcrumb.length === 0) {
+      return [...fallback, { label: 'Screen' }];
+    }
+
+    const normalized = rawBreadcrumb.map((entry, index) => {
+      const value = typeof entry === 'string' ? { label: entry } : entry;
+      if (value.href) return value;
+      if (index === 0) return { ...value, href: '/dashboard/' };
+      if (index === 1) return { ...value, href: '/legalnomics/' };
+      if (index === rawBreadcrumb.length - 1) return value;
+      return { ...value, href: currentRoute || '/legalnomics/' };
+    });
+    return normalized;
+  }
+
   function badge(priority) { return `<span class="legal-badge ${String(priority || '').toLowerCase()}">${priority || 'NA'}</span>`; }
   function routeTabs(currentRoute) { return `<article class="table-card"><div class="route-tabs">${ROUTES.map((route) => `<a class="route-tab ${route.href === currentRoute ? 'active' : ''}" href="${route.href}">${route.label}</a>`).join('')}</div></article>`; }
   function daysTo(dateString) { return Math.ceil((new Date(dateString).getTime() - Date.now()) / 86400000); }
@@ -356,14 +395,16 @@
     const { rows, columns, summary } = screenConfig(config.screen);
     const state = { selectedId: null, search: '', status: 'all', priority: 'all', case: 'all', advocate: 'all', corporate: 'all', docType: 'all', segment: 'all', jurisdiction: 'all' };
 
+    const breadcrumb = normalizeBreadcrumb(config.breadcrumb, config.currentRoute);
+    const actionConfig = screenPrimaryAction(config.screen);
     HNIWorldShell.mount({
       currentRoute: config.currentRoute,
       activeFamily: 'legalnomics',
       title: config.title,
-      breadcrumb: config.breadcrumb,
+      breadcrumb,
       status: 'AI LEGALNOMICS OS · Operational',
       chips: ['Document Control', 'Evidence Stack', 'Hearing Calendar', 'Checklist Engine', 'Deadline Alerts', 'Owner Visibility'],
-      backHref: '/legalnomics/',
+      backHref: breadcrumb.length > 1 && breadcrumb[breadcrumb.length - 2].href ? breadcrumb[breadcrumb.length - 2].href : '/legalnomics/',
       backLabel: 'Back to Legalnomics',
       contentHtml: `${routeTabs(config.currentRoute)}<section class="hero-card"><h2>${config.heading}</h2><p>${config.description}</p></section><section class="legal-kpi">${summary.map((entry) => `<article class="stat-card"><h4>${entry[0]}</h4><div class="stat-number">${entry[1]}</div></article>`).join('')}</section>${screenToolbar(config.screen)}<section class="legal-grid"><article class="table-card"><h3>${config.tableTitle}</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr>${columns.map((col) => `<th>${col}</th>`).join('')}<th>Actions</th></tr></thead><tbody id="legalTableBody"></tbody></table></div></article><aside class="legal-detail" id="legalDetail"></aside></section>${additionalPanels(config.screen)}`
     });
@@ -403,10 +444,15 @@
       const body = document.getElementById('legalTableBody');
       const detail = document.getElementById('legalDetail');
       const records = filteredRows();
-      body.innerHTML = records.map((row) => `<tr data-row-id="${row.id}" class="${state.selectedId === row.id ? 'active' : ''}">${columns.map((col) => `<td>${col === 'priority' ? badge(row[col]) : (row[col] || '-')}</td>`).join('')}<td><div class="legal-action-row"><button class="secondary-btn">Open</button></div></td></tr>`).join('');
+      const emptyState = `<tr><td colspan="${columns.length + 1}"><div class="legal-empty-state"><strong>No records found</strong><p>Adjust filters or search query to continue.</p></div></td></tr>`;
+      body.innerHTML = records.length
+        ? records.map((row) => `<tr data-row-id="${row.id}" class="${state.selectedId === row.id ? 'active' : ''}">${columns.map((col) => `<td>${col === 'priority' ? badge(row[col]) : (row[col] || '-')}</td>`).join('')}<td><div class="legal-action-row"><button class="secondary-btn" ${actionConfig.enabled ? '' : `disabled title="${actionConfig.reason || 'Pending backend integration.'}"`}>${actionConfig.enabled ? actionConfig.label : 'Action Pending'}</button></div></td></tr>`).join('')
+        : emptyState;
       const selected = records.find((x) => x.id === state.selectedId) || records[0];
       state.selectedId = selected ? selected.id : null;
-      detail.innerHTML = selected ? `<article class="info-card"><h3>Detail · ${selected.id}</h3><p><strong>Status:</strong> ${selected.status || selected.verificationState}</p><p><strong>Owner:</strong> ${selected.owner || '-'}</p><p><strong>Priority:</strong> ${selected.priority || '-'}</p><p><strong>Notes:</strong> ${selected.notes || '-'}</p></article>` : '<article class="info-card"><h3>No Records</h3></article>';
+      detail.innerHTML = selected
+        ? `<article class="info-card"><h3>Detail · ${selected.id}</h3><p><strong>Status:</strong> ${selected.status || selected.verificationState}</p><p><strong>Owner:</strong> ${selected.owner || '-'}</p><p><strong>Priority:</strong> ${selected.priority || '-'}</p><p><strong>Notes:</strong> ${selected.notes || '-'}</p><p><strong>Primary Action:</strong> ${actionConfig.enabled ? actionConfig.label : 'Pending backend integration'}</p></article>`
+        : '<article class="info-card"><h3>No records selected</h3><p>Once data is available, choose a row to inspect details.</p></article>';
     }
 
     render();
