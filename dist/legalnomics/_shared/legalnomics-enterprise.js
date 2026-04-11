@@ -138,8 +138,39 @@
   function badge(priority) { return `<span class="legal-badge ${String(priority || '').toLowerCase()}">${priority || 'NA'}</span>`; }
   function routeTabs(currentRoute) { return `<article class="table-card"><div class="route-tabs">${ROUTES.map((route) => `<a class="route-tab ${route.href === currentRoute ? 'active' : ''}" href="${route.href}">${route.label}</a>`).join('')}</div></article>`; }
   function daysTo(dateString) { return Math.ceil((new Date(dateString).getTime() - Date.now()) / 86400000); }
+  function safeProductivity(productivity) { return Number.parseInt(String(productivity || '0').replace('%', ''), 10) || 0; }
+
+  function intelligenceRows() {
+    const partnerRows = [...DATA.partnerLawFirms, ...DATA.partnerIndependents];
+    return [
+      { id: 'intel-ops-bottleneck', metric: 'Operational bottlenecks', value: DATA.hearing.filter((x) => ['order-awaited', 'adjourned'].includes(x.status)).length, status: 'watch', owner: 'Hearing Command', segment: 'hearing', category: 'ops', jurisdiction: 'multi' },
+      { id: 'intel-demand-b2c', metric: 'Demand by category · B2C', value: DATA.legalCase.filter((x) => (x.tags || []).includes('b2c') || (x.tags || []).includes('consumer')).length, status: 'active', owner: 'Intake + B2C', segment: 'b2c', category: 'demand', jurisdiction: 'multi' },
+      { id: 'intel-demand-corporate', metric: 'Demand by category · Corporate', value: DATA.corporatePipeline.filter((x) => x.status === 'open').length, status: 'active', owner: 'Corporate Cell', segment: 'corporate', category: 'demand', jurisdiction: 'multi' },
+      { id: 'intel-hearing-status', metric: 'Hearings by status · order awaited + upcoming', value: DATA.hearing.filter((x) => ['order-awaited', 'upcoming'].includes(x.status)).length, status: 'critical', owner: 'Hearing Desk', segment: 'hearing', category: 'hearing_status', jurisdiction: 'multi' },
+      { id: 'intel-verdict-backlog', metric: 'Verdict backlog', value: DATA.verdict.filter((x) => String(x.status).includes('pending')).length, status: 'critical', owner: 'Verdict Review Cell', segment: 'verdict', category: 'backlog', jurisdiction: 'multi' },
+      { id: 'intel-challenge-load', metric: 'Challenge queue load', value: DATA.challengeReview.length, status: 'critical', owner: 'Challenge Command', segment: 'challenge', category: 'queue', jurisdiction: 'multi' },
+      { id: 'intel-adv-productivity', metric: 'Advocate productivity at risk (<80%)', value: DATA.advocateNetwork.filter((x) => x.activeLoad >= 7).length, status: 'watch', owner: 'Advocate Ops', segment: 'advocate', category: 'productivity', jurisdiction: 'multi' },
+      { id: 'intel-partner-productivity', metric: 'Partner productivity at risk (<80%)', value: partnerRows.filter((x) => safeProductivity(x.productivity) < 80).length, status: 'watch', owner: 'Partner Network', segment: 'advocate', category: 'productivity', jurisdiction: 'multi' },
+      { id: 'intel-corp-risk', metric: 'Corporate matter risk (score >= 75)', value: DATA.corporatePipeline.filter((x) => x.riskScore >= 75 && x.status === 'open').length, status: 'critical', owner: 'Corporate Risk Board', segment: 'corporate', category: 'risk', jurisdiction: 'multi' },
+      { id: 'intel-doc-backlog', metric: 'Documentation backlog (pending/deficient)', value: DATA.legalDocument.filter((x) => ['pending', 'deficient'].includes(x.verificationState)).length, status: 'watch', owner: 'Document Command', segment: 'b2c', category: 'backlog', jurisdiction: 'multi' }
+    ];
+  }
 
   function screenConfig(screen) {
+    if (screen === 'intelligence') {
+      return {
+        columns: ['id', 'metric', 'value', 'status', 'owner', 'segment', 'category', 'jurisdiction'],
+        rows: intelligenceRows(),
+        summary: [
+          ['Open matters', DATA.legalCase.filter((x) => x.status !== 'closed').length + DATA.corporatePipeline.filter((x) => x.status === 'open').length],
+          ['Upcoming hearings', DATA.hearing.filter((x) => x.status === 'upcoming').length],
+          ['Verdicts pending review', DATA.verdict.filter((x) => String(x.status).includes('pending')).length],
+          ['Challenges pending action', DATA.challengeReview.filter((x) => ['legal_strategy_review', 'rebuttal_preparation'].includes(x.status)).length],
+          ['Advocate active load', DATA.advocateNetwork.reduce((sum, row) => sum + row.activeLoad, 0)],
+          ['Corporate active matters', DATA.corporatePipeline.filter((x) => x.status === 'open').length]
+        ]
+      };
+    }
     if (screen === 'advocate') {
       return {
         columns: ['id', 'advocate', 'specialization', 'city', 'jurisdiction', 'verificationState', 'activeLoad', 'hearingLoad', 'verdictReviewLoad', 'assignedCases', 'availability'],
@@ -257,6 +288,9 @@
   }
 
   function screenToolbar(screen) {
+    if (screen === 'intelligence') {
+      return `<article class="table-card"><div class="legal-toolbar"><input id="legalSearch" class="legal-input" placeholder="Search intelligence metric / owner / segment" /><select id="statusFilter" class="legal-select"><option value="all">All Status</option></select><select id="filterSegment" class="legal-select"><option value="all">All Segments</option></select><select id="filterJurisdiction" class="legal-select"><option value="all">All Jurisdictions</option></select></div><p class="legal-mini">Segmentation: B2C · advocate · corporate · hearing · verdict · challenge · geography/jurisdiction.</p></article>`;
+    }
     if (screen === 'documents') {
       return `<article class="table-card"><div class="legal-toolbar"><input id="legalSearch" class="legal-input" placeholder="Search documents / case / matter" /><select id="filterCase" class="legal-select"><option value="all">All Cases</option></select><select id="filterAdvocate" class="legal-select"><option value="all">All Advocates</option></select><select id="filterCorporate" class="legal-select"><option value="all">All Corporates</option></select><select id="filterDocType" class="legal-select"><option value="all">All Document Types</option></select><select id="statusFilter" class="legal-select"><option value="all">All Verification</option></select></div><p class="legal-mini">Filters: case · advocate · corporate · document type · verification status.</p></article>`;
     }
@@ -264,6 +298,24 @@
   }
 
   function additionalPanels(screen) {
+    if (screen === 'intelligence') {
+      const openMatters = DATA.legalCase.filter((x) => x.status !== 'closed').length + DATA.corporatePipeline.filter((x) => x.status === 'open').length;
+      const verdictPending = DATA.verdict.filter((x) => String(x.status).includes('pending')).length;
+      const challengePending = DATA.challengeReview.filter((x) => ['legal_strategy_review', 'rebuttal_preparation'].includes(x.status)).length;
+      const overloadedQueues = [
+        { queue: 'Verdict review queue', load: verdictPending, state: verdictPending >= 2 ? 'Critical' : 'Watch', reason: 'Owner/senior counsel approvals pending' },
+        { queue: 'Challenge filing queue', load: challengePending, state: challengePending >= 2 ? 'Critical' : 'Watch', reason: 'Affidavit + strategy signoff bottleneck' },
+        { queue: 'Documentation remediation', load: DATA.legalDocument.filter((x) => ['pending', 'deficient'].includes(x.verificationState)).length, state: 'Watch', reason: 'Verification and compliance backlog' }
+      ];
+      const ownerFeed = [
+        { item: 'High-risk hearing items', detail: `${DATA.hearing.filter((x) => ['upcoming', 'order-awaited'].includes(x.status) && x.priority === 'high').length} hearings require command watch`, owner: 'Owner + MUSKI', urgency: 'High' },
+        { item: 'Verdict review delays', detail: `${verdictPending} verdicts remain in pending review states`, owner: 'Verdict Review Cell', urgency: 'High' },
+        { item: 'Challenge deadline alerts', detail: `${DATA.challengeReview.filter((x) => daysTo(x.filingDeadline) <= 3).length} challenge items due in <= 3 days`, owner: 'Challenge Command', urgency: 'Critical' },
+        { item: 'Partner verification delays', detail: `${[...DATA.partnerLawFirms, ...DATA.partnerIndependents].filter((x) => x.onboardingState === 'pending_review').length} partners waiting for verification gate`, owner: 'Partner Ops', urgency: 'Medium' },
+        { item: 'Corporate dispute spikes', detail: `${DATA.corporatePipeline.filter((x) => x.bucket === 'Dispute' && x.status === 'open').length} active disputes in corporate pipeline`, owner: 'Corporate Risk Board', urgency: 'High' }
+      ];
+      return `<section class="module-grid two"><article class="info-card"><h3>Daily Legal Operations Snapshot</h3><p><strong>Open matters:</strong> ${openMatters}</p><p><strong>Upcoming hearings:</strong> ${DATA.hearing.filter((x) => x.status === 'upcoming').length}</p><p><strong>Verdicts pending review:</strong> ${verdictPending}</p><p><strong>Challenges pending action:</strong> ${challengePending}</p><p><strong>Escalation hotspots:</strong> ${DATA.challengeReview.filter((x) => String(x.escalationState).includes('escalate')).length}</p></article><article class="table-card"><h3>Command Reporting · Priority Matters + Overloaded Queues</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Queue</th><th>Current Load</th><th>State</th><th>Delay Reason</th></tr></thead><tbody>${overloadedQueues.map((row) => `<tr><td>${row.queue}</td><td>${row.load}</td><td>${row.state}</td><td>${row.reason}</td></tr>`).join('')}</tbody></table></div><p class="legal-mini"><strong>Strategic risk areas:</strong> corporate disputes, verdict backlog, and challenge filing latency.</p></article></section><section class="table-card"><h3>Owner / MUSKI Event Feed</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Signal Block</th><th>Current Observation</th><th>Command Owner</th><th>Urgency</th></tr></thead><tbody>${ownerFeed.map((row) => `<tr><td>${row.item}</td><td>${row.detail}</td><td>${row.owner}</td><td>${row.urgency}</td></tr>`).join('')}</tbody></table></div></section>`;
+    }
     if (screen === 'advocate') {
       return `<section class="module-grid two"><article class="table-card"><h3>Case Assignment Summary</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>Advocate</th><th>Active Load</th><th>Hearing Load</th><th>Verdict Review</th><th>Capacity State</th></tr></thead><tbody>${DATA.advocateNetwork.map((row) => `<tr><td>${row.advocate}</td><td>${row.activeLoad}</td><td>${row.hearingLoad}</td><td>${row.verdictReviewLoad}</td><td>${row.availability}</td></tr>`).join('')}</tbody></table></div></article><article class="info-card"><h3>Availability + Capacity Indicator</h3><p><strong>Overloaded:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Overloaded').length}</p><p><strong>Near capacity:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Near Capacity').length}</p><p><strong>Available:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Available').length}</p><p><strong>Verification hold:</strong> ${DATA.advocateNetwork.filter((x) => x.availability === 'Verification Hold').length}</p></article></section><section class="table-card"><h3>Onboarding + Verification Flow States</h3><div class="legal-table-wrap"><table class="legal-table"><thead><tr><th>ID</th><th>Entity Type</th><th>Entity</th><th>Document Verification</th><th>Compliance Verification</th><th>Review State</th></tr></thead><tbody>${DATA.onboardingFlow.map((flow) => `<tr><td>${flow.id}</td><td>${flow.entityType}</td><td>${flow.entity}</td><td>${flow.documentVerification}</td><td>${flow.complianceVerification}</td><td>${flow.reviewState}</td></tr>`).join('')}</tbody></table></div></section>`;
     }
@@ -302,7 +354,7 @@
 
   function mount(config) {
     const { rows, columns, summary } = screenConfig(config.screen);
-    const state = { selectedId: null, search: '', status: 'all', priority: 'all', case: 'all', advocate: 'all', corporate: 'all', docType: 'all' };
+    const state = { selectedId: null, search: '', status: 'all', priority: 'all', case: 'all', advocate: 'all', corporate: 'all', docType: 'all', segment: 'all', jurisdiction: 'all' };
 
     HNIWorldShell.mount({
       currentRoute: config.currentRoute,
@@ -327,6 +379,8 @@
     seedFilter('filterAdvocate', Array.from(new Set(DATA.legalDocument.map((r) => r.advocateId))).filter(Boolean), 'All Advocates');
     seedFilter('filterCorporate', Array.from(new Set(DATA.legalDocument.map((r) => r.corporate))).filter(Boolean), 'All Corporates');
     seedFilter('filterDocType', Array.from(new Set(DATA.legalDocument.map((r) => r.docType))).filter(Boolean), 'All Document Types');
+    seedFilter('filterSegment', Array.from(new Set(rows.map((r) => r.segment))).filter(Boolean), 'All Segments');
+    seedFilter('filterJurisdiction', Array.from(new Set(rows.map((r) => r.jurisdiction))).filter(Boolean), 'All Jurisdictions');
 
     function filteredRows() {
       const q = state.search.trim().toLowerCase();
@@ -338,8 +392,10 @@
         const advMatch = state.advocate === 'all' || String(row.advocateId || '').toLowerCase() === state.advocate;
         const corpMatch = state.corporate === 'all' || String(row.corporate || '').toLowerCase() === state.corporate;
         const docTypeMatch = state.docType === 'all' || String(row.docType || '').toLowerCase() === state.docType;
+        const segmentMatch = state.segment === 'all' || String(row.segment || '').toLowerCase() === state.segment;
+        const jurisdictionMatch = state.jurisdiction === 'all' || String(row.jurisdiction || '').toLowerCase() === state.jurisdiction;
         const searchMatch = !q || columns.some((col) => String(row[col] || '').toLowerCase().includes(q));
-        return statusMatch && priorityMatch && caseMatch && advMatch && corpMatch && docTypeMatch && searchMatch;
+        return statusMatch && priorityMatch && caseMatch && advMatch && corpMatch && docTypeMatch && segmentMatch && jurisdictionMatch && searchMatch;
       });
     }
 
@@ -366,6 +422,8 @@
     bind('filterAdvocate', 'advocate');
     bind('filterCorporate', 'corporate');
     bind('filterDocType', 'docType');
+    bind('filterSegment', 'segment');
+    bind('filterJurisdiction', 'jurisdiction');
     document.body.addEventListener('click', (event) => {
       const row = event.target.closest('tr[data-row-id]');
       if (row) { state.selectedId = row.getAttribute('data-row-id'); render(); }
