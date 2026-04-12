@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matching Engine - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/edunomics/_shared/edunomics.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script type="module">
+    import { renderEdunomicsScreen } from '/edunomics/_shared/edunomics-app.js';
+
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/matching-engine/',
+      activeFamily: 'edunomics',
+      title: 'Student Matching Engine',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Matching Engine'],
+      status: 'Phase B University Intelligence Live',
+      chips: ['Country Filter', 'Budget Filter', 'Intake Filter', 'Score Filter'],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: renderEdunomicsScreen('matching-engine')
+    });
+  </script>
+</body>
+</html>
