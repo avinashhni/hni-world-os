@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Course Intelligence DB - AI EDUNOMICS OS</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/edunomics/_shared/edunomics.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script type="module">
+    import { renderEdunomicsScreen } from '/edunomics/_shared/edunomics-app.js';
+
+    HNIWorldShell.mount({
+      currentRoute: '/edunomics/courses/',
+      activeFamily: 'edunomics',
+      title: 'Course Intelligence Database',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Course Intelligence DB'],
+      status: 'Phase B University Intelligence Live',
+      chips: ['Course Catalog', 'Placement Metrics', 'Outcome Intelligence'],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: renderEdunomicsScreen('courses')
+    });
+  </script>
+</body>
+</html>

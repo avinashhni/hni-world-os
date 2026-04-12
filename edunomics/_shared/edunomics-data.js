@@ -21,8 +21,8 @@
 
 /** @typedef {BaseRecord & {leadSource:string;email:string;phone:string;interestCountries:string[];targetIntake:string}} StudentLead */
 /** @typedef {BaseRecord & {studentLeadId:string;fullName:string;profileCompleteness:number;academicScore:number;englishTest:string;counselorId:string}} StudentProfile */
-/** @typedef {BaseRecord & {name:string;country:string;rankingBand:string;visaSuccessRate:number;partnerTier:'strategic'|'growth'|'network'}} UniversityProfile */
-/** @typedef {BaseRecord & {universityId:string;name:string;level:string;tuitionUSD:number;durationMonths:number;intakeMonths:string[]}} CourseProfile */
+/** @typedef {BaseRecord & {name:string;country:string;ranking:number;intakeMonths:string[];admissionRequirements:string[];feesUSD:number;scholarships:string[];acceptanceRate:number;visaSuccessRatio:number;partnerTier:'strategic'|'growth'|'network'}} UniversityProfile */
+/** @typedef {BaseRecord & {universityId:string;name:string;degreeLevel:string;durationMonths:number;tuitionUSD:number;prerequisites:string[];careerOutcome:string;jobPlacementRate:number;intakeMonths:string[]}} CourseProfile */
 /** @typedef {BaseRecord & {studentId:string;universityId:string;courseId:string;deadline:string;documentsPending:number;offerType:'none'|'conditional'|'unconditional'}} Application */
 /** @typedef {BaseRecord & {applicationId:string;studentId:string;provider:string;amountUSD:number;coverage:'partial'|'full';decisionDate:string}} Scholarship */
 /** @typedef {BaseRecord & {studentId:string;applicationId:string;country:string;embassyDate:string;checklistProgress:number}} VisaCase */
@@ -30,7 +30,7 @@
 /** @typedef {BaseRecord & {name:string;capacity:number;activeStudents:number;conversionRate:number;specializations:string[]}} CounselorProfile */
 /** @typedef {BaseRecord & {name:string;institutionType:string;countries:string[];slaDays:number;successRate:number}} PartnerInstitution */
 /** @typedef {BaseRecord & {studentId:string;applicationId:string;currency:string;totalAmount:number;installments:number;dueSchedule:string[]}} PaymentPlan */
-/** @typedef {BaseRecord & {name:string;season:'spring'|'summer'|'fall'|'winter';year:number;applicationWindow:string;visaWindow:string}} IntakeCycle */
+/** @typedef {BaseRecord & {name:string;season:'spring'|'summer'|'fall'|'winter';year:number;applicationWindow:string;visaWindow:string;openUniversities:string[]}} IntakeCycle */
 /** @typedef {BaseRecord & {studentId:string;counselorId:string;mode:'virtual'|'in-person';result:'pass'|'pending'|'retry';scheduledAt:string}} InterviewRecord */
 /** @typedef {BaseRecord & {entityType:string;entityId:string;action:string;actor:string;notes:string}} ActivityLog */
 
@@ -83,12 +83,14 @@ export const mockDB = {
     { ...base('stu-002', 'active', 'application', 'counselor.rahul', 'medium', 'MEA', ['business']), studentLeadId: 'lead-002', fullName: 'Omar Nasser', profileCompleteness: 74, academicScore: 3.3, englishTest: 'TOEFL 99', counselorId: 'cnsl-002' }
   ],
   universityProfiles: [
-    { ...base('uni-001', 'active', 'onboarded', 'partners.team', 'medium', 'Canada', ['top-200']), name: 'Toronto Metropolitan University', country: 'Canada', rankingBand: 'Top 200', visaSuccessRate: 91, partnerTier: 'strategic' },
-    { ...base('uni-002', 'active', 'onboarded', 'partners.team', 'low', 'UK', ['research']), name: 'University of Leeds', country: 'UK', rankingBand: 'Top 150', visaSuccessRate: 89, partnerTier: 'growth' }
+    { ...base('uni-001', 'active', 'onboarded', 'partners.team', 'medium', 'Canada', ['top-200']), name: 'Toronto Metropolitan University', country: 'Canada', ranking: 137, intakeMonths: ['January', 'May', 'September'], admissionRequirements: ['Bachelor 3.0/4.0', 'IELTS 7.0', 'SOP + 2 LOR'], feesUSD: 32000, scholarships: ['International Merit Award', 'Women in AI Grant'], acceptanceRate: 43, visaSuccessRatio: 91, partnerTier: 'strategic' },
+    { ...base('uni-002', 'active', 'onboarded', 'partners.team', 'low', 'UK', ['research']), name: 'University of Leeds', country: 'UK', ranking: 82, intakeMonths: ['September', 'January'], admissionRequirements: ['Bachelor 2:1 equivalent', 'IELTS 6.5', 'Academic references'], feesUSD: 41000, scholarships: ['Leeds Global Masters Scholarship'], acceptanceRate: 52, visaSuccessRatio: 89, partnerTier: 'growth' },
+    { ...base('uni-003', 'active', 'onboarded', 'partners.team', 'medium', 'Australia', ['employability']), name: 'Deakin University', country: 'Australia', ranking: 197, intakeMonths: ['March', 'July', 'November'], admissionRequirements: ['Bachelor 60%', 'IELTS 6.5', 'CV'], feesUSD: 28500, scholarships: ['Vice Chancellor Scholarship', 'STEM Excellence Award'], acceptanceRate: 64, visaSuccessRatio: 87, partnerTier: 'network' }
   ],
   courseProfiles: [
-    { ...base('course-001', 'active', 'open', 'catalog.team', 'medium', 'Canada', ['ai']), universityId: 'uni-001', name: 'MSc Data Science', level: 'Masters', tuitionUSD: 32000, durationMonths: 24, intakeMonths: ['September', 'January'] },
-    { ...base('course-002', 'active', 'open', 'catalog.team', 'medium', 'UK', ['mba']), universityId: 'uni-002', name: 'MBA Global', level: 'Masters', tuitionUSD: 41000, durationMonths: 18, intakeMonths: ['September'] }
+    { ...base('course-001', 'active', 'open', 'catalog.team', 'medium', 'Canada', ['ai']), universityId: 'uni-001', name: 'MSc Data Science', degreeLevel: 'Masters', durationMonths: 24, tuitionUSD: 32000, prerequisites: ['STEM Bachelor', 'Python basics', 'IELTS 7.0'], careerOutcome: 'Data Scientist / ML Analyst', jobPlacementRate: 86, intakeMonths: ['September', 'January'] },
+    { ...base('course-002', 'active', 'open', 'catalog.team', 'medium', 'UK', ['mba']), universityId: 'uni-002', name: 'MBA Global', degreeLevel: 'Masters', durationMonths: 18, tuitionUSD: 41000, prerequisites: ['Bachelor degree', '2+ years work experience', 'IELTS 6.5'], careerOutcome: 'Business Consultant / Product Manager', jobPlacementRate: 82, intakeMonths: ['September'] },
+    { ...base('course-003', 'active', 'open', 'catalog.team', 'medium', 'Australia', ['cyber']), universityId: 'uni-003', name: 'Master of Cyber Security', degreeLevel: 'Masters', durationMonths: 24, tuitionUSD: 29800, prerequisites: ['CS/IT background', 'IELTS 6.5', 'Statement of purpose'], careerOutcome: 'Cybersecurity Engineer / SOC Analyst', jobPlacementRate: 84, intakeMonths: ['March', 'July', 'November'] }
   ],
   applications: [
     { ...base('app-001', 'active', 'submitted', 'counselor.rina', 'high', 'Canada', ['priority']), studentId: 'stu-001', universityId: 'uni-001', courseId: 'course-001', deadline: '2026-05-20', documentsPending: 2, offerType: 'conditional' },
@@ -115,7 +117,8 @@ export const mockDB = {
     { ...base('pay-001', 'active', 'scheduled', 'finance.ops', 'medium', 'APAC', ['emi']), studentId: 'stu-001', applicationId: 'app-001', currency: 'USD', totalAmount: 12000, installments: 4, dueSchedule: ['2026-05-10', '2026-06-10', '2026-07-10', '2026-08-10'] }
   ],
   intakeCycles: [
-    { ...base('intake-2026-fall', 'active', 'open', 'owner.office', 'critical', 'Global', ['primary']), name: 'Fall Main Intake', season: 'fall', year: 2026, applicationWindow: '2026-03-01 to 2026-07-15', visaWindow: '2026-06-01 to 2026-09-01' }
+    { ...base('intake-2026-fall', 'active', 'open', 'owner.office', 'critical', 'Global', ['primary']), name: 'Fall Main Intake', season: 'fall', year: 2026, applicationWindow: '2026-03-01 to 2026-07-15', visaWindow: '2026-06-01 to 2026-09-01', openUniversities: ['uni-001', 'uni-002'] },
+    { ...base('intake-2027-spring', 'active', 'planning', 'owner.office', 'high', 'Global', ['secondary']), name: 'Spring Strategic Intake', season: 'spring', year: 2027, applicationWindow: '2026-08-01 to 2026-11-30', visaWindow: '2026-11-01 to 2027-02-15', openUniversities: ['uni-001', 'uni-003'] }
   ],
   interviewRecords: [
     { ...base('iv-001', 'active', 'scheduled', 'counselor.rina', 'medium', 'APAC', ['mock']), studentId: 'stu-001', counselorId: 'cnsl-001', mode: 'virtual', result: 'pending', scheduledAt: '2026-04-22T10:00:00Z' }
