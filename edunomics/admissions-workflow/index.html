@@ -5,26 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Admissions Workflow - AI EDUNOMICS OS</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/edunomics/_shared/edunomics.css" />
 </head>
 <body>
   <div id="app"></div>
   <script src="/dashboard/master-shell.js"></script>
-  <script>
+  <script type="module">
+    import { renderEdunomicsScreen } from '/edunomics/_shared/edunomics-app.js';
+
     HNIWorldShell.mount({
       currentRoute: '/edunomics/admissions-workflow/',
+      activeFamily: 'edunomics',
       title: 'Admissions Workflow',
       breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Admissions Workflow'],
-      status: 'Admissions Operations Live',
-      chips: ["Application Builder", "Offer Tracking", "Deadline Control"],
+      status: 'Phase C Workflow Engine Live',
+      chips: ['Application Pipeline', 'Document Control', 'Validation'],
       backHref: '/edunomics/',
       backLabel: 'Back to AI EDUNOMICS OS',
-      contentHtml: `
-<section class='hero-card'><h2>Admissions Workflow</h2><p>End-to-end admissions pipeline from shortlist and application packaging to offer management, acceptance, and deposit confirmation.</p><div class='hero-tags'><span>Submission Control</span><span>Offer Management</span><span>Deadline Alerts</span></div></section>
-<section class='content-grid two'>
-<article class='table-card'><h3>Workflows Implemented</h3><ul class='info-list'><li>Application readiness checklist and required artifact validation.</li><li>University submission queue with priority and due-date ranking.</li><li>Offer letter tracking with acceptance and rejection branching.</li><li>Escalation path for pending applications breaching SLA windows.</li></ul></article>
-<article class='table-card'><h3>Testable</h3><ul class='info-list'><li>Route entry from Edunomics root tile.</li><li>Admissions workflow description render and checklist visibility.</li><li>Back-link and top-level shell navigation consistency.</li></ul></article>
-</section>
-`
+      contentHtml: renderEdunomicsScreen('admissions-workflow')
     });
   </script>
 </body>

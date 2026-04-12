@@ -36,10 +36,13 @@
 
 export const workflowStates = {
   studentJourney: ['lead', 'profile created', 'counseling', 'shortlist', 'application', 'offer', 'visa', 'enrolled'],
-  applicationFlow: ['draft', 'submitted', 'review', 'conditional offer', 'unconditional offer', 'accepted', 'enrolled'],
+  applicationFlow: ['draft', 'review', 'submit', 'university decision', 'offer', 'acceptance'],
   scholarshipFlow: ['eligible', 'applied', 'review', 'awarded', 'rejected'],
   visaFlow: ['docs pending', 'submitted', 'under review', 'approved', 'rejected']
 };
+
+export const applicationStageFlow = ['draft', 'review', 'submit', 'university decision', 'offer', 'acceptance'];
+export const requiredDocumentTypes = ['passport', 'transcripts', 'test scores', 'financials', 'SOP', 'LOR', 'visa docs'];
 
 const now = new Date().toISOString();
 
@@ -177,6 +180,34 @@ export const edunomicsAdapter = {
     };
     mockDB.applications.unshift(app);
     addLog('Application started', 'application', app.id, 'application.ops', `Draft created for ${studentId}`);
+    return app;
+  },
+  createApplication(studentId, universityId, courseId) {
+    return this.startApplication(studentId, universityId, courseId);
+  },
+  advanceApplicationStage(applicationId) {
+    const app = mockDB.applications.find((a) => a.id === applicationId);
+    if (!app) return null;
+    const currentStageIndex = applicationStageFlow.indexOf(app.stage);
+    const nextStage = applicationStageFlow[currentStageIndex + 1];
+    if (!nextStage) return app;
+    app.stage = nextStage;
+    if (nextStage === 'offer') app.offerType = 'conditional';
+    if (nextStage === 'acceptance') app.offerType = 'unconditional';
+    app.updatedAt = new Date().toISOString();
+    addLog('Application advanced', 'application', app.id, 'workflow.bot', `Moved to ${nextStage}`);
+    return app;
+  },
+  uploadOfferLetter(applicationId, filename = 'offer-letter.pdf') {
+    const app = mockDB.applications.find((a) => a.id === applicationId);
+    if (!app) return null;
+    app.attachments.push({
+      name: filename,
+      url: `/uploads/${applicationId}/${filename}`,
+      type: 'offer-letter'
+    });
+    app.updatedAt = new Date().toISOString();
+    addLog('Offer letter uploaded', 'application', app.id, 'counselor.ops', `Uploaded ${filename}`);
     return app;
   },
   submitDocuments(applicationId, docsSubmitted = 1) {
