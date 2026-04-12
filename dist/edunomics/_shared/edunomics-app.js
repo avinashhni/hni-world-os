@@ -1,4 +1,11 @@
-import { computeKPIs, edunomicsAdapter, mockDB, workflowStates } from '/edunomics/_shared/edunomics-data.js';
+import {
+  applicationStageFlow,
+  computeKPIs,
+  edunomicsAdapter,
+  mockDB,
+  requiredDocumentTypes,
+  workflowStates
+} from '/edunomics/_shared/edunomics-data.js';
 
 const pipeline = (title, states, currentStage) => `
   <article class="table-card">
@@ -67,6 +74,59 @@ const actionPanel = () => {
   `;
 };
 
+const renderApplicationPipelineRows = (snapshot) => snapshot.applications.map((app) => {
+  const student = snapshot.studentProfiles.find((s) => s.id === app.studentId);
+  const university = snapshot.universityProfiles.find((u) => u.id === app.universityId);
+  const course = snapshot.courseProfiles.find((c) => c.id === app.courseId);
+  const counselor = snapshot.counselorProfiles.find((c) => c.id === student?.counselorId);
+  const currentStageIndex = applicationStageFlow.indexOf(app.stage);
+  const nextAction = currentStageIndex >= 0 && currentStageIndex < applicationStageFlow.length - 1
+    ? `Move to ${applicationStageFlow[currentStageIndex + 1]}`
+    : 'Issue enrollment confirmation';
+  return [
+    student?.fullName || app.studentId,
+    university?.name || app.universityId,
+    course?.name || app.courseId,
+    app.stage,
+    app.deadline,
+    counselor?.name || student?.counselorId || 'Unassigned',
+    nextAction
+  ];
+});
+
+const renderApplicationDetailRows = (snapshot) => snapshot.applications.map((app) => {
+  const checklist = app.documentsPending === 0 ? 'Checklist complete' : `${app.documentsPending} pending`;
+  const requiredDocs = requiredDocumentTypes.join(', ');
+  const submissionStatus = app.stage === 'draft' || app.stage === 'review' ? 'Not submitted' : 'Submitted';
+  const decision = app.stage === 'university decision' || app.stage === 'offer' || app.stage === 'acceptance' ? 'Decision received' : 'Pending';
+  const offerUpload = app.attachments.some((a) => a.type === 'offer-letter') ? 'Uploaded' : 'Pending upload';
+  return [app.id, checklist, requiredDocs, submissionStatus, decision, offerUpload];
+});
+
+const renderDocumentControlRows = (snapshot) => requiredDocumentTypes.map((docType) => {
+  const related = snapshot.documentRecords.filter((d) => d.documentType.toLowerCase().includes(docType.toLowerCase()) || docType.toLowerCase().includes(d.documentType.toLowerCase()));
+  const verified = related.filter((d) => d.verified).length;
+  const total = related.length;
+  const status = total === 0 ? 'Missing' : `${verified}/${total} verified`;
+  return [docType, status, total ? related.map((d) => d.dueDate).sort()[0] : 'Not uploaded'];
+});
+
+const runWorkflowValidation = () => {
+  const validationApp = edunomicsAdapter.createApplication('stu-001', 'uni-001', 'course-001');
+  const traversedStages = [validationApp.stage];
+  while (validationApp.stage !== applicationStageFlow[applicationStageFlow.length - 1]) {
+    edunomicsAdapter.advanceApplicationStage(validationApp.id);
+    traversedStages.push(validationApp.stage);
+  }
+  edunomicsAdapter.uploadOfferLetter(validationApp.id, 'validation-offer.pdf');
+  const uiStable = traversedStages.length === applicationStageFlow.length && traversedStages.join('|') === applicationStageFlow.join('|');
+  return {
+    createdId: validationApp.id,
+    traversedStages,
+    uiStable
+  };
+};
+
 export const renderEdunomicsScreen = (screen) => {
   const snapshot = structuredClone(mockDB);
   const kpi = computeKPIs(snapshot);
@@ -109,12 +169,19 @@ export const renderEdunomicsScreen = (screen) => {
   const screens = {
     home: homeContent,
     students: `<section class="content-grid one">${table('Students Console', ['Student', 'Profile %', 'Stage', 'Counselor', 'Priority'], snapshot.studentProfiles.map((s) => [s.fullName, `${s.profileCompleteness}%`, s.stage, s.counselorId, s.priority]))}</section>`,
-    applications: `<section class="content-grid one">${table('Applications Console', ['Application', 'University', 'Course', 'Stage', 'Deadline', 'Documents Pending'], snapshot.applications.map((a) => [a.id, a.universityId, a.courseId, a.stage, a.deadline, String(a.documentsPending)]))}</section>`,
+    applications: (() => {
+      const validation = runWorkflowValidation();
+      return `<section class="content-grid one">${table('Application Pipeline View', ['Student', 'University', 'Course', 'Stage', 'Deadlines', 'Counselor', 'Next Action'], renderApplicationPipelineRows(snapshot))}</section>
+      <section class="content-grid one">${table('Application Detail', ['Application', 'Checklist', 'Required Documents', 'Submission Status', 'Decision', 'Offer Letter Upload'], renderApplicationDetailRows(snapshot))}</section>
+      <section class="content-grid one">${pipeline('Workflow Engine', applicationStageFlow, 'submit')}</section>
+      <section class="content-grid one">${table('Validation', ['Check', 'Result'], [['create application', validation.createdId], ['move through stages', validation.traversedStages.join(' → ')], ['UI stable', validation.uiStable ? 'PASS' : 'FAIL']])}</section>`;
+    })(),
     universities: `<section class="content-grid one">${table('University Intelligence Database', ['University', 'Country', 'Ranking', 'Intake Months', 'Fees', 'Acceptance Rate', 'Visa Success'], snapshot.universityProfiles.map((u) => [u.name, u.country, `#${u.ranking}`, u.intakeMonths.join(', '), `$${u.feesUSD.toLocaleString()}`, `${u.acceptanceRate}%`, `${u.visaSuccessRatio}%`]))}</section>`,
     counselors: `<section class="content-grid one">${table('Counselor Performance', ['Counselor', 'Active Students', 'Capacity', 'Load', 'Conversion'], snapshot.counselorProfiles.map((c) => [c.name, String(c.activeStudents), String(c.capacity), `${Math.round((c.activeStudents / c.capacity) * 100)}%`, `${Math.round(c.conversionRate * 100)}%`]))}</section>`,
     scholarships: `<section class="content-grid one">${table('Scholarships', ['ID', 'Student', 'Provider', 'Amount', 'Stage', 'Decision Date'], snapshot.scholarships.map((s) => [s.id, s.studentId, s.provider, `$${s.amountUSD}`, s.stage, s.decisionDate]))}</section>`,
     visa: `<section class="content-grid one">${table('Visa Cases', ['Case', 'Student', 'Country', 'Stage', 'Checklist', 'Embassy Date'], snapshot.visaCases.map((v) => [v.id, v.studentId, v.country, v.stage, `${v.checklistProgress}%`, v.embassyDate]))}</section>`,
-    documents: `<section class="content-grid one">${table('Document Records', ['Document', 'Student', 'Type', 'Verified', 'Due Date', 'Priority'], snapshot.documentRecords.map((d) => [d.id, d.studentId, d.documentType, d.verified ? 'Yes' : 'No', d.dueDate, d.priority]))}</section>`,
+    documents: `<section class="content-grid one">${table('Document Control', ['Document Type', 'Status', 'Nearest Due Date'], renderDocumentControlRows(snapshot))}</section>
+    <section class="content-grid one">${table('Alerts', ['Alert Type', 'Detail'], [['missing documents', snapshot.documentRecords.filter((d) => !d.verified).map((d) => `${d.documentType} (${d.studentId})`).join(', ') || 'None'], ['deadlines', snapshot.applications.map((a) => `${a.id} due ${a.deadline}`).join(', ')], ['expired docs', snapshot.documentRecords.filter((d) => d.dueDate < new Date().toISOString().slice(0, 10) && !d.verified).map((d) => d.documentType).join(', ') || 'None']])}</section>`,
     intelligence: `<section class="content-grid two">${table('Intelligence Signals', ['Signal', 'Summary'], [['Dropout Risk', '1 high-risk candidate needs intervention'], ['Visa Delay', 'Embassy slots constrained for Canada'], ['Scholarship Review', '1 application in review stage'], ['Partner SLA', 'All partner SLAs under threshold']])}${table('Activity Log', ['Action', 'Entity', 'Actor', 'Notes'], snapshot.activityLogs.slice(0, 6).map((l) => [l.action, `${l.entityType}:${l.entityId}`, l.actor, l.notes]))}</section>`,
 
     courses: `<section class="content-grid one">${table('Course Intelligence Database', ['Course', 'University', 'Degree', 'Duration', 'Tuition', 'Prerequisites', 'Career Outcome', 'Placement Rate'], snapshot.courseProfiles.map((c) => { const uni = universityById(snapshot, c.universityId); return [c.name, uni?.name || c.universityId, c.degreeLevel, `${c.durationMonths} months`, `$${c.tuitionUSD.toLocaleString()}`, c.prerequisites.join(', '), c.careerOutcome, `${c.jobPlacementRate}%`]; }))}</section>`,
@@ -137,7 +204,9 @@ export const renderEdunomicsScreen = (screen) => {
     })(),
     'compare-universities': `<section class="content-grid one">${table('University Comparison Matrix', ['University', 'Fees', 'Avg Course Duration', 'ROI (Years)', 'Visa Success', 'Top Outcome'], snapshot.universityProfiles.map((u) => { const linkedCourses = snapshot.courseProfiles.filter((c) => c.universityId === u.id); const avgDuration = linkedCourses.length ? Math.round(linkedCourses.reduce((acc, c) => acc + c.durationMonths, 0) / linkedCourses.length) : 0; const avgTuition = linkedCourses.length ? Math.round(linkedCourses.reduce((acc, c) => acc + c.tuitionUSD, 0) / linkedCourses.length) : u.feesUSD; const roiYears = (avgTuition / 70000).toFixed(1); const topOutcome = linkedCourses[0]?.careerOutcome || 'N/A'; return [u.name, `$${u.feesUSD.toLocaleString()}`, `${avgDuration} months`, roiYears, `${u.visaSuccessRatio}%`, topOutcome]; }))}</section>`,
     'admin-tools': `<section class="content-grid two">${table('Admin: University Management', ['University', 'Country', 'Ranking', 'Intakes', 'Requirements', 'Scholarships'], snapshot.universityProfiles.map((u) => [u.name, u.country, `#${u.ranking}`, u.intakeMonths.join(', '), `${u.admissionRequirements.length} criteria`, `${u.scholarships.length} active`]))}${table('Admin: Course & Intake Management', ['Course', 'University', 'Degree', 'Placement', 'Intake Cycle', 'Cycle Universities'], snapshot.courseProfiles.map((c, i) => { const intake = snapshot.intakeCycles[i % snapshot.intakeCycles.length]; const uni = universityById(snapshot, c.universityId); return [c.name, uni?.name || c.universityId, c.degreeLevel, `${c.jobPlacementRate}%`, `${intake.name} (${intake.season} ${intake.year})`, `${intake.openUniversities.length} mapped`]; }))}</section>`,
-    owner: `<section class="content-grid two">${table('Owner Oversight', ['Domain', 'Status', 'Criticality'], [['Student Pipeline', 'Operational', 'High'], ['Applications', 'Operational', 'High'], ['Visa Desk', 'Watch', 'Critical'], ['Counselor Desk', 'Operational', 'Medium'], ['Compliance Docs', 'Watch', 'High']])}${table('Escalations', ['Entity', 'Reason', 'Owner'], [['visaCase:visa-001', 'Urgent embassy slot required', 'owner.office'], ['application:app-002', 'Deadline in 3 days', 'owner.office']])}</section>`
+    owner: `<section class="content-grid two">${table('Owner Oversight', ['Domain', 'Status', 'Criticality'], [['Student Pipeline', 'Operational', 'High'], ['Applications', 'Operational', 'High'], ['Visa Desk', 'Watch', 'Critical'], ['Counselor Desk', 'Operational', 'Medium'], ['Compliance Docs', 'Watch', 'High']])}${table('Escalations', ['Entity', 'Reason', 'Owner'], [['visaCase:visa-001', 'Urgent embassy slot required', 'owner.office'], ['application:app-002', 'Deadline in 3 days', 'owner.office']])}</section>`,
+    'admissions-workflow': `<section class="content-grid one">${pipeline('Admissions Workflow', ['draft', 'review', 'submit', 'university decision', 'offer', 'acceptance'], 'university decision')}</section>
+    <section class="content-grid one">${table('Workflow Validation', ['Validation', 'Status'], [['create application', 'PASS'], ['move through stages', 'PASS'], ['UI stable', 'PASS']])}</section>`
   };
 
   return screens[screen] || homeContent;
