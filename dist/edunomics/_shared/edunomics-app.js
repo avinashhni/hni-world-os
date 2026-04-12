@@ -111,6 +111,76 @@ const renderDocumentControlRows = (snapshot) => requiredDocumentTypes.map((docTy
   return [docType, status, total ? related.map((d) => d.dueDate).sort()[0] : 'Not uploaded'];
 });
 
+const visaChecklistStages = ['checklist', 'documents', 'appointment', 'biometrics', 'status', 'approval'];
+
+const renderVisaTrackerRows = (snapshot) => snapshot.visaCases.map((visaCase) => {
+  const student = snapshot.studentProfiles.find((s) => s.id === visaCase.studentId);
+  const docPending = snapshot.documentRecords.filter((doc) => doc.applicationId === visaCase.applicationId && !doc.verified).length;
+  const progressBand = visaCase.checklistProgress >= 90 ? 'approval'
+    : visaCase.checklistProgress >= 75 ? 'status'
+      : visaCase.checklistProgress >= 55 ? 'biometrics'
+        : visaCase.checklistProgress >= 35 ? 'appointment'
+          : visaCase.checklistProgress >= 15 ? 'documents'
+            : 'checklist';
+  return [
+    visaCase.id,
+    student?.fullName || visaCase.studentId,
+    progressBand,
+    docPending === 0 ? 'Complete' : `${docPending} pending`,
+    visaCase.embassyDate,
+    `${visaCase.checklistProgress}%`
+  ];
+});
+
+const renderInterviewRows = (snapshot) => snapshot.interviewRecords.map((interview) => {
+  const student = snapshot.studentProfiles.find((s) => s.id === interview.studentId);
+  const mockPrep = interview.tags.includes('mock') ? 'Mock pack ready' : 'Prep pending';
+  const feedback = interview.result === 'pass' ? 'Strong confidence, crisp answers'
+    : interview.result === 'retry' ? 'Needs financial justification clarity'
+      : 'Awaiting panel feedback';
+  const result = interview.result === 'pass' ? 'Pass'
+    : interview.result === 'retry' ? 'Retry required'
+      : 'Pending';
+  return [
+    student?.fullName || interview.studentId,
+    new Date(interview.scheduledAt).toISOString().slice(0, 10),
+    mockPrep,
+    feedback,
+    result
+  ];
+});
+
+const renderEnrollmentRows = (snapshot) => snapshot.applications.map((application) => {
+  const student = snapshot.studentProfiles.find((s) => s.id === application.studentId);
+  const tuitionPlan = snapshot.paymentPlans.find((plan) => plan.applicationId === application.id);
+  const tuitionPaid = tuitionPlan ? `${Math.round((1 / tuitionPlan.installments) * 100)}% paid` : 'Not started';
+  const casOrI20 = application.offerType === 'unconditional' ? 'Issued' : application.offerType === 'conditional' ? 'In process' : 'Pending';
+  const accommodation = application.stage === 'acceptance' ? 'Reserved' : 'Search in progress';
+  const travelStatus = application.stage === 'acceptance' && casOrI20 === 'Issued' ? 'Ready to ticket' : 'Awaiting visa approval';
+  return [student?.fullName || application.studentId, tuitionPaid, casOrI20, accommodation, travelStatus];
+});
+
+const renderVisaAlertsRows = (snapshot) => {
+  const visaDeadlines = snapshot.documentRecords
+    .filter((doc) => !doc.verified)
+    .map((doc) => `${doc.documentType} due ${doc.dueDate}`);
+  const interviewDates = snapshot.interviewRecords.map((record) => `Interview on ${new Date(record.scheduledAt).toISOString().slice(0, 10)}`);
+  const enrollmentCutoffs = snapshot.applications.map((app) => `Enrollment cutoff for ${app.id}: ${app.deadline}`);
+  return [
+    ['Visa Deadlines', visaDeadlines.join(', ') || 'No pending visa deadlines'],
+    ['Interview Dates', interviewDates.join(', ') || 'No interviews scheduled'],
+    ['Enrollment Cutoffs', enrollmentCutoffs.join(', ') || 'No enrollment cutoffs']
+  ];
+};
+
+const runVisaEnrollmentValidation = (snapshot) => {
+  const visaRows = renderVisaTrackerRows(snapshot);
+  const enrollmentRows = renderEnrollmentRows(snapshot);
+  const visaFlowWorks = visaRows.length > 0 && visaRows.every((row) => visaChecklistStages.includes(row[2]));
+  const enrollmentVisible = enrollmentRows.length > 0 && enrollmentRows.every((row) => row[1] && row[2] && row[3] && row[4]);
+  return { visaFlowWorks, enrollmentVisible };
+};
+
 const runWorkflowValidation = () => {
   const validationApp = edunomicsAdapter.createApplication('stu-001', 'uni-001', 'course-001');
   const traversedStages = [validationApp.stage];
@@ -179,7 +249,15 @@ export const renderEdunomicsScreen = (screen) => {
     universities: `<section class="content-grid one">${table('University Intelligence Database', ['University', 'Country', 'Ranking', 'Intake Months', 'Fees', 'Acceptance Rate', 'Visa Success'], snapshot.universityProfiles.map((u) => [u.name, u.country, `#${u.ranking}`, u.intakeMonths.join(', '), `$${u.feesUSD.toLocaleString()}`, `${u.acceptanceRate}%`, `${u.visaSuccessRatio}%`]))}</section>`,
     counselors: `<section class="content-grid one">${table('Counselor Performance', ['Counselor', 'Active Students', 'Capacity', 'Load', 'Conversion'], snapshot.counselorProfiles.map((c) => [c.name, String(c.activeStudents), String(c.capacity), `${Math.round((c.activeStudents / c.capacity) * 100)}%`, `${Math.round(c.conversionRate * 100)}%`]))}</section>`,
     scholarships: `<section class="content-grid one">${table('Scholarships', ['ID', 'Student', 'Provider', 'Amount', 'Stage', 'Decision Date'], snapshot.scholarships.map((s) => [s.id, s.studentId, s.provider, `$${s.amountUSD}`, s.stage, s.decisionDate]))}</section>`,
-    visa: `<section class="content-grid one">${table('Visa Cases', ['Case', 'Student', 'Country', 'Stage', 'Checklist', 'Embassy Date'], snapshot.visaCases.map((v) => [v.id, v.studentId, v.country, v.stage, `${v.checklistProgress}%`, v.embassyDate]))}</section>`,
+    visa: (() => {
+      const validation = runVisaEnrollmentValidation(snapshot);
+      return `<section class="content-grid one">${pipeline('Visa Tracker Flow', visaChecklistStages, 'documents')}</section>
+      <section class="content-grid one">${table('Visa Tracker', ['Case', 'Student', 'Status', 'Documents', 'Appointment', 'Progress'], renderVisaTrackerRows(snapshot))}</section>
+      <section class="content-grid one">${table('Interview Management', ['Student', 'Interview Schedule', 'Mock Interview Prep', 'Feedback', 'Result'], renderInterviewRows(snapshot))}</section>
+      <section class="content-grid one">${table('Enrollment Tracker', ['Student', 'Tuition Paid', 'CAS / I-20', 'Accommodation', 'Travel Status'], renderEnrollmentRows(snapshot))}</section>
+      <section class="content-grid one">${table('Alerts', ['Alert Type', 'Detail'], renderVisaAlertsRows(snapshot))}</section>
+      <section class="content-grid one">${table('Validation', ['Check', 'Result'], [['visa flow works', validation.visaFlowWorks ? 'PASS' : 'FAIL'], ['enrollment visible', validation.enrollmentVisible ? 'PASS' : 'FAIL']])}</section>`;
+    })(),
     documents: `<section class="content-grid one">${table('Document Control', ['Document Type', 'Status', 'Nearest Due Date'], renderDocumentControlRows(snapshot))}</section>
     <section class="content-grid one">${table('Alerts', ['Alert Type', 'Detail'], [['missing documents', snapshot.documentRecords.filter((d) => !d.verified).map((d) => `${d.documentType} (${d.studentId})`).join(', ') || 'None'], ['deadlines', snapshot.applications.map((a) => `${a.id} due ${a.deadline}`).join(', ')], ['expired docs', snapshot.documentRecords.filter((d) => d.dueDate < new Date().toISOString().slice(0, 10) && !d.verified).map((d) => d.documentType).join(', ') || 'None']])}</section>`,
     intelligence: `<section class="content-grid two">${table('Intelligence Signals', ['Signal', 'Summary'], [['Dropout Risk', '1 high-risk candidate needs intervention'], ['Visa Delay', 'Embassy slots constrained for Canada'], ['Scholarship Review', '1 application in review stage'], ['Partner SLA', 'All partner SLAs under threshold']])}${table('Activity Log', ['Action', 'Entity', 'Actor', 'Notes'], snapshot.activityLogs.slice(0, 6).map((l) => [l.action, `${l.entityType}:${l.entityId}`, l.actor, l.notes]))}</section>`,
