@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI EDUNOMICS OS</title>
+  <title>Students Console - AI EDUNOMICS OS</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
   <link rel="stylesheet" href="/edunomics/_shared/edunomics.css" />
 </head>
@@ -14,15 +14,15 @@
     import { renderEdunomicsScreen } from '/edunomics/_shared/edunomics-app.js';
 
     HNIWorldShell.mount({
-      currentRoute: '/edunomics/',
+      currentRoute: '/edunomics/students/',
       activeFamily: 'edunomics',
-      title: 'Edunomics Home',
-      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Edunomics Home'],
+      title: 'Students Console',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Students Console'],
       status: 'Phase A Operations Live',
       chips: ['Typed Models', 'Workflow States', 'Action System'],
       backHref: '/edunomics/',
       backLabel: 'Back to AI EDUNOMICS OS',
-      contentHtml: renderEdunomicsScreen('home')
+      contentHtml: renderEdunomicsScreen('students')
     });
   </script>
 </body>

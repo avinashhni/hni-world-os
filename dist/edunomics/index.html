@@ -5,45 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>AI EDUNOMICS OS</title>
   <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+  <link rel="stylesheet" href="/edunomics/_shared/edunomics.css" />
 </head>
 <body>
   <div id="app"></div>
   <script src="/dashboard/master-shell.js"></script>
-  <script>
+  <script type="module">
+    import { renderEdunomicsScreen } from '/edunomics/_shared/edunomics-app.js';
+
     HNIWorldShell.mount({
       currentRoute: '/edunomics/',
       activeFamily: 'edunomics',
-      title: 'AI EDUNOMICS OS',
-      breadcrumb: ['HNI WORLD OS', 'Edunomics'],
-      status: 'Enterprise Build Active',
-      chips: ['Student Lifecycle Engine', 'Admissions + Compliance', 'MUSKI Hooks'],
-      backHref: '/dashboard/',
-      backLabel: 'Back to HNI WORLD OS',
-      contentHtml: `
-        <section class="hero-card">
-          <h2>Enterprise AI EDUNOMICS OS Command Layer</h2>
-          <p>Global education intelligence and operations stack with student lifecycle orchestration, admissions workflows, compliance controls, partner network management, counselling CRM, and analytics under one operating shell.</p>
-          <div class="hero-tags"><span>Lifecycle Engine</span><span>Role Portals</span><span>Compliance Workflows</span><span>MUSKI Signals</span></div>
-        </section>
-
-        <section class="stats-grid four">
-          <article class="stat-card"><h4>Core Modules</h4><div class="stat-number">8/8</div><p>All requested enterprise modules routed.</p></article>
-          <article class="stat-card"><h4>Student Pipeline</h4><div class="stat-number">LIVE</div><p>Intake → Eligibility → Admit → Enrolment tracking flow onboarded.</p></article>
-          <article class="stat-card"><h4>Partner Network</h4><div class="stat-number">ACTIVE</div><p>University onboarding, SLA and seat capacity governance enabled.</p></article>
-          <article class="stat-card"><h4>Compliance Layer</h4><div class="stat-number">ENFORCED</div><p>Document verification and policy checkpoints integrated.</p></article>
-        </section>
-
-        <section class="module-grid three">
-          <article class="feature-card"><h3>1) Education Command Dashboard</h3><p>Enterprise command center with KPI rollups, alerts, and intervention queues.</p><a class="primary-btn" href="/edunomics/command-dashboard/">Open Module</a></article>
-          <article class="feature-card"><h3>2) Student Intake & Pipeline</h3><p>Capture leads, assess readiness, and move students through lifecycle stages.</p><a class="primary-btn" href="/edunomics/student-pipeline/">Open Module</a></article>
-          <article class="feature-card"><h3>3) Eligibility Engine</h3><p>Rules engine for course-country-university matching and rejection reasons.</p><a class="primary-btn" href="/edunomics/eligibility-engine/">Open Module</a></article>
-          <article class="feature-card"><h3>4) Admissions Workflow</h3><p>Application assembly, submission orchestration, and offer acceptance controls.</p><a class="primary-btn" href="/edunomics/admissions-workflow/">Open Module</a></article>
-          <article class="feature-card"><h3>5) Partner Management</h3><p>University onboarding, contracts, SLA, and performance governance.</p><a class="primary-btn" href="/edunomics/partner-management/">Open Module</a></article>
-          <article class="feature-card"><h3>6) Document & Compliance Engine</h3><p>Identity, academic, finance, and visa documentation with risk triggers.</p><a class="primary-btn" href="/edunomics/document-compliance/">Open Module</a></article>
-          <article class="feature-card"><h3>7) Counselling & CRM</h3><p>Counsellor workspace, communication pipeline, and follow-up automation.</p><a class="primary-btn" href="/edunomics/counselling-crm/">Open Module</a></article>
-          <article class="feature-card"><h3>8) Analytics & Reporting</h3><p>Conversion analytics, partner outcomes, compliance ratios, and forecast dashboards.</p><a class="primary-btn" href="/edunomics/analytics-reporting/">Open Module</a></article>
-        </section>
-      `
+      title: 'Edunomics Home',
+      breadcrumb: ['HNI WORLD OS', 'AI EDUNOMICS OS', 'Edunomics Home'],
+      status: 'Phase A Operations Live',
+      chips: ['Typed Models', 'Workflow States', 'Action System'],
+      backHref: '/edunomics/',
+      backLabel: 'Back to AI EDUNOMICS OS',
+      contentHtml: renderEdunomicsScreen('home')
     });
   </script>
 </body>
