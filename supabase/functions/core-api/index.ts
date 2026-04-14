@@ -95,18 +95,165 @@ async function writeAudit(
   });
 }
 
+type ProviderCapability = {
+  category: "travel" | "payment" | "whatsapp" | "email" | "ai";
+  provider_key: string;
+  provider_type: string;
+  request_builder: {
+    endpoint_template: string;
+    method: "POST" | "GET";
+    headers: string[];
+    required_fields: string[];
+  };
+  response_normalization: {
+    success_path: string;
+    status_path: string;
+    message_path?: string;
+    normalized_codes: Record<string, string>;
+  };
+  retry_policy: { max_attempts: number; backoff_seconds: number[]; retryable_statuses: number[] };
+  error_mapping: Record<string, string>;
+};
+
+function buildProviderCapability(providerType: string, providerKey: string): ProviderCapability {
+  const providerTypeKey = providerType.toLowerCase();
+  const providerKeyNormalized = providerKey.toLowerCase();
+
+  const defaultErrorMap = {
+    timeout: "provider_timeout",
+    unauthorized: "provider_auth_failed",
+    rate_limit: "provider_rate_limited",
+    unknown: "provider_unknown_error",
+  };
+
+  if (providerTypeKey === "travel") {
+    return {
+      category: "travel",
+      provider_key: providerKeyNormalized,
+      provider_type: providerTypeKey,
+      request_builder: {
+        endpoint_template: "/availability/search",
+        method: "POST",
+        headers: ["content-type", "authorization"],
+        required_fields: ["origin", "destination", "depart_date", "travellers"],
+      },
+      response_normalization: {
+        success_path: "ok",
+        status_path: "status",
+        message_path: "message",
+        normalized_codes: { confirmed: "BOOKED", hold: "HELD", unavailable: "NOT_AVAILABLE" },
+      },
+      retry_policy: { max_attempts: 4, backoff_seconds: [10, 45, 120, 300], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+      error_mapping: defaultErrorMap,
+    };
+  }
+
+  if (providerTypeKey === "payment") {
+    return {
+      category: "payment",
+      provider_key: providerKeyNormalized,
+      provider_type: providerTypeKey,
+      request_builder: {
+        endpoint_template: providerKeyNormalized === "razorpay" ? "/v1/orders" : "/v1/payment_intents",
+        method: "POST",
+        headers: ["content-type", "authorization", "idempotency-key"],
+        required_fields: ["amount", "currency", "reference_id"],
+      },
+      response_normalization: {
+        success_path: "ok",
+        status_path: "payment_status",
+        message_path: "error.message",
+        normalized_codes: { succeeded: "PAID", pending: "PENDING", failed: "FAILED" },
+      },
+      retry_policy: { max_attempts: 5, backoff_seconds: [5, 15, 45, 120, 300], retryable_statuses: [408, 409, 425, 429, 500, 502, 503, 504] },
+      error_mapping: defaultErrorMap,
+    };
+  }
+
+  if (providerTypeKey === "whatsapp") {
+    return {
+      category: "whatsapp",
+      provider_key: providerKeyNormalized,
+      provider_type: providerTypeKey,
+      request_builder: {
+        endpoint_template: "/2010-04-01/Accounts/{account_sid}/Messages.json",
+        method: "POST",
+        headers: ["content-type", "authorization"],
+        required_fields: ["to", "from", "body"],
+      },
+      response_normalization: {
+        success_path: "ok",
+        status_path: "delivery_status",
+        message_path: "error_message",
+        normalized_codes: { queued: "QUEUED", sent: "SENT", delivered: "DELIVERED", failed: "FAILED" },
+      },
+      retry_policy: { max_attempts: 4, backoff_seconds: [10, 30, 90, 240], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+      error_mapping: defaultErrorMap,
+    };
+  }
+
+  if (providerTypeKey === "email") {
+    return {
+      category: "email",
+      provider_key: providerKeyNormalized,
+      provider_type: providerTypeKey,
+      request_builder: {
+        endpoint_template: "/send",
+        method: "POST",
+        headers: ["content-type", "authorization"],
+        required_fields: ["from", "to", "subject", "body"],
+      },
+      response_normalization: {
+        success_path: "ok",
+        status_path: "delivery_status",
+        message_path: "error.message",
+        normalized_codes: { accepted: "QUEUED", delivered: "DELIVERED", bounced: "FAILED" },
+      },
+      retry_policy: { max_attempts: 4, backoff_seconds: [10, 30, 120, 300], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+      error_mapping: defaultErrorMap,
+    };
+  }
+
+  return {
+    category: "ai",
+    provider_key: providerKeyNormalized,
+    provider_type: providerTypeKey,
+    request_builder: {
+      endpoint_template: providerKeyNormalized.includes("anthropic") ? "/v1/messages" : "/v1/chat/completions",
+      method: "POST",
+      headers: ["content-type", "authorization"],
+      required_fields: ["model", "messages"],
+    },
+    response_normalization: {
+      success_path: "ok",
+      status_path: "completion_status",
+      message_path: "error.message",
+      normalized_codes: { completed: "COMPLETED", partial: "PARTIAL", failed: "FAILED" },
+    },
+    retry_policy: { max_attempts: 3, backoff_seconds: [5, 20, 60], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+    error_mapping: defaultErrorMap,
+  };
+}
+
 function buildProviderRuntime(providerType: string, providerKey: string) {
   const keyPresent = Boolean(Deno.env.get(`PROVIDER_${providerKey.toUpperCase()}_KEY`));
+  const capability = buildProviderCapability(providerType, providerKey);
   return {
-    provider_key: providerKey,
-    provider_type: providerType,
-    mode: keyPresent ? "live" : "sandbox",
-    status: keyPresent ? "active" : "sandbox_stub",
-    retry_policy: { max_attempts: 3, backoff_seconds: [30, 120, 300] },
-    error_mapping: {
-      timeout: "provider_timeout",
-      unauthorized: "provider_auth_failed",
-      unknown: "provider_unknown_error",
+    provider_key: capability.provider_key,
+    provider_type: capability.provider_type,
+    category: capability.category,
+    execution_mode: keyPresent ? "live" : "ready_pending_live_key",
+    status: keyPresent ? "active" : "READY FOR LIVE API KEY",
+    live_key_pending: !keyPresent,
+    adapter_runtime: {
+      request_builder: capability.request_builder,
+      response_normalization: capability.response_normalization,
+      retry_policy: capability.retry_policy,
+      error_mapping: capability.error_mapping,
+    },
+    execution_flow: {
+      stages: ["build_request", "execute", "normalize_response", "handle_error", "retry_or_finalize"],
+      status: "execution_ready",
     },
   };
 }
