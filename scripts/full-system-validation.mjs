@@ -239,6 +239,29 @@ function checkApiContracts() {
   return `${routeFiles.length} route contracts and ${serviceFiles.length} services validated`;
 }
 
+function checkRuntimeCompatibilityMode() {
+  const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const scriptEntries = Object.entries(packageJson.scripts ?? {});
+  const denoScriptUsage = scriptEntries.filter(([, command]) => /\bdeno\b/i.test(String(command)));
+  assert(denoScriptUsage.length === 0, `Validation scripts must be runtime-agnostic; found deno usage in package scripts: ${denoScriptUsage.map(([name]) => name).join(", ")}`);
+
+  const edgeFunctions = [
+    "supabase/functions/core-api/index.ts",
+    "supabase/functions/create-intake/index.ts",
+    "supabase/functions/claim-lead/index.ts",
+    "supabase/functions/job-worker/index.ts",
+  ];
+
+  for (const file of edgeFunctions) {
+    assert(existsSync(join(root, file)), `Missing edge function: ${file}`);
+    const source = readFileSync(join(root, file), "utf8");
+    assert(/serve\(/.test(source), `${file} missing serve() handler`);
+    assert(/createClient\(/.test(source), `${file} missing Supabase client initialization`);
+  }
+
+  return "Runtime compatibility mode active: validation uses static/dry-run checks and does not require Deno execution";
+}
+
 function checkDeploymentReadiness() {
   const required = [
     'vercel.json',
@@ -326,14 +349,19 @@ function checkDeepExecutionReadiness() {
   assert(/insert\s+into\s+public\.workflow_definitions/i.test(seedSql), "No workflow_definitions seed records found");
   assert(seedSql.includes("booking.lifecycle") && seedSql.includes("legal.lifecycle") && seedSql.includes("education.lifecycle"), "Missing required lifecycle workflow seeds");
   assert(seedSql.includes("copspower.escalation.lifecycle"), "Missing COPSPOWER escalation lifecycle seed");
-  assert(/retry"\s*:\s*\{/.test(seedSql) || seedSql.includes('retry'), "Workflow transitions missing retry metadata");
+  assert(/transitions::jsonb/.test(seedSql), "Workflow seed missing transition definition payloads");
+  assert(/retry"\s*:\s*\{/.test(seedSql) || seedSql.includes("retry"), "Workflow transitions missing retry metadata");
 
   assert(existsSync(join(root, "supabase/functions/job-worker/index.ts")), "No async job worker implementation found for job_queue processing");
+  assert(/async function claimJobs/.test(workerRuntime) && /async function processJob/.test(workerRuntime), "Queue worker missing async claim/process structure");
+  assert(/MAX_ATTEMPTS/.test(workerRuntime) && /RETRY_BACKOFF_SECONDS/.test(workerRuntime), "Queue worker missing retry constants");
   assert(/locked_at/.test(workerRuntime) && /job_dead_letters/.test(workerRuntime), "Queue worker missing lock/retry/dead-letter handling");
   assert(/queue_name:\s*"ai_execution"/.test(coreApi), "AI queue intake not wired into job queue");
+  assert(/from\("ai_executions"\)\s*\.insert\(/.test(coreApi), "AI execution write path missing from core API");
   assert(/Authorization/.test(createIntake) && /Authorization/.test(claimLead), "create-intake/claim-lead missing bearer auth enforcement");
   assert(/audit_logs/.test(coreApi) && /audit_logs/.test(createIntake) && /audit_logs/.test(claimLead), "Mutation audit logging not consistently implemented");
   assert(/muski_commands/.test(muskiService) && /muski_approvals/.test(muskiService), "MUSKI runtime persistence layer missing command/approval storage");
+  assert(/muski_execution_history/.test(muskiService), "MUSKI runtime persistence layer missing execution history storage");
 
   const requiredRuntimeFiles = [
     "backend/apps/muski-core-runtime/src/workers/persistent-queue-worker.ts",
@@ -343,7 +371,7 @@ function checkDeepExecutionReadiness() {
   const missing = requiredRuntimeFiles.filter((file) => !existsSync(join(root, file)));
   assert(missing.length === 0, `Missing persistent runtime artifacts: ${missing.join(", ")}`);
 
-  return "Workflow seeds, queue workers, MUSKI persistence, auth hardening, audit logs, and AI runtime checks confirmed";
+  return "Workflow seeds, queue worker logic, MUSKI persistence, auth hardening, audit logs, and runtime-agnostic AI checks confirmed";
 }
 
 
@@ -362,6 +390,7 @@ async function main() {
   });
 
   runCheck('API contract checks', checkApiContracts);
+  runCheck("Runtime compatibility mode", checkRuntimeCompatibilityMode);
   runCheck("Role & permission checks", checkRoleAndPermissionModel);
   runCheck("Security boundary checks", checkSecurityBoundaries);
   runCheck("Monitoring readiness", checkMonitoringReadiness);
