@@ -11,6 +11,18 @@
     "compliance_workflow",
     "deployment_workflow",
     "franchise_workflow",
-    "document_workflow"
+    "document_workflow",
+    "quotation_workflow",
+    "booking_lifecycle_workflow",
+    "vendor_onboarding_workflow",
+    "supplier_rate_selection_workflow",
+    "invoice_ledger_workflow",
+    "gst_compliance_workflow",
+    "omnichannel_communication_workflow",
+    "operations_escalation_workflow",
+    "worldnomics_analytics_workflow",
+    "hr_payroll_workflow",
+    "marketing_automation_workflow",
+    "muski_intelligence_orchestration_workflow"
   ]
 }

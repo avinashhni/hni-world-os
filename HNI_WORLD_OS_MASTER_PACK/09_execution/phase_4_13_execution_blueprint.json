@@ -1,0 +1,267 @@
+{
+  "system": "HNI WORLD OS",
+  "generated_on": "2026-04-14",
+  "master_control": {
+    "orchestrator": "MUSKI",
+    "governance": "COPSPOWER",
+    "flow": "MUSKI -> Manager AI -> Worker AI"
+  },
+  "execution_rules": {
+    "strict_phase_sequence": true,
+    "no_placeholder_logic": true,
+    "no_duplicate_modules": true,
+    "shared_vs_os_layer_boundary_lock": true,
+    "validation_required_before_promotion": true
+  },
+  "phases": [
+    {
+      "phase": 4,
+      "name": "Quotation & Booking Engine",
+      "owner_manager": "LEGALNOMICS_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "WORKFLOW_AGENT",
+        "DATA_MODEL_AGENT",
+        "API_INTEGRATION_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "quote_engine",
+        "itinerary_builder",
+        "booking_lifecycle",
+        "multi_occupancy_pricing",
+        "cwb_cnb_rules",
+        "seasonal_pricing",
+        "multi_room_selection",
+        "margin_control",
+        "currency_rounding",
+        "pdf_generator"
+      ],
+      "dependencies": [
+        "crm_core",
+        "supplier_vendor_system"
+      ],
+      "handoff": "Phase 5 starts only after pricing, booking and PDF output validation passes"
+    },
+    {
+      "phase": 5,
+      "name": "Supplier & Vendor System",
+      "owner_manager": "LEGALNOMICS_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "WORKFLOW_AGENT",
+        "API_INTEGRATION_AGENT",
+        "INTELLIGENCE_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "vendor_onboarding",
+        "contract_management",
+        "rate_sheets",
+        "vendor_performance_tracking",
+        "vendor_allocation",
+        "api_manual_supplier_merge",
+        "best_rate_selection_ai"
+      ],
+      "dependencies": [
+        "phase_4_booking_engine"
+      ],
+      "handoff": "Phase 6 starts only after supplier merge and best-rate ranking checks pass"
+    },
+    {
+      "phase": 6,
+      "name": "Finance Engine (WAAI V15)",
+      "owner_manager": "CORE_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "DATA_MODEL_AGENT",
+        "API_INTEGRATION_AGENT",
+        "WORKFLOW_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "invoice_system",
+        "ledger",
+        "payment_tracking",
+        "receivable_payable",
+        "profit_engine",
+        "multi_currency_sync"
+      ],
+      "dependencies": [
+        "phase_4_booking_engine",
+        "phase_5_supplier_vendor"
+      ],
+      "handoff": "Phase 7 starts only after booking-finance reconciliation is deterministic"
+    },
+    {
+      "phase": 7,
+      "name": "GST & Compliance",
+      "owner_manager": "CORE_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "SECURITY_PERMISSIONS_AGENT",
+        "DATA_MODEL_AGENT",
+        "WORKFLOW_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "gst_engine",
+        "compliance_tracker",
+        "audit_logs",
+        "document_tracking",
+        "expiry_alerts",
+        "compliance_monitoring"
+      ],
+      "dependencies": [
+        "phase_6_finance"
+      ],
+      "handoff": "Phase 8 starts only after compliance alerts and audit logs are policy-complete"
+    },
+    {
+      "phase": 8,
+      "name": "Communication System",
+      "owner_manager": "CORE_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "API_INTEGRATION_AGENT",
+        "WORKFLOW_AGENT",
+        "UI_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "whatsapp_hub",
+        "email_center",
+        "calling_system",
+        "ivr_routing",
+        "live_chat",
+        "video_meetings",
+        "communication_logging"
+      ],
+      "dependencies": [
+        "crm_core"
+      ],
+      "handoff": "Phase 9 starts only after omnichannel communication events are captured in CRM"
+    },
+    {
+      "phase": 9,
+      "name": "Operations System",
+      "owner_manager": "LEGALNOMICS_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "WORKFLOW_AGENT",
+        "API_INTEGRATION_AGENT",
+        "SECURITY_PERMISSIONS_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "booking_management",
+        "task_checklist_engine",
+        "vendor_assignment",
+        "timeline_tracking",
+        "issue_tracking",
+        "escalation_system"
+      ],
+      "dependencies": [
+        "phase_4_booking_engine",
+        "phase_8_communication"
+      ],
+      "handoff": "Phase 10 starts only after escalation SLAs and task closure integrity checks pass"
+    },
+    {
+      "phase": 10,
+      "name": "Analytics (WORLDNOMICS)",
+      "owner_manager": "WORLDNOMICS_ANALYTICS_MANAGER_AI",
+      "worker_agents": [
+        "DATA_MODEL_AGENT",
+        "INTELLIGENCE_AGENT",
+        "UI_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "kpi_dashboard",
+        "revenue_intelligence",
+        "sales_analytics",
+        "customer_behavior_tracking",
+        "forecast_engine"
+      ],
+      "dependencies": [
+        "phase_6_finance",
+        "phase_9_operations"
+      ],
+      "handoff": "Phase 11 starts only after KPI and forecast data contracts are stable"
+    },
+    {
+      "phase": 11,
+      "name": "HR System",
+      "owner_manager": "CORE_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "DATA_MODEL_AGENT",
+        "WORKFLOW_AGENT",
+        "SECURITY_PERMISSIONS_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "employee_management",
+        "attendance_tracking",
+        "payroll_system",
+        "recruitment_pipeline",
+        "role_permissions_copspower"
+      ],
+      "dependencies": [
+        "phase_7_compliance"
+      ],
+      "handoff": "Phase 12 starts only after payroll + permissions audit consistency checks pass"
+    },
+    {
+      "phase": 12,
+      "name": "Marketing System",
+      "owner_manager": "CORE_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "WORKFLOW_AGENT",
+        "INTELLIGENCE_AGENT",
+        "API_INTEGRATION_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "campaign_manager",
+        "social_automation",
+        "lead_funnels",
+        "email_marketing",
+        "creative_generator"
+      ],
+      "dependencies": [
+        "phase_8_communication",
+        "phase_10_analytics"
+      ],
+      "handoff": "Phase 13 starts only after campaign attribution and funnel integrity checks pass"
+    },
+    {
+      "phase": 13,
+      "name": "AI Intelligence (MUSKI Expansion)",
+      "owner_manager": "MUSKI_MODULE_MANAGER_AI",
+      "worker_agents": [
+        "INTELLIGENCE_AGENT",
+        "API_INTEGRATION_AGENT",
+        "SECURITY_PERMISSIONS_AGENT",
+        "QA_VALIDATION_AGENT"
+      ],
+      "modules": [
+        "ai_decision_engine",
+        "ai_recommendation_system",
+        "ai_insights_engine",
+        "ai_automation_bots",
+        "cross_os_intelligence",
+        "voice_command_readiness"
+      ],
+      "dependencies": [
+        "phase_4_to_12_data_contracts"
+      ],
+      "handoff": "Final platform validation and release promotion"
+    }
+  ],
+  "final_validation": {
+    "checks": [
+      "module_connections",
+      "data_flows",
+      "role_based_access",
+      "intelligence_layer_consistency",
+      "duplication_scan",
+      "dependency_health"
+    ],
+    "required_status": "all_pass"
+  }
+}
