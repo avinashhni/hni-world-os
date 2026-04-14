@@ -45,6 +45,49 @@ executionLogger.log("task", "Sample task initialized", {
 
 const businessExecutionSamples = [
   businessEngine.execute({
+    module: "core_intelligence",
+    workflow: "unified_crm_profile",
+    action: "upsert_customer_identity",
+    payload: {
+      sourceSystem: "LEGALNOMICS",
+      sourceCustomerId: "LGL-CUST-100",
+      globalCustomerId: "HNI-CUST-9001",
+      email: "customer9001@hni.world",
+      phone: "+91-9000009001",
+    },
+  }),
+  businessEngine.execute({
+    module: "core_intelligence",
+    workflow: "cross_os_connections",
+    action: "sync_cross_os_connections",
+    payload: {
+      crmRecordId: "CRM-9001",
+      connectors: ["LEGALNOMICS", "EDUNOMICS", "AIRNOMICS", "DOCTORNOMICS", "SOBBO"],
+    },
+  }),
+  businessEngine.execute({
+    module: "core_intelligence",
+    workflow: "cross_os_activity",
+    action: "track_activity_event",
+    payload: {
+      globalCustomerId: "HNI-CUST-9001",
+      sourceSystem: "EDUNOMICS",
+      eventType: "application_submitted",
+      eventAt: "2026-04-14T10:00:00Z",
+      metadata: { applicationId: "APP-221" },
+    },
+  }),
+  businessEngine.execute({
+    module: "core_intelligence",
+    workflow: "analytics_notifications_tasks",
+    action: "run_intelligence_pipeline",
+    payload: {
+      globalCustomerId: "HNI-CUST-9001",
+      priority: "high",
+      targetSystems: ["LEGALNOMICS", "EDUNOMICS", "AIRNOMICS", "DOCTORNOMICS", "SOBBO"],
+    },
+  }),
+  businessEngine.execute({
     module: "travel",
     workflow: "fare_selection",
     action: "select_fare",
@@ -93,6 +136,8 @@ for (const result of businessExecutionSamples) {
 }
 
 console.log("Business workflows:", businessEngine.getRegisteredWorkflows());
+console.log("Unified identities:", businessEngine.getUnifiedIdentityCount());
+console.log("Cross-OS activities:", businessEngine.getCrossOsActivityCount());
 console.log("Logs:", executionLogger.getAll());
 console.log("Agents:", agentRegistry.getAllAgents());
 console.log("Tasks:", taskIntake.getAllTasks());
