@@ -6,6 +6,13 @@
     "role": "Master AI Command Brain",
     "reports_to": null
   },
+  "governance_overlay": {
+    "agent_code": "AI-090",
+    "agent_name": "COPSPOWER",
+    "agent_level": "governance",
+    "role": "Approval chains, permissions, audit enforcement, escalation control",
+    "reports_to": "MUSKI"
+  },
   "core_agents": [
     {
       "agent_code": "AI-101",
@@ -41,6 +48,87 @@
       "agent_level": "president",
       "role": "Environment, deployment, security, release, scale, audit hardening",
       "reports_to": "MUSKI"
+    }
+  ],
+  "manager_agents": [
+    {
+      "agent_code": "AI-201",
+      "agent_name": "LEGALNOMICS_MODULE_MANAGER_AI",
+      "agent_level": "manager",
+      "role": "Owns Legalnomics phase execution and service boundaries",
+      "reports_to": "ENTERPRISE_MODULE_INTELLIGENCE_AI"
+    },
+    {
+      "agent_code": "AI-202",
+      "agent_name": "CORE_MODULE_MANAGER_AI",
+      "agent_level": "manager",
+      "role": "Owns shared shell, routing, identity and platform primitives",
+      "reports_to": "ENTERPRISE_MODULE_INTELLIGENCE_AI"
+    },
+    {
+      "agent_code": "AI-203",
+      "agent_name": "MUSKI_MODULE_MANAGER_AI",
+      "agent_level": "manager",
+      "role": "Owns AI decisioning, recommendation, and cross-OS automation orchestration",
+      "reports_to": "AI_HIERARCHY_AUTOMATION_AI"
+    },
+    {
+      "agent_code": "AI-204",
+      "agent_name": "WORLDNOMICS_ANALYTICS_MANAGER_AI",
+      "agent_level": "manager",
+      "role": "Owns KPI, forecasting and revenue intelligence contracts",
+      "reports_to": "ENTERPRISE_MODULE_INTELLIGENCE_AI"
+    }
+  ],
+  "execution_agents": [
+    {
+      "agent_code": "AI-301",
+      "agent_name": "UI_AGENT",
+      "agent_level": "worker",
+      "role": "Implements shell-safe UI components and route-level layouts",
+      "reports_to": "CORE_MODULE_MANAGER_AI"
+    },
+    {
+      "agent_code": "AI-302",
+      "agent_name": "WORKFLOW_AGENT",
+      "agent_level": "worker",
+      "role": "Implements state machines, lifecycle transitions and handoff logic",
+      "reports_to": "LEGALNOMICS_MODULE_MANAGER_AI"
+    },
+    {
+      "agent_code": "AI-303",
+      "agent_name": "DATA_MODEL_AGENT",
+      "agent_level": "worker",
+      "role": "Implements schema updates, constraints and data contracts",
+      "reports_to": "DATABASE_ARCHITECT_AI"
+    },
+    {
+      "agent_code": "AI-304",
+      "agent_name": "API_INTEGRATION_AGENT",
+      "agent_level": "worker",
+      "role": "Implements APIs, connectors, retries and idempotent integration logic",
+      "reports_to": "LEGALNOMICS_MODULE_MANAGER_AI"
+    },
+    {
+      "agent_code": "AI-305",
+      "agent_name": "INTELLIGENCE_AGENT",
+      "agent_level": "worker",
+      "role": "Implements ranking, recommendation and signal intelligence models",
+      "reports_to": "MUSKI_MODULE_MANAGER_AI"
+    },
+    {
+      "agent_code": "AI-306",
+      "agent_name": "QA_VALIDATION_AGENT",
+      "agent_level": "worker",
+      "role": "Implements automated checks and release readiness gating",
+      "reports_to": "DEPLOYMENT_SECURITY_SCALE_AI"
+    },
+    {
+      "agent_code": "AI-307",
+      "agent_name": "SECURITY_PERMISSIONS_AGENT",
+      "agent_level": "worker",
+      "role": "Implements RBAC, policy checks, audit trails and governance hooks",
+      "reports_to": "COPSPOWER"
     }
   ]
 }
