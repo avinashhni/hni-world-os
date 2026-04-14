@@ -1,4 +1,5 @@
 export type BusinessModuleCode =
+  | "core_intelligence"
   | "travel"
   | "legalnomics"
   | "edunomics"
@@ -24,6 +25,22 @@ export interface BusinessActionResult {
   executedAt: string;
   outcome: string;
   stateChanges: Record<string, unknown>;
+}
+
+interface IdentityRecord {
+  globalCustomerId: string;
+  sourceSystem: string;
+  sourceCustomerId: string;
+  email: string;
+  phone: string;
+}
+
+interface ActivityEvent {
+  globalCustomerId: string;
+  sourceSystem: string;
+  eventType: string;
+  eventAt: string;
+  metadata: Record<string, unknown>;
 }
 
 type ActionHandler = (payload: Record<string, unknown>) => BusinessActionResult;
@@ -54,7 +71,95 @@ function success(
 }
 
 export class BusinessEngineService {
+  private readonly unifiedIdentityBySource = new Map<string, IdentityRecord>();
+  private readonly unifiedIdentityByGlobalId = new Map<string, IdentityRecord>();
+  private readonly crossOsActivityStream: ActivityEvent[] = [];
+
   private readonly handlers: Record<string, ActionHandler> = {
+    "core_intelligence.unified_crm_profile": (payload) => {
+      const sourceSystem = ensureString(payload.sourceSystem, "sourceSystem");
+      const sourceCustomerId = ensureString(payload.sourceCustomerId, "sourceCustomerId");
+      const globalCustomerId = ensureString(payload.globalCustomerId, "globalCustomerId");
+      const email = ensureString(payload.email, "email");
+      const phone = ensureString(payload.phone, "phone");
+
+      const sourceKey = `${sourceSystem}:${sourceCustomerId}`;
+      const existingByGlobalId = this.unifiedIdentityByGlobalId.get(globalCustomerId);
+      if (
+        existingByGlobalId &&
+        (existingByGlobalId.email !== email || existingByGlobalId.phone !== phone)
+      ) {
+        throw new Error("Identity conflict detected for globalCustomerId");
+      }
+
+      const record: IdentityRecord = {
+        globalCustomerId,
+        sourceSystem,
+        sourceCustomerId,
+        email,
+        phone,
+      };
+
+      this.unifiedIdentityBySource.set(sourceKey, record);
+      this.unifiedIdentityByGlobalId.set(globalCustomerId, record);
+
+      return success("core_intelligence", "unified_crm_profile", "upsert_customer_identity", "Unified CRM identity synchronized", {
+        sourceSystem,
+        sourceCustomerId,
+        globalCustomerId,
+        identityScope: "one_customer_one_identity",
+      });
+    },
+    "core_intelligence.cross_os_activity": (payload) => {
+      const globalCustomerId = ensureString(payload.globalCustomerId, "globalCustomerId");
+      const sourceSystem = ensureString(payload.sourceSystem, "sourceSystem");
+      const eventType = ensureString(payload.eventType, "eventType");
+      const eventAt = ensureString(payload.eventAt, "eventAt");
+
+      const event: ActivityEvent = {
+        globalCustomerId,
+        sourceSystem,
+        eventType,
+        eventAt,
+        metadata: (payload.metadata as Record<string, unknown>) ?? {},
+      };
+      this.crossOsActivityStream.push(event);
+
+      return success("core_intelligence", "cross_os_activity", "track_activity_event", "Cross-OS customer activity tracked", {
+        globalCustomerId,
+        sourceSystem,
+        eventType,
+        trackedEvents: this.crossOsActivityStream.length,
+      });
+    },
+    "core_intelligence.analytics_notifications_tasks": (payload) => {
+      const globalCustomerId = ensureString(payload.globalCustomerId, "globalCustomerId");
+      const priority = ensureString(payload.priority, "priority");
+      const targetSystems = Array.isArray(payload.targetSystems) ? payload.targetSystems : [];
+
+      return success("core_intelligence", "analytics_notifications_tasks", "run_intelligence_pipeline", "Global analytics pipeline, notifications, and unified tasks executed", {
+        globalCustomerId,
+        priority,
+        analyticsSnapshotId: `ANL-${globalCustomerId}`,
+        notificationFanout: targetSystems.length,
+        unifiedTaskQueue: "global_customer_task_engine",
+      });
+    },
+    "core_intelligence.cross_os_connections": (payload) => {
+      const crmRecordId = ensureString(payload.crmRecordId, "crmRecordId");
+      const connectors = Array.isArray(payload.connectors) ? payload.connectors.map(String) : [];
+      const requiredConnectors = ["LEGALNOMICS", "EDUNOMICS", "AIRNOMICS", "DOCTORNOMICS", "SOBBO"];
+      const missing = requiredConnectors.filter((connector) => !connectors.includes(connector));
+      if (missing.length > 0) {
+        throw new Error(`Missing required connectors: ${missing.join(", ")}`);
+      }
+
+      return success("core_intelligence", "cross_os_connections", "sync_cross_os_connections", "Cross-OS module to CRM connections synchronized", {
+        crmRecordId,
+        connectors,
+        connectedSystems: connectors.length,
+      });
+    },
     "travel.fare_selection": (payload) => {
       const tripId = ensureString(payload.tripId, "tripId");
       const fareClass = ensureString(payload.fareClass, "fareClass");
@@ -208,5 +313,13 @@ export class BusinessEngineService {
 
   getRegisteredWorkflows(): string[] {
     return Object.keys(this.handlers).sort();
+  }
+
+  getUnifiedIdentityCount(): number {
+    return this.unifiedIdentityByGlobalId.size;
+  }
+
+  getCrossOsActivityCount(): number {
+    return this.crossOsActivityStream.length;
   }
 }

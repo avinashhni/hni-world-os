@@ -417,6 +417,45 @@ function checkPhase15BusinessEngineExecution() {
   return `${requiredModules.length} module engines and ${requiredHandlers.length} real action handlers validated`;
 }
 
+function checkPhase16CrossOsIntelligenceLayer() {
+  const blueprintPath = join(root, "HNI_WORLD_OS_MASTER_PACK/09_execution/phase_16_cross_os_intelligence_blueprint.json");
+  assert(existsSync(blueprintPath), "Missing phase 16 cross-OS intelligence blueprint");
+  const blueprint = JSON.parse(readFileSync(blueprintPath, "utf8"));
+
+  assert(blueprint.phase === "16", "Cross-OS intelligence blueprint has incorrect phase id");
+  assert(blueprint.identity_resolution?.rule === "one_customer_one_identity", "Phase 16 identity lock is not one_customer_one_identity");
+
+  const requiredConnectors = ["LEGALNOMICS", "EDUNOMICS", "AIRNOMICS", "DOCTORNOMICS", "SOBBO"];
+  const configuredConnectors = blueprint.required_connectors ?? [];
+  const missingConnectors = requiredConnectors.filter((connector) => !configuredConnectors.includes(connector));
+  assert(missingConnectors.length === 0, `Phase 16 blueprint missing connectors: ${missingConnectors.join(", ")}`);
+
+  const requiredDataLayerKeys = [
+    "master_profile",
+    "activity_stream",
+    "analytics_sink",
+    "notification_fabric",
+    "task_fabric",
+  ];
+  const missingDataLayerKeys = requiredDataLayerKeys.filter((key) => !blueprint.data_layer?.[key]);
+  assert(missingDataLayerKeys.length === 0, `Phase 16 data layer missing keys: ${missingDataLayerKeys.join(", ")}`);
+
+  const businessEngineFile = readFileSync(
+    join(root, "backend/apps/muski-core-runtime/src/services/business-engine.service.ts"),
+    "utf8",
+  );
+  const requiredHandlers = [
+    "core_intelligence.unified_crm_profile",
+    "core_intelligence.cross_os_connections",
+    "core_intelligence.cross_os_activity",
+    "core_intelligence.analytics_notifications_tasks",
+  ];
+  const missingHandlers = requiredHandlers.filter((handler) => !businessEngineFile.includes(`"${handler}"`));
+  assert(missingHandlers.length === 0, `Phase 16 business engine missing handlers: ${missingHandlers.join(", ")}`);
+
+  return `${requiredHandlers.length} intelligence handlers and ${requiredConnectors.length} cross-OS connectors validated`;
+}
+
 
 async function main() {
   runCheck('Module structure health', () => {
@@ -439,6 +478,7 @@ async function main() {
   runCheck("Monitoring readiness", checkMonitoringReadiness);
   runCheck("Deep execution readiness", checkDeepExecutionReadiness);
   runCheck("Phase 15 business engine execution", checkPhase15BusinessEngineExecution);
+  runCheck("Phase 16 cross-OS intelligence layer", checkPhase16CrossOsIntelligenceLayer);
   runCheck('Deployment readiness audit', checkDeploymentReadiness);
   runCheck('Route integrity audit', checkRouteIntegrity);
 

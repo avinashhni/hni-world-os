@@ -1,0 +1,65 @@
+{
+  "phase": "16",
+  "name": "cross_os_intelligence_layer",
+  "mode": "MUSKI_GLOBAL_INTELLIGENCE_MODE",
+  "objective": "One customer equals one identity across HNI WORLD OS with unified CRM, shared customer data, cross-OS activity tracking, global analytics, notifications, and unified task orchestration.",
+  "ownership": {
+    "umbrella": "HNI WORLD",
+    "master_ai": "MUSKI",
+    "reporting_flow": ["MUSKI", "Manager AI", "Worker AI"]
+  },
+  "modules": [
+    {
+      "code": "core_intelligence",
+      "name": "Unified Intelligence Layer",
+      "capabilities": [
+        "unified_crm",
+        "shared_customer_database",
+        "cross_os_activity_tracking",
+        "global_analytics_pipeline",
+        "unified_notifications",
+        "unified_task_engine"
+      ]
+    },
+    {
+      "code": "crm",
+      "name": "CRM Hub",
+      "capabilities": [
+        "single_customer_profile",
+        "global_relationship_timeline",
+        "task_ownership_and_sla"
+      ]
+    }
+  ],
+  "cross_os_connections": [
+    { "source": "LEGALNOMICS", "target": "CRM", "sync_mode": "bidirectional" },
+    { "source": "EDUNOMICS", "target": "CRM", "sync_mode": "bidirectional" },
+    { "source": "AIRNOMICS", "target": "CRM", "sync_mode": "bidirectional" },
+    { "source": "DOCTORNOMICS", "target": "CRM", "sync_mode": "bidirectional" },
+    { "source": "SOBBO", "target": "CRM", "sync_mode": "bidirectional" }
+  ],
+  "identity_resolution": {
+    "rule": "one_customer_one_identity",
+    "keys": ["global_customer_id", "email", "phone"],
+    "conflict_policy": "block_inconsistent_identity"
+  },
+  "data_layer": {
+    "master_profile": "crm_customer_master",
+    "activity_stream": "cross_os_activity_stream",
+    "analytics_sink": "global_customer_analytics",
+    "notification_fabric": "unified_notification_bus",
+    "task_fabric": "global_customer_task_engine"
+  },
+  "execution_workflows": [
+    "core_intelligence.unified_crm_profile",
+    "core_intelligence.cross_os_connections",
+    "core_intelligence.cross_os_activity",
+    "core_intelligence.analytics_notifications_tasks"
+  ],
+  "required_connectors": ["LEGALNOMICS", "EDUNOMICS", "AIRNOMICS", "DOCTORNOMICS", "SOBBO"],
+  "final_outputs": {
+    "A": "Shared Intelligence Built",
+    "B": "Cross-OS Connections",
+    "C": "Unified Data Layer"
+  }
+}
