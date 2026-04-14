@@ -343,6 +343,18 @@ export const renderEdunomicsScreen = (screen) => {
       <article class="feature-card"><h3>Course Intelligence DB</h3><p>Degree, prerequisites, tuition, placement outcomes.</p><a class="primary-btn" href="/edunomics/courses/">Open</a></article>
       <article class="feature-card"><h3>Matching Engine</h3><p>Student profile to best-fit course recommendations.</p><a class="primary-btn" href="/edunomics/matching-engine/">Open</a></article>
       <article class="feature-card"><h3>Compare Universities</h3><p>Fees, duration, ROI, and visa success side-by-side.</p><a class="primary-btn" href="/edunomics/compare-universities/">Open</a></article>
+      <article class="feature-card"><h3>Counselors</h3><p>Capacity, load, and conversion performance by counselor.</p><a class="primary-btn" href="/edunomics/counselors/">Open</a></article>
+      <article class="feature-card"><h3>Scholarships</h3><p>Funding pipeline, decision timelines, and status signals.</p><a class="primary-btn" href="/edunomics/scholarships/">Open</a></article>
+      <article class="feature-card"><h3>Visa Desk</h3><p>Checklist, interview prep, appointment, and enrollment actions.</p><a class="primary-btn" href="/edunomics/visa/">Open</a></article>
+      <article class="feature-card"><h3>Documents</h3><p>Compliance control for required docs and deadline alerts.</p><a class="primary-btn" href="/edunomics/documents/">Open</a></article>
+      <article class="feature-card"><h3>Admissions Workflow</h3><p>Stage-by-stage admissions lifecycle with validation checkpoints.</p><a class="primary-btn" href="/edunomics/admissions-workflow/">Open</a></article>
+      <article class="feature-card"><h3>Command Dashboard</h3><p>Executive command route for live Edunomics actions.</p><a class="primary-btn" href="/edunomics/command-dashboard/">Open</a></article>
+      <article class="feature-card"><h3>Student Pipeline</h3><p>Intake-level lead flow and progression visibility.</p><a class="primary-btn" href="/edunomics/student-pipeline/">Open</a></article>
+      <article class="feature-card"><h3>Eligibility Engine</h3><p>Intake and destination eligibility decision support layer.</p><a class="primary-btn" href="/edunomics/eligibility-engine/">Open</a></article>
+      <article class="feature-card"><h3>Counseling CRM</h3><p>Counselor CRM orchestration and engagement workflows.</p><a class="primary-btn" href="/edunomics/counselling-crm/">Open</a></article>
+      <article class="feature-card"><h3>Partner Management</h3><p>Institution onboarding and partner performance governance.</p><a class="primary-btn" href="/edunomics/partner-management/">Open</a></article>
+      <article class="feature-card"><h3>Document Compliance</h3><p>Cross-check route for compliance and verification readiness.</p><a class="primary-btn" href="/edunomics/document-compliance/">Open</a></article>
+      <article class="feature-card"><h3>Analytics Reporting</h3><p>Executive analytics, forecasting, and growth intelligence.</p><a class="primary-btn" href="/edunomics/analytics-reporting/">Open</a></article>
       <article class="feature-card"><h3>Admin / Owner Tools</h3><p>Manage universities, courses, and intake cycles.</p><a class="primary-btn" href="/edunomics/admin-tools/">Open</a></article>
       <article class="feature-card"><h3>Intelligence</h3><p>Signals and activity log intelligence layer.</p><a class="primary-btn" href="/edunomics/intelligence/">Open</a></article>
       <article class="feature-card"><h3>Owner Command</h3><p>Escalations and phase-level executive oversight.</p><a class="primary-btn" href="/edunomics/owner/">Open</a></article>
