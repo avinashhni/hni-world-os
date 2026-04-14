@@ -3,6 +3,7 @@ export type ApprovalStatus = "pending" | "approved" | "rejected";
 export interface ApprovalRequest {
   id: string;
   taskId: string;
+  tenantId: string;
   requestedBy: string;
   status: ApprovalStatus;
   createdAt: string;
@@ -13,10 +14,11 @@ export interface ApprovalRequest {
 export class ApprovalService {
   private approvals: ApprovalRequest[] = [];
 
-  requestApproval(taskId: string, requestedBy: string): ApprovalRequest {
+  requestApproval(taskId: string, requestedBy: string, tenantId: string): ApprovalRequest {
     const approval: ApprovalRequest = {
       id: crypto.randomUUID(),
       taskId,
+      tenantId,
       requestedBy,
       status: "pending",
       createdAt: new Date().toISOString(),
@@ -26,8 +28,8 @@ export class ApprovalService {
     return approval;
   }
 
-  approve(id: string, decidedBy: string): ApprovalRequest | undefined {
-    const approval = this.approvals.find((a) => a.id === id);
+  approve(id: string, decidedBy: string, tenantId: string): ApprovalRequest | undefined {
+    const approval = this.approvals.find((a) => a.id === id && a.tenantId === tenantId);
     if (!approval) return;
 
     approval.status = "approved";
@@ -37,8 +39,8 @@ export class ApprovalService {
     return approval;
   }
 
-  reject(id: string, decidedBy: string): ApprovalRequest | undefined {
-    const approval = this.approvals.find((a) => a.id === id);
+  reject(id: string, decidedBy: string, tenantId: string): ApprovalRequest | undefined {
+    const approval = this.approvals.find((a) => a.id === id && a.tenantId === tenantId);
     if (!approval) return;
 
     approval.status = "rejected";
@@ -50,5 +52,9 @@ export class ApprovalService {
 
   getAll(): ApprovalRequest[] {
     return this.approvals;
+  }
+
+  getAllByTenant(tenantId: string): ApprovalRequest[] {
+    return this.approvals.filter((approval) => approval.tenantId === tenantId);
   }
 }

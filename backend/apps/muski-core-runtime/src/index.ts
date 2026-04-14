@@ -11,6 +11,9 @@ import { AiWorkflowTriggerService } from "./services/ai-workflow-trigger.service
 import { AiRecommendationService } from "./services/ai-recommendation.service";
 import { AiIntegrationHubService } from "./services/ai-integration-hub.service";
 import { AiExecutionPipelineService } from "./services/ai-execution-pipeline.service";
+import { AuditSystemService } from "./services/audit-system.service";
+import { GovernanceControlsService } from "./services/governance-controls.service";
+import { SecurityContext, SecurityLayerService } from "./services/security-layer.service";
 
 const agentRegistry = new AgentRegistryService();
 const taskIntake = new TaskIntakeService();
@@ -18,6 +21,10 @@ const dispatcher = new TaskDispatcherService(agentRegistry);
 const approvalService = new ApprovalService();
 const validationService = new ValidationService();
 const executionLogger = new ExecutionLoggerService();
+const security = new SecurityLayerService();
+const auditSystem = new AuditSystemService();
+const governanceControls = new GovernanceControlsService(auditSystem);
+
 const businessEngine = new BusinessEngineService();
 const decisionEngine = new AiDecisionEngineService();
 const triggerService = new AiWorkflowTriggerService();
@@ -31,6 +38,18 @@ const aiPipeline = new AiExecutionPipelineService(
   executionLogger,
 );
 
+const ownerContext: SecurityContext = {
+  actorId: "OWNER_PRIMARY",
+  role: "OWNER",
+  tenantId: "HNI_GLOBAL",
+};
+
+const workerContext: SecurityContext = {
+  actorId: "WORKER_AUTOMATION_01",
+  role: "WORKER_AI",
+  tenantId: "TENANT_EXTERNAL",
+};
+
 const health = healthRoute();
 
 console.log("MUSKI CORE RUNTIME BOOTED");
@@ -42,16 +61,36 @@ const sampleTask = taskIntake.createTask({
   priority: "high",
   requestedBy: "OWNER",
   targetAgent: "OPS_MANAGER_AI",
+  tenantId: "HNI_GLOBAL",
 });
 
 const validation = validationService.validateTask(sampleTask);
 console.log("Validation:", validation);
 
+security.assertAuthorized(ownerContext, "task:dispatch", sampleTask.tenantId);
 const dispatchResult = dispatcher.dispatch(sampleTask);
 console.log("Dispatch:", dispatchResult);
+auditSystem.record(ownerContext, "task:dispatch", "success", dispatchResult as unknown as Record<string, unknown>);
 
-const approval = approvalService.requestApproval(sampleTask.id, "OWNER");
+const approval = approvalService.requestApproval(sampleTask.id, ownerContext.actorId, ownerContext.tenantId);
+const approvalFlow = governanceControls.startApprovalFlow(sampleTask.id, ownerContext, 1);
 console.log("Approval:", approval);
+console.log("Governance flow:", approvalFlow);
+
+try {
+  security.assertAuthorized(workerContext, "task:dispatch", sampleTask.tenantId);
+} catch (error) {
+  const reason = error instanceof Error ? error.message : "Unauthorized execution blocked.";
+  executionLogger.log("access_denied", "Unauthorized dispatch blocked", {
+    actor: workerContext.actorId,
+    reason,
+  });
+  auditSystem.record(workerContext, "security:blocked", "denied", {
+    action: "task:dispatch",
+    taskId: sampleTask.id,
+    reason,
+  });
+}
 
 executionLogger.log("task", "Sample task initialized", {
   taskId: sampleTask.id,
@@ -103,48 +142,6 @@ const businessExecutionSamples = [
       targetSystems: ["LEGALNOMICS", "EDUNOMICS", "AIRNOMICS", "DOCTORNOMICS", "SOBBO"],
     },
   }),
-  businessEngine.execute({
-    module: "travel",
-    workflow: "fare_selection",
-    action: "select_fare",
-    payload: { tripId: "TRIP-1001", fareClass: "economy_flex", supplier: "AIRNOMICS_GDS" },
-  }),
-  businessEngine.execute({
-    module: "legalnomics",
-    workflow: "case_execution",
-    action: "execute_case_stage",
-    payload: { caseId: "CASE-8842", stage: "evidence_review" },
-  }),
-  businessEngine.execute({
-    module: "edunomics",
-    workflow: "application_visa_counselor",
-    action: "advance_application",
-    payload: { applicationId: "APP-221", visaStatus: "interview_scheduled", counselorId: "COUN-09" },
-  }),
-  businessEngine.execute({
-    module: "doctornomics",
-    workflow: "treatment_hospital_pricing",
-    action: "book_treatment",
-    payload: { patientId: "PAT-41", hospitalId: "HOSP-AX1", treatmentCode: "CARD-02", price: 84000 },
-  }),
-  businessEngine.execute({
-    module: "sobbo",
-    workflow: "product_order_delivery",
-    action: "execute_order_flow",
-    payload: { merchantId: "MER-77", orderId: "ORD-200", deliveryStatus: "out_for_delivery" },
-  }),
-  businessEngine.execute({
-    module: "crm",
-    workflow: "lead_followup_journey",
-    action: "route_lead",
-    payload: { leadId: "LEAD-845", ownerId: "CRM-31", nextActionAt: "2026-04-15T10:30:00Z" },
-  }),
-  businessEngine.execute({
-    module: "finance_waai",
-    workflow: "invoice_ledger_profit_gst",
-    action: "post_invoice",
-    payload: { invoiceId: "INV-552", ledgerId: "LED-301", gstStatus: "filed", profit: 12000 },
-  }),
 ];
 
 for (const result of businessExecutionSamples) {
@@ -171,6 +168,9 @@ console.log("AI pipeline execution:", aiExecutionResult.summary);
 console.log("AI recommendation count:", aiExecutionResult.recommendations.length);
 console.log("AI execution history:", executionLogger.getHistoryByType("ai_execution").length);
 
+console.log("Security Layer:", security.getPermissionMatrix());
+console.log("Governance Controls:", governanceControls.getApprovalFlowsByTenant("HNI_GLOBAL"));
+console.log("Audit System:", auditSystem.getEventsByTenant("HNI_GLOBAL").length);
 console.log("Business workflows:", businessEngine.getRegisteredWorkflows());
 console.log("Unified identities:", businessEngine.getUnifiedIdentityCount());
 console.log("Cross-OS activities:", businessEngine.getCrossOsActivityCount());
