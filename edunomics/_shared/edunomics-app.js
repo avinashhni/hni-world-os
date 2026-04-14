@@ -197,9 +197,122 @@ const runWorkflowValidation = () => {
   };
 };
 
+const buildIntelligenceModel = (snapshot) => {
+  const studentsByStage = workflowStates.studentJourney.reduce((acc, stage) => {
+    acc[stage] = snapshot.studentProfiles.filter((student) => student.stage === stage).length;
+    return acc;
+  }, {});
+  studentsByStage.lead = snapshot.studentLeads.length;
+
+  const countryDistribution = snapshot.studentLeads.reduce((acc, lead) => {
+    lead.interestCountries.forEach((country) => {
+      acc[country] = (acc[country] || 0) + 1;
+    });
+    return acc;
+  }, {});
+
+  const acceptanceRates = snapshot.universityProfiles.map((university) => [
+    university.name,
+    `${university.acceptanceRate}%`,
+    university.acceptanceRate >= 55 ? 'High' : university.acceptanceRate >= 45 ? 'Balanced' : 'Selective'
+  ]);
+
+  const visaSuccessRates = snapshot.universityProfiles.map((university) => [
+    university.name,
+    `${university.visaSuccessRatio}%`,
+    university.visaSuccessRatio >= 90 ? 'Strong' : university.visaSuccessRatio >= 85 ? 'Watch' : 'Risk'
+  ]);
+
+  const counselorProductivity = snapshot.counselorProfiles.map((counselor) => {
+    const load = counselor.activeStudents / counselor.capacity;
+    const closedWon = Math.round(counselor.activeStudents * counselor.conversionRate);
+    return [
+      counselor.name,
+      `${Math.round(load * 100)}%`,
+      `${Math.round(counselor.conversionRate * 100)}%`,
+      String(closedWon),
+      load > 0.85 ? 'Overloaded' : 'Healthy'
+    ];
+  });
+
+  const intakeForecast = snapshot.intakeCycles.map((cycle) => {
+    const pipelineStudents = snapshot.studentLeads.filter((lead) => lead.targetIntake === `${cycle.season.charAt(0).toUpperCase()}${cycle.season.slice(1)} ${cycle.year}`).length;
+    const appCapacity = cycle.openUniversities.length * 30;
+    const forecastUtilization = appCapacity ? Math.round((pipelineStudents / appCapacity) * 100) : 0;
+    return [
+      `${cycle.name} (${cycle.year})`,
+      `${pipelineStudents} leads`,
+      `${appCapacity} app slots`,
+      `${forecastUtilization}%`,
+      forecastUtilization > 70 ? 'Hot intake' : 'Headroom'
+    ];
+  });
+
+  const missingDocs = snapshot.documentRecords.filter((doc) => !doc.verified);
+  const delayedApplications = snapshot.applications.filter((app) => app.stage === 'draft' || app.stage === 'review');
+  const visaDelays = snapshot.visaCases.filter((visaCase) => visaCase.checklistProgress < 75);
+  const counselorOverload = snapshot.counselorProfiles.filter((counselor) => counselor.activeStudents / counselor.capacity > 0.85);
+
+  const bottlenecks = [
+    ['Missing Docs', `${missingDocs.length}`, missingDocs.map((doc) => `${doc.documentType} (${doc.studentId})`).join(', ') || 'None'],
+    ['Delayed Applications', `${delayedApplications.length}`, delayedApplications.map((app) => `${app.id} · ${app.stage}`).join(', ') || 'None'],
+    ['Visa Delays', `${visaDelays.length}`, visaDelays.map((visaCase) => `${visaCase.id} · ${visaCase.country} ${visaCase.checklistProgress}%`).join(', ') || 'None'],
+    ['Counselor Overload', `${counselorOverload.length}`, counselorOverload.map((counselor) => `${counselor.name} ${Math.round((counselor.activeStudents / counselor.capacity) * 100)}%`).join(', ') || 'None']
+  ];
+
+  const highValueStudents = snapshot.studentProfiles
+    .map((student) => {
+      const applications = snapshot.applications.filter((app) => app.studentId === student.id);
+      const expectedRevenue = applications.reduce((sum, application) => {
+        const course = snapshot.courseProfiles.find((profile) => profile.id === application.courseId);
+        return sum + (course?.tuitionUSD || 0);
+      }, 0);
+      return { student, expectedRevenue };
+    })
+    .sort((a, b) => b.expectedRevenue - a.expectedRevenue)
+    .slice(0, 5);
+
+  const revenuePipeline = snapshot.applications.reduce((sum, application) => {
+    const course = snapshot.courseProfiles.find((profile) => profile.id === application.courseId);
+    return sum + (course?.tuitionUSD || 0);
+  }, 0);
+
+  const riskFlags = [
+    ...missingDocs.map((doc) => `Doc risk: ${doc.documentType} due ${doc.dueDate} (${doc.studentId})`),
+    ...visaDelays.map((visaCase) => `Visa risk: ${visaCase.id} at ${visaCase.checklistProgress}%`),
+    ...counselorOverload.map((counselor) => `Capacity risk: ${counselor.name} ${Math.round((counselor.activeStudents / counselor.capacity) * 100)}%`)
+  ];
+
+  const escalations = [
+    ...visaDelays.map((visaCase) => [`visaCase:${visaCase.id}`, 'Embassy processing lag', 'owner.office']),
+    ...delayedApplications.map((app) => [`application:${app.id}`, `Stage stuck at ${app.stage}`, 'owner.office'])
+  ];
+
+  const validation = {
+    intelligenceLoads: Object.keys(countryDistribution).length > 0 && acceptanceRates.length > 0 && counselorProductivity.length > 0,
+    kpisRender: Number.isFinite(revenuePipeline) && bottlenecks.length === 4 && highValueStudents.length > 0
+  };
+
+  return {
+    studentsByStage,
+    countryDistribution,
+    acceptanceRates,
+    visaSuccessRates,
+    counselorProductivity,
+    intakeForecast,
+    bottlenecks,
+    highValueStudents,
+    revenuePipeline,
+    riskFlags,
+    escalations,
+    validation
+  };
+};
+
 export const renderEdunomicsScreen = (screen) => {
   const snapshot = structuredClone(mockDB);
   const kpi = computeKPIs(snapshot);
+  const intelligence = buildIntelligenceModel(snapshot);
 
   const homeContent = `
     <section class="hero-card">
@@ -260,7 +373,17 @@ export const renderEdunomicsScreen = (screen) => {
     })(),
     documents: `<section class="content-grid one">${table('Document Control', ['Document Type', 'Status', 'Nearest Due Date'], renderDocumentControlRows(snapshot))}</section>
     <section class="content-grid one">${table('Alerts', ['Alert Type', 'Detail'], [['missing documents', snapshot.documentRecords.filter((d) => !d.verified).map((d) => `${d.documentType} (${d.studentId})`).join(', ') || 'None'], ['deadlines', snapshot.applications.map((a) => `${a.id} due ${a.deadline}`).join(', ')], ['expired docs', snapshot.documentRecords.filter((d) => d.dueDate < new Date().toISOString().slice(0, 10) && !d.verified).map((d) => d.documentType).join(', ') || 'None']])}</section>`,
-    intelligence: `<section class="content-grid two">${table('Intelligence Signals', ['Signal', 'Summary'], [['Dropout Risk', '1 high-risk candidate needs intervention'], ['Visa Delay', 'Embassy slots constrained for Canada'], ['Scholarship Review', '1 application in review stage'], ['Partner SLA', 'All partner SLAs under threshold']])}${table('Activity Log', ['Action', 'Entity', 'Actor', 'Notes'], snapshot.activityLogs.slice(0, 6).map((l) => [l.action, `${l.entityType}:${l.entityId}`, l.actor, l.notes]))}</section>`,
+    intelligence: `<section class="stats-grid four">
+      <article class="stat-card"><h4>Student Pipeline</h4><div class="stat-number">${Object.values(intelligence.studentsByStage).reduce((sum, count) => sum + count, 0)}</div><p>Lead-to-offer command visibility.</p></article>
+      <article class="stat-card"><h4>Country Distribution</h4><div class="stat-number">${Object.keys(intelligence.countryDistribution).length}</div><p>Countries actively targeted by leads.</p></article>
+      <article class="stat-card"><h4>Acceptance Bench</h4><div class="stat-number">${Math.round(snapshot.universityProfiles.reduce((sum, university) => sum + university.acceptanceRate, 0) / snapshot.universityProfiles.length)}%</div><p>Average acceptance rate across mapped universities.</p></article>
+      <article class="stat-card"><h4>Visa Success Bench</h4><div class="stat-number">${Math.round(snapshot.universityProfiles.reduce((sum, university) => sum + university.visaSuccessRatio, 0) / snapshot.universityProfiles.length)}%</div><p>Average visa success by destination profile.</p></article>
+    </section>
+    <section class="content-grid two">${table('Intelligence Dashboard · Student Pipeline', ['Stage', 'Students'], Object.entries(intelligence.studentsByStage).map(([stage, count]) => [stage, String(count)]))}${table('Country Distribution', ['Country', 'Lead Count'], Object.entries(intelligence.countryDistribution).map(([country, count]) => [country, String(count)]))}</section>
+    <section class="content-grid two">${table('Acceptance Rates', ['University', 'Acceptance Rate', 'Signal'], intelligence.acceptanceRates)}${table('Visa Success Rates', ['University', 'Visa Success', 'Signal'], intelligence.visaSuccessRates)}</section>
+    <section class="content-grid two">${table('Counselor Productivity', ['Counselor', 'Load', 'Conversion', 'Expected Closures', 'Signal'], intelligence.counselorProductivity)}${table('Intake Forecast', ['Intake', 'Pipeline', 'Capacity', 'Utilization', 'Signal'], intelligence.intakeForecast)}</section>
+    <section class="content-grid one">${table('Bottlenecks', ['Bottleneck', 'Count', 'Detail'], intelligence.bottlenecks)}</section>
+    <section class="content-grid one">${table('Validation', ['Check', 'Result'], [['intelligence loads', intelligence.validation.intelligenceLoads ? 'PASS' : 'FAIL'], ['KPIs render', intelligence.validation.kpisRender ? 'PASS' : 'FAIL']])}</section>`,
 
     courses: `<section class="content-grid one">${table('Course Intelligence Database', ['Course', 'University', 'Degree', 'Duration', 'Tuition', 'Prerequisites', 'Career Outcome', 'Placement Rate'], snapshot.courseProfiles.map((c) => { const uni = universityById(snapshot, c.universityId); return [c.name, uni?.name || c.universityId, c.degreeLevel, `${c.durationMonths} months`, `$${c.tuitionUSD.toLocaleString()}`, c.prerequisites.join(', '), c.careerOutcome, `${c.jobPlacementRate}%`]; }))}</section>`,
     'matching-engine': (() => {
@@ -282,7 +405,14 @@ export const renderEdunomicsScreen = (screen) => {
     })(),
     'compare-universities': `<section class="content-grid one">${table('University Comparison Matrix', ['University', 'Fees', 'Avg Course Duration', 'ROI (Years)', 'Visa Success', 'Top Outcome'], snapshot.universityProfiles.map((u) => { const linkedCourses = snapshot.courseProfiles.filter((c) => c.universityId === u.id); const avgDuration = linkedCourses.length ? Math.round(linkedCourses.reduce((acc, c) => acc + c.durationMonths, 0) / linkedCourses.length) : 0; const avgTuition = linkedCourses.length ? Math.round(linkedCourses.reduce((acc, c) => acc + c.tuitionUSD, 0) / linkedCourses.length) : u.feesUSD; const roiYears = (avgTuition / 70000).toFixed(1); const topOutcome = linkedCourses[0]?.careerOutcome || 'N/A'; return [u.name, `$${u.feesUSD.toLocaleString()}`, `${avgDuration} months`, roiYears, `${u.visaSuccessRatio}%`, topOutcome]; }))}</section>`,
     'admin-tools': `<section class="content-grid two">${table('Admin: University Management', ['University', 'Country', 'Ranking', 'Intakes', 'Requirements', 'Scholarships'], snapshot.universityProfiles.map((u) => [u.name, u.country, `#${u.ranking}`, u.intakeMonths.join(', '), `${u.admissionRequirements.length} criteria`, `${u.scholarships.length} active`]))}${table('Admin: Course & Intake Management', ['Course', 'University', 'Degree', 'Placement', 'Intake Cycle', 'Cycle Universities'], snapshot.courseProfiles.map((c, i) => { const intake = snapshot.intakeCycles[i % snapshot.intakeCycles.length]; const uni = universityById(snapshot, c.universityId); return [c.name, uni?.name || c.universityId, c.degreeLevel, `${c.jobPlacementRate}%`, `${intake.name} (${intake.season} ${intake.year})`, `${intake.openUniversities.length} mapped`]; }))}</section>`,
-    owner: `<section class="content-grid two">${table('Owner Oversight', ['Domain', 'Status', 'Criticality'], [['Student Pipeline', 'Operational', 'High'], ['Applications', 'Operational', 'High'], ['Visa Desk', 'Watch', 'Critical'], ['Counselor Desk', 'Operational', 'Medium'], ['Compliance Docs', 'Watch', 'High']])}${table('Escalations', ['Entity', 'Reason', 'Owner'], [['visaCase:visa-001', 'Urgent embassy slot required', 'owner.office'], ['application:app-002', 'Deadline in 3 days', 'owner.office']])}</section>`,
+    owner: `<section class="stats-grid four">
+      <article class="stat-card"><h4>Revenue Pipeline</h4><div class="stat-number">$${intelligence.revenuePipeline.toLocaleString()}</div><p>Total tuition-linked opportunity value.</p></article>
+      <article class="stat-card"><h4>High-Value Students</h4><div class="stat-number">${intelligence.highValueStudents.length}</div><p>Students with top expected revenue potential.</p></article>
+      <article class="stat-card"><h4>Risk Flags</h4><div class="stat-number">${intelligence.riskFlags.length}</div><p>Operational and visa/compliance risks requiring action.</p></article>
+      <article class="stat-card"><h4>Escalations</h4><div class="stat-number">${intelligence.escalations.length}</div><p>Items elevated to owner command layer.</p></article>
+    </section>
+    <section class="content-grid two">${table('Owner View · High-Value Students', ['Student', 'Stage', 'Counselor', 'Expected Revenue'], intelligence.highValueStudents.map((item) => [item.student.fullName, item.student.stage, item.student.counselorId, `$${item.expectedRevenue.toLocaleString()}`]))}${table('Revenue Pipeline by Application', ['Application', 'Student', 'Stage', 'Tuition Value'], snapshot.applications.map((application) => { const student = snapshot.studentProfiles.find((s) => s.id === application.studentId); const course = snapshot.courseProfiles.find((profile) => profile.id === application.courseId); return [application.id, student?.fullName || application.studentId, application.stage, `$${(course?.tuitionUSD || 0).toLocaleString()}`]; }))}</section>
+    <section class="content-grid two">${table('Risk Flags', ['Flag', 'Impact'], intelligence.riskFlags.map((flag) => [flag, flag.includes('Visa') ? 'Critical' : flag.includes('Capacity') ? 'High' : 'Medium']))}${table('Escalations', ['Entity', 'Reason', 'Owner'], intelligence.escalations)}</section>`,
     'admissions-workflow': `<section class="content-grid one">${pipeline('Admissions Workflow', ['draft', 'review', 'submit', 'university decision', 'offer', 'acceptance'], 'university decision')}</section>
     <section class="content-grid one">${table('Workflow Validation', ['Validation', 'Status'], [['create application', 'PASS'], ['move through stages', 'PASS'], ['UI stable', 'PASS']])}</section>`
   };
