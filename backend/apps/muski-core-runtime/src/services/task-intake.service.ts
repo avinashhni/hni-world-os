@@ -4,6 +4,7 @@ export interface TaskInput {
   description: string;
   priority: "low" | "medium" | "high" | "critical";
   requestedBy: string;
+  tenantId: string;
   createdAt: string;
   targetAgent?: string;
 }
@@ -24,6 +25,10 @@ export class TaskIntakeService {
 
   getAllTasks(): TaskInput[] {
     return this.tasks;
+  }
+
+  getAllTasksByTenant(tenantId: string): TaskInput[] {
+    return this.tasks.filter((task) => task.tenantId === tenantId);
   }
 
   getTaskById(id: string): TaskInput | undefined {

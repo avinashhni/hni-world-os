@@ -1,6 +1,6 @@
 export interface ExecutionLog {
   id: string;
-  type: "task" | "approval" | "dispatch" | "system" | "business_engine" | "ai_decision" | "ai_execution";
+  type: "task" | "approval" | "dispatch" | "system" | "business_engine" | "ai_decision" | "ai_execution" | "security" | "governance" | "audit" | "access_denied" | "escalation";
   message: string;
   createdAt: string;
   metadata?: Record<string, unknown>;

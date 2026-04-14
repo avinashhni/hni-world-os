@@ -25,6 +25,10 @@ export class ValidationService {
       errors.push("Priority is required.");
     }
 
+    if (!task.tenantId || task.tenantId.trim().length < 2) {
+      errors.push("TenantId is required.");
+    }
+
     return {
       valid: errors.length === 0,
       errors,
