@@ -65,7 +65,7 @@ with tenant_rows as (
         ]'
       ),
       (
-        'crm.followup.lifecycle',
+        'crm.lifecycle',
         'CRM Follow-up Lifecycle',
         'crm',
         '["NEW","QUALIFIED","ROUTED","FOLLOW_UP","CLOSED"]',
@@ -77,7 +77,7 @@ with tenant_rows as (
         ]'
       ),
       (
-        'finance.approval.lifecycle',
+        'finance.lifecycle',
         'Finance Approval Lifecycle',
         'finance',
         '["DRAFT","VALIDATED","APPROVED","POSTED"]',
