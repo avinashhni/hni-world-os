@@ -416,3 +416,84 @@ as $$
   )
   select total_debit = total_credit from totals;
 $$;
+
+create table if not exists public.workflow_state_history (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  workflow_instance_id uuid not null references public.workflow_instances(id) on delete cascade,
+  from_state text,
+  to_state text not null,
+  event_name text not null,
+  actor_user_id uuid references public.user_accounts(id) on delete set null,
+  guard_status text not null default 'passed' check (guard_status in ('passed','failed')),
+  retry_attempt int not null default 0,
+  escalation_target text,
+  transition_status text not null default 'success' check (transition_status in ('success','failed')),
+  failure_reason text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.job_dead_letters (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  queue_job_id uuid not null,
+  queue_name text not null,
+  payload jsonb not null,
+  attempts int not null,
+  last_error text,
+  failed_at timestamptz not null default now()
+);
+
+create table if not exists public.muski_commands (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  command_key text not null,
+  command_payload jsonb not null default '{}'::jsonb,
+  requested_by uuid references public.user_accounts(id) on delete set null,
+  status text not null default 'queued' check (status in ('queued','running','completed','failed','requires_approval')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.muski_execution_history (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  command_id uuid not null references public.muski_commands(id) on delete cascade,
+  execution_stage text not null,
+  state_payload jsonb not null default '{}'::jsonb,
+  status text not null default 'running',
+  error_message text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.muski_approvals (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  command_id uuid not null references public.muski_commands(id) on delete cascade,
+  approval_scope text not null,
+  requested_by uuid references public.user_accounts(id) on delete set null,
+  approved_by uuid references public.user_accounts(id) on delete set null,
+  status text not null default 'pending' check (status in ('pending','approved','rejected','escalated')),
+  decision_note text,
+  decided_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists public.muski_escalations (
+  id uuid primary key default gen_random_uuid(),
+  tenant_id uuid not null references public.tenants(id) on delete cascade,
+  command_id uuid not null references public.muski_commands(id) on delete cascade,
+  source_scope text not null,
+  escalation_target text not null,
+  reason text not null,
+  status text not null default 'open' check (status in ('open','resolved')),
+  resolved_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_workflow_state_history_instance on public.workflow_state_history(workflow_instance_id, created_at desc);
+create index if not exists idx_job_dead_letters_queue_name on public.job_dead_letters(queue_name, failed_at desc);
+create index if not exists idx_muski_commands_status on public.muski_commands(status, created_at desc);
+create index if not exists idx_muski_execution_command on public.muski_execution_history(command_id, created_at desc);
+create index if not exists idx_muski_approvals_status on public.muski_approvals(status, created_at desc);
+create index if not exists idx_muski_escalations_status on public.muski_escalations(status, created_at desc);

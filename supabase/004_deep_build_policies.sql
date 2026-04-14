@@ -74,3 +74,17 @@ create policy queue_tenant_policy on public.job_queue for all to authenticated u
 
 -- global read access for permission dictionary
 create policy permissions_catalog_read on public.permissions for select to authenticated using (true);
+
+alter table public.workflow_state_history enable row level security;
+alter table public.job_dead_letters enable row level security;
+alter table public.muski_commands enable row level security;
+alter table public.muski_execution_history enable row level security;
+alter table public.muski_approvals enable row level security;
+alter table public.muski_escalations enable row level security;
+
+create policy workflow_state_history_tenant_policy on public.workflow_state_history for all to authenticated using (tenant_id = public.current_tenant_id()) with check (tenant_id = public.current_tenant_id());
+create policy job_dead_letters_tenant_policy on public.job_dead_letters for all to authenticated using (tenant_id = public.current_tenant_id()) with check (tenant_id = public.current_tenant_id());
+create policy muski_commands_tenant_policy on public.muski_commands for all to authenticated using (tenant_id = public.current_tenant_id()) with check (tenant_id = public.current_tenant_id());
+create policy muski_execution_tenant_policy on public.muski_execution_history for all to authenticated using (tenant_id = public.current_tenant_id()) with check (tenant_id = public.current_tenant_id());
+create policy muski_approvals_tenant_policy on public.muski_approvals for all to authenticated using (tenant_id = public.current_tenant_id()) with check (tenant_id = public.current_tenant_id());
+create policy muski_escalations_tenant_policy on public.muski_escalations for all to authenticated using (tenant_id = public.current_tenant_id()) with check (tenant_id = public.current_tenant_id());
