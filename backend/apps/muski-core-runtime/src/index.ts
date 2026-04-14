@@ -14,6 +14,11 @@ import { AiExecutionPipelineService } from "./services/ai-execution-pipeline.ser
 import { AuditSystemService } from "./services/audit-system.service";
 import { GovernanceControlsService } from "./services/governance-controls.service";
 import { SecurityContext, SecurityLayerService } from "./services/security-layer.service";
+import { PerformanceCacheService } from "./services/performance-cache.service";
+import { ScalingQueueOptimizerService } from "./services/scaling-queue-optimizer.service";
+import { AsyncProcessingService } from "./services/async-processing.service";
+import { DbOptimizationService } from "./services/db-optimization.service";
+import { LoadBalancingReadinessService } from "./services/load-balancing-readiness.service";
 
 const agentRegistry = new AgentRegistryService();
 const taskIntake = new TaskIntakeService();
@@ -24,6 +29,12 @@ const executionLogger = new ExecutionLoggerService();
 const security = new SecurityLayerService();
 const auditSystem = new AuditSystemService();
 const governanceControls = new GovernanceControlsService(auditSystem);
+
+const cache = new PerformanceCacheService<string>(100_000, 120_000);
+const queueOptimizer = new ScalingQueueOptimizerService<{ taskId: string; tenantId: string }>(256, 2_000);
+const asyncProcessor = new AsyncProcessingService();
+const dbOptimizer = new DbOptimizationService();
+const loadBalancing = new LoadBalancingReadinessService();
 
 const businessEngine = new BusinessEngineService();
 const decisionEngine = new AiDecisionEngineService();
@@ -177,3 +188,46 @@ console.log("Cross-OS activities:", businessEngine.getCrossOsActivityCount());
 console.log("Logs:", executionLogger.getAll());
 console.log("Agents:", agentRegistry.getAllAgents());
 console.log("Tasks:", taskIntake.getAllTasks());
+
+void (async () => {
+  cache.set("tenant:HNI_GLOBAL:dashboard", "warm");
+  cache.get("tenant:HNI_GLOBAL:dashboard");
+
+  for (const task of taskIntake.getAllTasks()) {
+    queueOptimizer.enqueue({
+      id: task.id,
+      queue: task.priority === "critical" ? "critical" : task.priority === "high" ? "high" : "default",
+      payload: { taskId: task.id, tenantId: task.tenantId },
+    });
+  }
+
+  const reservedBatch = queueOptimizer.reserveBatch();
+  const asyncBatchResult = await asyncProcessor.runWithConcurrency(
+    reservedBatch,
+    async (job) => ({
+      jobId: job.id,
+      status: "completed",
+      completedAt: new Date().toISOString(),
+    }),
+    64,
+  );
+  queueOptimizer.ack(asyncBatchResult.completed.length);
+
+  const dbPlan = dbOptimizer.createPhase20Plan();
+  const lbReadiness = loadBalancing.evaluate([
+    { nodeId: "muski-us-east-1a", region: "us-east", cpuLoad: 0.52, memoryLoad: 0.48, healthy: true },
+    { nodeId: "muski-us-east-1b", region: "us-east", cpuLoad: 0.63, memoryLoad: 0.55, healthy: true },
+    { nodeId: "muski-us-west-2a", region: "us-west", cpuLoad: 0.41, memoryLoad: 0.46, healthy: true },
+    { nodeId: "muski-eu-west-1a", region: "eu-west", cpuLoad: 0.77, memoryLoad: 0.71, healthy: true },
+  ]);
+
+  console.log("Phase 20 cache stats:", cache.getStats());
+  console.log("Phase 20 queue metrics:", queueOptimizer.getMetrics());
+  console.log("Phase 20 async summary:", {
+    completed: asyncBatchResult.completed.length,
+    failed: asyncBatchResult.failed.length,
+    durationMs: asyncBatchResult.durationMs,
+  });
+  console.log("Phase 20 DB optimization plan:", dbPlan);
+  console.log("Phase 20 load balancing readiness:", lbReadiness);
+})();
