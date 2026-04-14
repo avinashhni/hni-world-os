@@ -1,6 +1,6 @@
 export interface ExecutionLog {
   id: string;
-  type: "task" | "approval" | "dispatch" | "system";
+  type: "task" | "approval" | "dispatch" | "system" | "business_engine" | "ai_decision" | "ai_execution";
   message: string;
   createdAt: string;
   metadata?: Record<string, unknown>;
@@ -28,5 +28,9 @@ export class ExecutionLoggerService {
 
   getAll(): ExecutionLog[] {
     return this.logs;
+  }
+
+  getHistoryByType(type: ExecutionLog["type"]): ExecutionLog[] {
+    return this.logs.filter((item) => item.type === type);
   }
 }

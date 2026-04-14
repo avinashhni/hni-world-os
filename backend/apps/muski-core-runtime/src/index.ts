@@ -6,6 +6,11 @@ import { ValidationService } from "./services/validation.service";
 import { ExecutionLoggerService } from "./services/execution-logger.service";
 import { healthRoute } from "./routes/health.route";
 import { BusinessEngineService } from "./services/business-engine.service";
+import { AiDecisionEngineService } from "./services/ai-decision-engine.service";
+import { AiWorkflowTriggerService } from "./services/ai-workflow-trigger.service";
+import { AiRecommendationService } from "./services/ai-recommendation.service";
+import { AiIntegrationHubService } from "./services/ai-integration-hub.service";
+import { AiExecutionPipelineService } from "./services/ai-execution-pipeline.service";
 
 const agentRegistry = new AgentRegistryService();
 const taskIntake = new TaskIntakeService();
@@ -14,6 +19,17 @@ const approvalService = new ApprovalService();
 const validationService = new ValidationService();
 const executionLogger = new ExecutionLoggerService();
 const businessEngine = new BusinessEngineService();
+const decisionEngine = new AiDecisionEngineService();
+const triggerService = new AiWorkflowTriggerService();
+const recommendationService = new AiRecommendationService();
+const integrationHub = new AiIntegrationHubService();
+const aiPipeline = new AiExecutionPipelineService(
+  decisionEngine,
+  triggerService,
+  recommendationService,
+  integrationHub,
+  executionLogger,
+);
 
 const health = healthRoute();
 
@@ -134,6 +150,26 @@ const businessExecutionSamples = [
 for (const result of businessExecutionSamples) {
   executionLogger.log("business_engine", result.outcome, result);
 }
+
+const aiExecutionResult = aiPipeline.execute({
+  role: "OWNER",
+  requestedBy: "MUSKI_MASTER",
+  objective: "Execute coordinated customer lifecycle updates across core connected systems",
+  urgency: "critical",
+  domains: ["crm", "booking", "finance", "legal", "education"],
+  payload: {
+    crmRecordId: "CRM-9001",
+    bookingId: "BKG-4021",
+    invoiceId: "INV-552",
+    caseId: "CASE-8842",
+    applicationId: "APP-221",
+    globalCustomerId: "HNI-CUST-9001",
+  },
+});
+
+console.log("AI pipeline execution:", aiExecutionResult.summary);
+console.log("AI recommendation count:", aiExecutionResult.recommendations.length);
+console.log("AI execution history:", executionLogger.getHistoryByType("ai_execution").length);
 
 console.log("Business workflows:", businessEngine.getRegisteredWorkflows());
 console.log("Unified identities:", businessEngine.getUnifiedIdentityCount());
