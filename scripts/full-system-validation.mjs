@@ -204,6 +204,7 @@ function checkApiContracts() {
     'backend/apps/muski-core-runtime/src/routes/task.route.ts',
     'backend/apps/muski-core-runtime/src/routes/dispatch.route.ts',
     'backend/apps/muski-core-runtime/src/routes/approval.route.ts',
+    'supabase/functions/core-api/index.ts',
   ];
 
   const missing = [];
@@ -213,7 +214,11 @@ function checkApiContracts() {
       continue;
     }
     const content = readFileSync(join(root, file), 'utf8');
-    assert(/export function/.test(content), `${file} does not export route function`);
+    if (file.endsWith('.ts') && file.includes('supabase/functions/core-api')) {
+      assert(/serve\(/.test(content), `${file} missing edge runtime handler`);
+    } else {
+      assert(/export function/.test(content), `${file} does not export route function`);
+    }
   }
 
   assert(missing.length === 0, `Missing route files: ${missing.join(', ')}`);
@@ -240,8 +245,12 @@ function checkDeploymentReadiness() {
     'dist/vercel.json',
     'supabase/001_schema.sql',
     'supabase/002_policies.sql',
+    'supabase/003_deep_build_schema.sql',
+    'supabase/004_deep_build_policies.sql',
+    'supabase/005_deep_build_seed.sql',
     'supabase/functions/create-intake/index.ts',
     'supabase/functions/claim-lead/index.ts',
+    'supabase/functions/core-api/index.ts',
   ];
 
   const missing = required.filter((file) => !existsSync(join(root, file)));
@@ -270,12 +279,18 @@ function checkRoleAndPermissionModel() {
 }
 
 function checkSecurityBoundaries() {
-  const schemaSql = readFileSync(join(root, "supabase/001_schema.sql"), "utf8");
-  const policySql = readFileSync(join(root, "supabase/002_policies.sql"), "utf8");
+  const schemaSql = [
+    readFileSync(join(root, "supabase/001_schema.sql"), "utf8"),
+    readFileSync(join(root, "supabase/003_deep_build_schema.sql"), "utf8"),
+  ].join("\n");
+  const policySql = [
+    readFileSync(join(root, "supabase/002_policies.sql"), "utf8"),
+    readFileSync(join(root, "supabase/004_deep_build_policies.sql"), "utf8"),
+  ].join("\n");
 
   const tables = Array.from(schemaSql.matchAll(/create table if not exists public\.([a-z0-9_]+)/gi)).map((match) => match[1]);
   const rlsEnabled = Array.from(policySql.matchAll(/alter table public\.([a-z0-9_]+) enable row level security;/gi)).map((match) => match[1]);
-  const policies = Array.from(policySql.matchAll(/create policy "[^"]+" on public\.([a-z0-9_]+)/gi)).map((match) => match[1]);
+  const policies = Array.from(policySql.matchAll(/create policy\s+(?:"[^"]+"|[a-z0-9_]+)\s+on public\.([a-z0-9_]+)/gi)).map((match) => match[1]);
 
   const missingRls = tables.filter((table) => !rlsEnabled.includes(table));
   assert(missingRls.length === 0, `Tables missing RLS: ${missingRls.join(", ")}`);
