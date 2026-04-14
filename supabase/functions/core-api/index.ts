@@ -9,8 +9,29 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
 };
 
-function badRequest(message: string, status = 400) {
-  return new Response(JSON.stringify({ ok: false, error: message }), {
+const ROLE_ACCESS: Record<string, string[]> = {
+  "crm.upsert": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "CRM_MANAGER"],
+  "crm.claim-lead": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "CRM_MANAGER", "STAFF"],
+  "bookings.create": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "BOOKING_MANAGER"],
+  "bookings.transition": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "BOOKING_MANAGER", "OPS_MANAGER"],
+  "finance.invoice": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "FINANCE_MANAGER"],
+  "workflows.transition": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "OPS_MANAGER"],
+  "legal.execute": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "LEGAL_MANAGER"],
+  "education.execute": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "EDU_MANAGER"],
+  "integrations.providers": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "OPS_MANAGER"],
+  "analytics.track": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "OPS_MANAGER", "STAFF"],
+  "ai.execute": ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "INTERNAL_AI"],
+};
+
+function badRequest(message: string, status = 400, code = "bad_request") {
+  return new Response(JSON.stringify({ ok: false, error: { code, message } }), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+}
+
+function ok(data: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify({ ok: true, ...data }), {
     status,
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
@@ -18,6 +39,42 @@ function badRequest(message: string, status = 400) {
 
 function hasRole(roles: string[], required: string[]) {
   return roles.some((item) => required.includes(item));
+}
+
+async function writeAudit(
+  supabase: ReturnType<typeof createClient>,
+  tenantId: string,
+  actorUserId: string,
+  action: string,
+  entityType: string,
+  entityId: string | null,
+  payload: Json,
+) {
+  await supabase.from("audit_logs").insert({
+    tenant_id: tenantId,
+    actor_user_id: actorUserId,
+    source_system: "COPSPOWER",
+    action,
+    entity_type: entityType,
+    entity_id: entityId,
+    action_payload: payload,
+  });
+}
+
+function buildProviderRuntime(providerType: string, providerKey: string) {
+  const keyPresent = Boolean(Deno.env.get(`PROVIDER_${providerKey.toUpperCase()}_KEY`));
+  return {
+    provider_key: providerKey,
+    provider_type: providerType,
+    mode: keyPresent ? "live" : "sandbox",
+    status: keyPresent ? "active" : "sandbox_stub",
+    retry_policy: { max_attempts: 3, backoff_seconds: [30, 120, 300] },
+    error_mapping: {
+      timeout: "provider_timeout",
+      unauthorized: "provider_auth_failed",
+      unknown: "provider_unknown_error",
+    },
+  };
 }
 
 serve(async (req) => {
@@ -30,7 +87,7 @@ serve(async (req) => {
     const actionName = segments.at(-1);
 
     if (!moduleName || !actionName) {
-      return badRequest("Invalid route. Use /core-api/{module}/{action}", 404);
+      return badRequest("Invalid route. Use /core-api/{module}/{action}", 404, "route_not_found");
     }
 
     const supabase = createClient(
@@ -40,17 +97,18 @@ serve(async (req) => {
 
     const authHeader = req.headers.get("Authorization") ?? "";
     const token = authHeader.replace("Bearer ", "").trim();
-    if (!token) return badRequest("Missing bearer token", 401);
+    if (!token) return badRequest("Missing bearer token", 401, "missing_bearer_token");
 
     const { data: userInfo, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userInfo.user) return badRequest("Unauthorized", 401);
+    if (userError || !userInfo.user) return badRequest("Unauthorized", 401, "unauthorized");
 
     const { data: userAccount, error: accountError } = await supabase
       .from("user_accounts")
       .select("id, tenant_id")
       .eq("auth_user_id", userInfo.user.id)
       .single();
-    if (accountError || !userAccount) return badRequest("User account not provisioned", 403);
+
+    if (accountError || !userAccount) return badRequest("User account not provisioned", 403, "user_not_provisioned");
 
     const { data: assignedRoles } = await supabase
       .from("user_role_assignments")
@@ -62,16 +120,18 @@ serve(async (req) => {
       .map((row: any) => row.roles?.role_key)
       .filter((item: unknown): item is string => Boolean(item));
 
+    const routeKey = `${moduleName}.${actionName}`;
+    const requiredRoles = ROLE_ACCESS[routeKey];
+    if (requiredRoles && !hasRole(roleKeys, requiredRoles)) {
+      return badRequest("Forbidden for current role", 403, "forbidden");
+    }
+
     const body = req.method === "POST" ? await req.json() : {};
 
     if (moduleName === "crm" && actionName === "upsert") {
-      if (!hasRole(roleKeys, ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "CRM_MANAGER"])) {
-        return badRequest("Forbidden for current role", 403);
-      }
-
       const payload = body as Json;
       if (!payload.customer_code || !payload.full_name || !payload.source || !payload.module_type) {
-        return badRequest("customer_code, full_name, source, module_type are required");
+        return badRequest("customer_code, full_name, source, module_type are required", 422, "validation_error");
       }
 
       const { data: customer, error: customerError } = await supabase
@@ -107,16 +167,31 @@ serve(async (req) => {
         .single();
       if (leadError) throw leadError;
 
-      return new Response(JSON.stringify({ ok: true, customer, lead }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "crm.upsert", "crm_lead", lead.id, { customer_id: customer.id });
+      return ok({ customer, lead });
+    }
+
+    if (moduleName === "crm" && actionName === "claim-lead") {
+      const payload = body as Json;
+      if (!payload.lead_id) return badRequest("lead_id is required", 422, "validation_error");
+
+      const { data, error } = await supabase
+        .from("crm_leads")
+        .update({ owner_user_id: userAccount.id, pipeline_stage: "routed" })
+        .eq("id", payload.lead_id)
+        .eq("tenant_id", userAccount.tenant_id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "crm.claim_lead", "crm_lead", data.id, { previous_owner: null });
+      return ok({ lead: data });
     }
 
     if (moduleName === "bookings" && actionName === "create") {
-      if (!hasRole(roleKeys, ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "BOOKING_MANAGER"])) {
-        return badRequest("Forbidden for current role", 403);
-      }
       const payload = body as Json;
       if (!payload.booking_number || !payload.customer_id || !payload.module_type) {
-        return badRequest("booking_number, customer_id, module_type are required");
+        return badRequest("booking_number, customer_id, module_type are required", 422, "validation_error");
       }
 
       const { data: booking, error: bookingError } = await supabase
@@ -140,22 +215,82 @@ serve(async (req) => {
       await supabase.from("booking_state_history").insert({
         tenant_id: userAccount.tenant_id,
         booking_id: booking.id,
-        from_state: null,
         to_state: "SEARCH",
-        event_name: "created",
+        event_name: "booking.created",
         actor_user_id: userAccount.id,
       });
 
-      return new Response(JSON.stringify({ ok: true, booking }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "booking.create", "booking", booking.id, { state: "SEARCH" });
+      return ok({ booking }, 201);
+    }
+
+    if (moduleName === "workflows" && actionName === "transition") {
+      const payload = body as Json;
+      if (!payload.booking_id || !payload.to_state || !payload.event_name) {
+        return badRequest("booking_id, to_state, event_name are required", 422, "validation_error");
+      }
+
+      const { data: booking, error: bookingError } = await supabase
+        .from("bookings")
+        .select("id,current_state")
+        .eq("id", payload.booking_id)
+        .eq("tenant_id", userAccount.tenant_id)
+        .single();
+      if (bookingError || !booking) return badRequest("Booking not found", 404, "not_found");
+
+      const validFlow: Record<string, string[]> = {
+        SEARCH: ["HOLD"],
+        HOLD: ["CONFIRM"],
+        CONFIRM: ["TICKET"],
+        TICKET: ["COMPLETE"],
+      };
+
+      const toState = String(payload.to_state);
+      const allowedNext = validFlow[booking.current_state as keyof typeof validFlow] ?? [];
+      if (!allowedNext.includes(toState)) {
+        await supabase.from("booking_state_history").insert({
+          tenant_id: userAccount.tenant_id,
+          booking_id: booking.id,
+          from_state: booking.current_state,
+          to_state: toState,
+          event_name: String(payload.event_name),
+          actor_user_id: userAccount.id,
+          transition_status: "failed",
+          failure_reason: "invalid_transition",
+        });
+        return badRequest(`Invalid transition from ${booking.current_state} to ${toState}`, 422, "invalid_transition");
+      }
+
+      const { data: updated, error: updateError } = await supabase
+        .from("bookings")
+        .update({ current_state: toState })
+        .eq("id", booking.id)
+        .select()
+        .single();
+      if (updateError) throw updateError;
+
+      await supabase.from("booking_state_history").insert({
+        tenant_id: userAccount.tenant_id,
+        booking_id: booking.id,
+        from_state: booking.current_state,
+        to_state: toState,
+        event_name: String(payload.event_name),
+        actor_user_id: userAccount.id,
+        transition_status: "success",
+      });
+
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "workflow.transition", "booking", booking.id, {
+        from_state: booking.current_state,
+        to_state: toState,
+      });
+
+      return ok({ booking: updated });
     }
 
     if (moduleName === "finance" && actionName === "invoice") {
-      if (!hasRole(roleKeys, ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "FINANCE_MANAGER"])) {
-        return badRequest("Forbidden for current role", 403);
-      }
       const payload = body as Json;
       if (!payload.invoice_number || !payload.customer_id || payload.subtotal === undefined) {
-        return badRequest("invoice_number, customer_id, subtotal are required");
+        return badRequest("invoice_number, customer_id, subtotal are required", 422, "validation_error");
       }
 
       const gstRate = Number(payload.gst_rate ?? 18);
@@ -180,74 +315,61 @@ serve(async (req) => {
         .single();
       if (invoiceError) throw invoiceError;
 
-      return new Response(JSON.stringify({ ok: true, invoice }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
-    }
-
-    if (moduleName === "workflows" && actionName === "transition") {
-      if (!hasRole(roleKeys, ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "OPS_MANAGER"])) {
-        return badRequest("Forbidden for current role", 403);
-      }
-      const payload = body as Json;
-      if (!payload.booking_id || !payload.to_state || !payload.event_name) {
-        return badRequest("booking_id, to_state, event_name are required");
-      }
-
-      const { data: booking, error: bookingError } = await supabase
-        .from("bookings")
-        .select("id,current_state")
-        .eq("id", payload.booking_id)
-        .eq("tenant_id", userAccount.tenant_id)
-        .single();
-      if (bookingError || !booking) return badRequest("Booking not found", 404);
-
-      const validFlow: Record<string, string[]> = {
-        SEARCH: ["HOLD"],
-        HOLD: ["CONFIRM"],
-        CONFIRM: ["TICKET"],
-        TICKET: ["COMPLETE"],
-      };
-
-      const allowedNext = validFlow[booking.current_state as keyof typeof validFlow] ?? [];
-      if (!allowedNext.includes(String(payload.to_state))) {
-        await supabase.from("booking_state_history").insert({
-          tenant_id: userAccount.tenant_id,
-          booking_id: booking.id,
-          from_state: booking.current_state,
-          to_state: String(payload.to_state),
-          event_name: String(payload.event_name),
-          actor_user_id: userAccount.id,
-          transition_status: "failed",
-          failure_reason: "invalid_transition",
-        });
-        return badRequest(`Invalid transition from ${booking.current_state} to ${String(payload.to_state)}`, 422);
-      }
-
-      const { data: updated, error: updateError } = await supabase
-        .from("bookings")
-        .update({ current_state: payload.to_state })
-        .eq("id", booking.id)
-        .select()
-        .single();
-      if (updateError) throw updateError;
-
-      await supabase.from("booking_state_history").insert({
-        tenant_id: userAccount.tenant_id,
-        booking_id: booking.id,
-        from_state: booking.current_state,
-        to_state: String(payload.to_state),
-        event_name: String(payload.event_name),
-        actor_user_id: userAccount.id,
-        transition_status: "success",
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "finance.invoice", "finance_invoice", invoice.id, {
+        subtotal,
+        gst_rate: gstRate,
       });
 
-      return new Response(JSON.stringify({ ok: true, booking: updated }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+      return ok({ invoice }, 201);
+    }
+
+    if (moduleName === "legal" && actionName === "execute") {
+      const payload = body as Json;
+      if (!payload.case_id || !payload.to_state || !payload.event_name) {
+        return badRequest("case_id, to_state, event_name are required", 422, "validation_error");
+      }
+
+      const event = {
+        tenant_id: userAccount.tenant_id,
+        module_type: "legal",
+        event_name: String(payload.event_name),
+        entity_type: "legal_case",
+        entity_id: String(payload.case_id),
+        event_payload: { to_state: payload.to_state },
+      };
+      const { data, error } = await supabase.from("analytics_events").insert(event).select().single();
+      if (error) throw error;
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "legal.execute", "legal_case", String(payload.case_id), { to_state: payload.to_state });
+      return ok({ execution: data });
+    }
+
+    if (moduleName === "education" && actionName === "execute") {
+      const payload = body as Json;
+      if (!payload.profile_id || !payload.to_state || !payload.event_name) {
+        return badRequest("profile_id, to_state, event_name are required", 422, "validation_error");
+      }
+
+      const event = {
+        tenant_id: userAccount.tenant_id,
+        module_type: "education",
+        event_name: String(payload.event_name),
+        entity_type: "education_profile",
+        entity_id: String(payload.profile_id),
+        event_payload: { to_state: payload.to_state },
+      };
+      const { data, error } = await supabase.from("analytics_events").insert(event).select().single();
+      if (error) throw error;
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "education.execute", "education_profile", String(payload.profile_id), { to_state: payload.to_state });
+      return ok({ execution: data });
     }
 
     if (moduleName === "integrations" && actionName === "providers") {
       const payload = body as Json;
       if (!payload.provider_key || !payload.provider_type) {
-        return badRequest("provider_key and provider_type are required");
+        return badRequest("provider_key and provider_type are required", 422, "validation_error");
       }
+
+      const runtime = buildProviderRuntime(String(payload.provider_type), String(payload.provider_key));
       const { data, error } = await supabase
         .from("integration_providers")
         .upsert({
@@ -256,18 +378,20 @@ serve(async (req) => {
           provider_type: payload.provider_type,
           base_url: payload.base_url,
           auth_type: payload.auth_type,
-          status_note: "READY FOR LIVE API KEY",
+          status_note: JSON.stringify(runtime),
         }, { onConflict: "tenant_id,provider_key" })
         .select()
         .single();
       if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, provider: data }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "integration.configure", "integration_provider", data.id, runtime);
+      return ok({ provider: data, runtime });
     }
 
     if (moduleName === "analytics" && actionName === "track") {
       const payload = body as Json;
       if (!payload.module_type || !payload.event_name) {
-        return badRequest("module_type and event_name are required");
+        return badRequest("module_type and event_name are required", 422, "validation_error");
       }
       const { data, error } = await supabase
         .from("analytics_events")
@@ -283,15 +407,16 @@ serve(async (req) => {
         .select()
         .single();
       if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, event: data }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+      return ok({ event: data });
     }
 
     if (moduleName === "ai" && actionName === "execute") {
       const payload = body as Json;
       if (!payload.module_type || !payload.input_payload) {
-        return badRequest("module_type and input_payload are required");
+        return badRequest("module_type and input_payload are required", 422, "validation_error");
       }
-      const { data, error } = await supabase
+
+      const { data: execution, error } = await supabase
         .from("ai_executions")
         .insert({
           tenant_id: userAccount.tenant_id,
@@ -304,11 +429,25 @@ serve(async (req) => {
         .select()
         .single();
       if (error) throw error;
-      return new Response(JSON.stringify({ ok: true, execution: data, live_status: "READY FOR LIVE API KEY" }), { headers: { "Content-Type": "application/json", ...corsHeaders } });
+
+      const { data: queueJob } = await supabase
+        .from("job_queue")
+        .insert({
+          tenant_id: userAccount.tenant_id,
+          queue_name: "ai_execution",
+          payload: { execution_id: execution.id, module_type: payload.module_type },
+          status: "queued",
+          available_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+
+      await writeAudit(supabase, userAccount.tenant_id, userAccount.id, "ai.execute", "ai_execution", execution.id, { queue_job_id: queueJob?.id });
+      return ok({ execution, queue_job_id: queueJob?.id }, 202);
     }
 
-    return badRequest(`Unsupported route for module=${moduleName} action=${actionName}`, 404);
+    return badRequest(`Unsupported route for module=${moduleName} action=${actionName}`, 404, "route_not_supported");
   } catch (error) {
-    return badRequest(String(error), 500);
+    return badRequest(String(error), 500, "internal_error");
   }
 });

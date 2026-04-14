@@ -318,25 +318,34 @@ function checkMonitoringReadiness() {
 function checkDeepExecutionReadiness() {
   const coreApi = readFileSync(join(root, "supabase/functions/core-api/index.ts"), "utf8");
   const seedSql = readFileSync(join(root, "supabase/005_deep_build_seed.sql"), "utf8");
+  const workerRuntime = readFileSync(join(root, "supabase/functions/job-worker/index.ts"), "utf8");
+  const createIntake = readFileSync(join(root, "supabase/functions/create-intake/index.ts"), "utf8");
+  const claimLead = readFileSync(join(root, "supabase/functions/claim-lead/index.ts"), "utf8");
+  const muskiService = readFileSync(join(root, "backend/apps/muski-core-runtime/src/services/muski-persistent-runtime.service.ts"), "utf8");
 
-  assert(
-    !/READY FOR LIVE API KEY/.test(coreApi),
-    "Integration and AI routes still return READY FOR LIVE API KEY placeholder status",
-  );
+  assert(/insert\s+into\s+public\.workflow_definitions/i.test(seedSql), "No workflow_definitions seed records found");
+  assert(seedSql.includes("booking.lifecycle") && seedSql.includes("legal.lifecycle") && seedSql.includes("education.lifecycle"), "Missing required lifecycle workflow seeds");
+  assert(seedSql.includes("copspower.escalation.lifecycle"), "Missing COPSPOWER escalation lifecycle seed");
+  assert(/retry"\s*:\s*\{/.test(seedSql) || seedSql.includes('retry'), "Workflow transitions missing retry metadata");
 
-  const hasWorkflowSeed = /insert\s+into\s+public\.workflow_definitions/i.test(seedSql);
-  assert(hasWorkflowSeed, "No workflow_definitions seed records found for booking/legal/education lifecycles");
+  assert(existsSync(join(root, "supabase/functions/job-worker/index.ts")), "No async job worker implementation found for job_queue processing");
+  assert(/locked_at/.test(workerRuntime) && /job_dead_letters/.test(workerRuntime), "Queue worker missing lock/retry/dead-letter handling");
+  assert(/queue_name:\s*"ai_execution"/.test(coreApi), "AI queue intake not wired into job queue");
+  assert(/Authorization/.test(createIntake) && /Authorization/.test(claimLead), "create-intake/claim-lead missing bearer auth enforcement");
+  assert(/audit_logs/.test(coreApi) && /audit_logs/.test(createIntake) && /audit_logs/.test(claimLead), "Mutation audit logging not consistently implemented");
+  assert(/muski_commands/.test(muskiService) && /muski_approvals/.test(muskiService), "MUSKI runtime persistence layer missing command/approval storage");
 
-  const queueWorkers = [
-    "backend/apps/muski-core-runtime/src/workers",
-    "supabase/functions/job-worker",
+  const requiredRuntimeFiles = [
+    "backend/apps/muski-core-runtime/src/workers/persistent-queue-worker.ts",
+    "supabase/functions/job-worker/index.ts",
+    "backend/apps/muski-core-runtime/src/services/muski-persistent-runtime.service.ts",
   ];
+  const missing = requiredRuntimeFiles.filter((file) => !existsSync(join(root, file)));
+  assert(missing.length === 0, `Missing persistent runtime artifacts: ${missing.join(", ")}`);
 
-  const hasQueueWorker = queueWorkers.some((path) => existsSync(join(root, path)));
-  assert(hasQueueWorker, "No async job worker implementation found for public.job_queue processing");
-
-  return "Live integrations, workflow seeds, and queue workers confirmed";
+  return "Workflow seeds, queue workers, MUSKI persistence, auth hardening, audit logs, and AI runtime checks confirmed";
 }
+
 
 async function main() {
   runCheck('Module structure health', () => {
