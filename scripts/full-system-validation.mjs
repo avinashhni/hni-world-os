@@ -315,6 +315,29 @@ function checkMonitoringReadiness() {
   return "Health endpoint and execution logging instrumentation confirmed";
 }
 
+function checkDeepExecutionReadiness() {
+  const coreApi = readFileSync(join(root, "supabase/functions/core-api/index.ts"), "utf8");
+  const seedSql = readFileSync(join(root, "supabase/005_deep_build_seed.sql"), "utf8");
+
+  assert(
+    !/READY FOR LIVE API KEY/.test(coreApi),
+    "Integration and AI routes still return READY FOR LIVE API KEY placeholder status",
+  );
+
+  const hasWorkflowSeed = /insert\s+into\s+public\.workflow_definitions/i.test(seedSql);
+  assert(hasWorkflowSeed, "No workflow_definitions seed records found for booking/legal/education lifecycles");
+
+  const queueWorkers = [
+    "backend/apps/muski-core-runtime/src/workers",
+    "supabase/functions/job-worker",
+  ];
+
+  const hasQueueWorker = queueWorkers.some((path) => existsSync(join(root, path)));
+  assert(hasQueueWorker, "No async job worker implementation found for public.job_queue processing");
+
+  return "Live integrations, workflow seeds, and queue workers confirmed";
+}
+
 async function main() {
   runCheck('Module structure health', () => {
     const critical = ['legalnomics', 'dashboard', 'muski', 'airnomics', 'edunomics', 'backend'];
@@ -333,6 +356,7 @@ async function main() {
   runCheck("Role & permission checks", checkRoleAndPermissionModel);
   runCheck("Security boundary checks", checkSecurityBoundaries);
   runCheck("Monitoring readiness", checkMonitoringReadiness);
+  runCheck("Deep execution readiness", checkDeepExecutionReadiness);
   runCheck('Deployment readiness audit', checkDeploymentReadiness);
   runCheck('Route integrity audit', checkRouteIntegrity);
 
