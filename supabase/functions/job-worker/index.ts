@@ -22,6 +22,158 @@ function json(status: number, data: Record<string, unknown>) {
   return new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json", ...corsHeaders } });
 }
 
+type IntegrationRuntime = {
+  provider_key: string;
+  provider_type: string;
+  category: "travel" | "payment" | "whatsapp" | "email" | "ai";
+  request_builder: {
+    method: "POST" | "GET";
+    endpoint_template: string;
+    required_fields: string[];
+  };
+  response_normalization: {
+    status_field: string;
+    normalized_codes: Record<string, string>;
+  };
+  retry_policy: { max_attempts: number; backoff_seconds: number[]; retryable_statuses: number[] };
+};
+
+function buildIntegrationRuntime(providerType: string, providerKey: string): IntegrationRuntime {
+  const typeKey = providerType.toLowerCase();
+  const key = providerKey.toLowerCase();
+  if (typeKey === "travel") {
+    return {
+      provider_key: key,
+      provider_type: typeKey,
+      category: "travel",
+      request_builder: { method: "POST", endpoint_template: "/availability/search", required_fields: ["origin", "destination", "depart_date", "travellers"] },
+      response_normalization: { status_field: "status", normalized_codes: { confirmed: "BOOKED", hold: "HELD", unavailable: "NOT_AVAILABLE" } },
+      retry_policy: { max_attempts: 4, backoff_seconds: [10, 45, 120, 300], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+    };
+  }
+  if (typeKey === "payment") {
+    return {
+      provider_key: key,
+      provider_type: typeKey,
+      category: "payment",
+      request_builder: { method: "POST", endpoint_template: key === "razorpay" ? "/v1/orders" : "/v1/payment_intents", required_fields: ["amount", "currency", "reference_id"] },
+      response_normalization: { status_field: "payment_status", normalized_codes: { succeeded: "PAID", pending: "PENDING", failed: "FAILED" } },
+      retry_policy: { max_attempts: 5, backoff_seconds: [5, 15, 45, 120, 300], retryable_statuses: [408, 409, 425, 429, 500, 502, 503, 504] },
+    };
+  }
+  if (typeKey === "whatsapp") {
+    return {
+      provider_key: key,
+      provider_type: typeKey,
+      category: "whatsapp",
+      request_builder: { method: "POST", endpoint_template: "/2010-04-01/Accounts/{account_sid}/Messages.json", required_fields: ["to", "from", "body"] },
+      response_normalization: { status_field: "delivery_status", normalized_codes: { queued: "QUEUED", sent: "SENT", delivered: "DELIVERED", failed: "FAILED" } },
+      retry_policy: { max_attempts: 4, backoff_seconds: [10, 30, 90, 240], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+    };
+  }
+  if (typeKey === "email") {
+    return {
+      provider_key: key,
+      provider_type: typeKey,
+      category: "email",
+      request_builder: { method: "POST", endpoint_template: "/send", required_fields: ["from", "to", "subject", "body"] },
+      response_normalization: { status_field: "delivery_status", normalized_codes: { accepted: "QUEUED", delivered: "DELIVERED", bounced: "FAILED" } },
+      retry_policy: { max_attempts: 4, backoff_seconds: [10, 30, 120, 300], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+    };
+  }
+  return {
+    provider_key: key,
+    provider_type: typeKey,
+    category: "ai",
+    request_builder: { method: "POST", endpoint_template: key.includes("anthropic") ? "/v1/messages" : "/v1/chat/completions", required_fields: ["model", "messages"] },
+    response_normalization: { status_field: "completion_status", normalized_codes: { completed: "COMPLETED", partial: "PARTIAL", failed: "FAILED" } },
+    retry_policy: { max_attempts: 3, backoff_seconds: [5, 20, 60], retryable_statuses: [408, 429, 500, 502, 503, 504] },
+  };
+}
+
+function buildRequestPayload(runtime: IntegrationRuntime, payload: Record<string, unknown>, attempt: number) {
+  return {
+    provider: { key: runtime.provider_key, type: runtime.provider_type, category: runtime.category },
+    request: {
+      endpoint: runtime.request_builder.endpoint_template,
+      method: runtime.request_builder.method,
+      required_fields: runtime.request_builder.required_fields,
+      attempt,
+      body: payload,
+    },
+    execution_flow: "build_request",
+  };
+}
+
+function normalizeProviderResponse(runtime: IntegrationRuntime, responsePayload: Record<string, unknown>) {
+  const rawStatus = String(responsePayload.status ?? responsePayload[runtime.response_normalization.status_field] ?? "processed").toLowerCase();
+  const normalizedStatus = runtime.response_normalization.normalized_codes[rawStatus] ?? rawStatus.toUpperCase();
+  return {
+    provider_key: runtime.provider_key,
+    provider_type: runtime.provider_type,
+    category: runtime.category,
+    raw_status: rawStatus,
+    normalized_status: normalizedStatus,
+    response: responsePayload,
+    execution_flow: "normalize_response",
+  };
+}
+
+async function sleep(ms: number) {
+  return await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function shouldRetry(status: number, runtime: IntegrationRuntime) {
+  return runtime.retry_policy.retryable_statuses.includes(status);
+}
+
+async function executeProviderCall(
+  runtime: IntegrationRuntime,
+  providerBaseUrl: string,
+  apiKey: string,
+  payload: Record<string, unknown>,
+) {
+  let lastError = "";
+  for (let attempt = 1; attempt <= runtime.retry_policy.max_attempts; attempt += 1) {
+    const builtPayload = buildRequestPayload(runtime, payload, attempt);
+    try {
+      const response = await fetch(`${providerBaseUrl}${runtime.request_builder.endpoint_template}`, {
+        method: runtime.request_builder.method,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "X-Retry-Attempt": String(attempt),
+        },
+        body: runtime.request_builder.method === "POST" ? JSON.stringify(builtPayload.request.body) : undefined,
+      });
+
+      if (!response.ok && shouldRetry(response.status, runtime)) {
+        lastError = `http_${response.status}`;
+        const backoff = runtime.retry_policy.backoff_seconds[Math.min(attempt - 1, runtime.retry_policy.backoff_seconds.length - 1)] ?? 30;
+        await sleep(backoff * 1000);
+        continue;
+      }
+
+      const responsePayload = await response.json().catch(() => ({ status: response.ok ? "completed" : "failed" }));
+      if (!response.ok) throw new Error(`provider_http_error:${response.status}`);
+
+      return {
+        mode: "live",
+        attempt,
+        request: builtPayload,
+        normalized: normalizeProviderResponse(runtime, responsePayload),
+      };
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+      if (attempt >= runtime.retry_policy.max_attempts) break;
+      const backoff = runtime.retry_policy.backoff_seconds[Math.min(attempt - 1, runtime.retry_policy.backoff_seconds.length - 1)] ?? 30;
+      await sleep(backoff * 1000);
+    }
+  }
+
+  throw new Error(`provider_execution_failed:${lastError}`);
+}
+
 async function writeAudit(supabase: ReturnType<typeof createClient>, tenantId: string, action: string, entityType: string, entityId: string, payload: Record<string, unknown>) {
   await supabase.from("audit_logs").insert({
     tenant_id: tenantId,
@@ -157,20 +309,36 @@ async function handleIntegrationJob(supabase: ReturnType<typeof createClient>, j
   const providerKey = String(job.payload.provider_key ?? "");
   const providerType = String(job.payload.provider_type ?? "");
   if (!providerKey || !providerType) throw new Error("integration payload requires provider_key and provider_type");
+  const runtime = buildIntegrationRuntime(providerType, providerKey);
+  const providerEnvKey = Deno.env.get(`PROVIDER_${providerKey.toUpperCase()}_KEY`) ?? "";
+  const providerBaseUrl = String(job.payload.base_url ?? Deno.env.get(`PROVIDER_${providerKey.toUpperCase()}_BASE_URL`) ?? "");
+  let executionResult: Record<string, unknown>;
 
-  const normalizedResponse = {
-    provider_key: providerKey,
-    provider_type: providerType,
-    mode: "sandbox",
-    status: "processed",
-    received_at: new Date().toISOString(),
-  };
+  if (!providerEnvKey || !providerBaseUrl) {
+    executionResult = {
+      mode: "ready_pending_live_key",
+      status: "READY FOR LIVE API KEY",
+      request: buildRequestPayload(runtime, job.payload, 1),
+      normalized: normalizeProviderResponse(runtime, { status: "pending_live_key" }),
+      retry_policy: runtime.retry_policy,
+      execution_flow: "skipped_live_call",
+    };
+  } else {
+    const liveResult = await executeProviderCall(runtime, providerBaseUrl, providerEnvKey, job.payload);
+    executionResult = {
+      mode: "live",
+      status: "executed",
+      ...liveResult,
+      retry_policy: runtime.retry_policy,
+      execution_flow: "execute_complete",
+    };
+  }
 
   await supabase.from("integration_webhooks").insert({
     tenant_id: job.tenant_id,
     provider_id: job.payload.provider_id,
     event_name: String(job.payload.event_name ?? "runtime.dispatch"),
-    payload: normalizedResponse,
+    payload: executionResult,
     processed: true,
   });
 }

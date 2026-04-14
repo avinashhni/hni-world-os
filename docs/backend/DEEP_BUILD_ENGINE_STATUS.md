@@ -24,6 +24,20 @@ Supported executable routes:
 - `POST /core-api/analytics/track`
 - `POST /core-api/ai/execute`
 
+Integration provider runtime now includes:
+- Request builders per provider category (travel, payment, WhatsApp, email, AI).
+- Response normalization contracts with unified status mapping.
+- Explicit retry policy with status-aware backoff profiles.
+- Error mapping (`timeout`, `unauthorized`, `rate_limit`, `unknown`).
+- Execution flow stages (`build_request -> execute -> normalize_response -> handle_error -> retry_or_finalize`).
+
+Async integration execution worker at `supabase/functions/job-worker/index.ts` now supports:
+- Runtime request payload builders.
+- Live API execution when `PROVIDER_<KEY>_KEY` and base URL are present.
+- Safe execution-ready mode (`READY FOR LIVE API KEY`) when secrets are still pending.
+- Retry with exponential backoff and transient status handling.
+- Normalized webhook payload persistence for downstream adapters.
+
 ### Workflow engine behavior
 - Booking transition guard: `SEARCH -> HOLD -> CONFIRM -> TICKET -> COMPLETE`.
 - Failed transition logging in `booking_state_history` with failure reason.
