@@ -356,7 +356,10 @@ function checkDeepExecutionReadiness() {
   assert(/async function claimJobs/.test(workerRuntime) && /async function processJob/.test(workerRuntime), "Queue worker missing async claim/process structure");
   assert(/MAX_ATTEMPTS/.test(workerRuntime) && /RETRY_BACKOFF_SECONDS/.test(workerRuntime), "Queue worker missing retry constants");
   assert(/locked_at/.test(workerRuntime) && /job_dead_letters/.test(workerRuntime), "Queue worker missing lock/retry/dead-letter handling");
-  assert(/queue_name:\s*"ai_execution"/.test(coreApi), "AI queue intake not wired into job queue");
+  assert(
+    /queue_name:\s*"ai_execution"/.test(coreApi) || /queue_name:\s*"muski_command"/.test(coreApi),
+    "AI queue intake not wired into job queue",
+  );
   assert(/from\("ai_executions"\)\s*\.insert\(/.test(coreApi), "AI execution write path missing from core API");
   assert(/Authorization/.test(createIntake) && /Authorization/.test(claimLead), "create-intake/claim-lead missing bearer auth enforcement");
   assert(/audit_logs/.test(coreApi) && /audit_logs/.test(createIntake) && /audit_logs/.test(claimLead), "Mutation audit logging not consistently implemented");
@@ -372,6 +375,46 @@ function checkDeepExecutionReadiness() {
   assert(missing.length === 0, `Missing persistent runtime artifacts: ${missing.join(", ")}`);
 
   return "Workflow seeds, queue worker logic, MUSKI persistence, auth hardening, audit logs, and runtime-agnostic AI checks confirmed";
+}
+
+function checkPhase15BusinessEngineExecution() {
+  const blueprintPath = join(root, "HNI_WORLD_OS_MASTER_PACK/09_execution/phase_15_business_engine_blueprint.json");
+  assert(existsSync(blueprintPath), "Missing phase 15 business engine blueprint");
+  const blueprint = JSON.parse(readFileSync(blueprintPath, "utf8"));
+
+  assert(blueprint.phase === "15", "Business engine blueprint has incorrect phase id");
+  const requiredModules = ["travel", "legalnomics", "edunomics", "doctornomics", "sobbo", "crm", "finance_waai"];
+  const moduleCodes = (blueprint.modules ?? []).map((item) => item.code);
+  const missingModules = requiredModules.filter((item) => !moduleCodes.includes(item));
+  assert(missingModules.length === 0, `Phase 15 blueprint missing modules: ${missingModules.join(", ")}`);
+
+  const businessEngineFile = readFileSync(
+    join(root, "backend/apps/muski-core-runtime/src/services/business-engine.service.ts"),
+    "utf8",
+  );
+  const requiredHandlers = [
+    "travel.fare_selection",
+    "travel.booking_ticket_refund",
+    "travel.pnr_lifecycle",
+    "legalnomics.case_execution",
+    "legalnomics.hearing_schedule",
+    "legalnomics.verdict_appeal",
+    "edunomics.student_matching",
+    "edunomics.application_visa_counselor",
+    "doctornomics.patient_journey",
+    "doctornomics.treatment_hospital_pricing",
+    "sobbo.merchant_onboarding",
+    "sobbo.product_order_delivery",
+    "crm.lead_followup_journey",
+    "finance_waai.invoice_ledger_profit_gst",
+  ];
+  const missingHandlers = requiredHandlers.filter((handler) => !businessEngineFile.includes(`"${handler}"`));
+  assert(missingHandlers.length === 0, `Business engine missing execution handlers: ${missingHandlers.join(", ")}`);
+
+  const runtimeFile = readFileSync(join(root, "backend/apps/muski-core-runtime/src/index.ts"), "utf8");
+  assert(runtimeFile.includes("businessEngine.execute("), "Runtime bootstrap does not execute phase 15 business workflows");
+
+  return `${requiredModules.length} module engines and ${requiredHandlers.length} real action handlers validated`;
 }
 
 
@@ -395,6 +438,7 @@ async function main() {
   runCheck("Security boundary checks", checkSecurityBoundaries);
   runCheck("Monitoring readiness", checkMonitoringReadiness);
   runCheck("Deep execution readiness", checkDeepExecutionReadiness);
+  runCheck("Phase 15 business engine execution", checkPhase15BusinessEngineExecution);
   runCheck('Deployment readiness audit', checkDeploymentReadiness);
   runCheck('Route integrity audit', checkRouteIntegrity);
 
