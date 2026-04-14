@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
+const ALLOWED_ROLES = ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "LEGAL_MANAGER", "STAFF"];
+
 function response(status: number, payload: Record<string, unknown>) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -33,6 +35,27 @@ serve(async (req) => {
       return response(401, { ok: false, error: { code: "unauthorized" } });
     }
 
+    const { data: userAccount, error: accountError } = await supabase
+      .from("user_accounts")
+      .select("id,tenant_id")
+      .eq("auth_user_id", userInfo.user.id)
+      .single();
+
+    if (accountError || !userAccount) {
+      return response(403, { ok: false, error: { code: "user_not_provisioned" } });
+    }
+
+    const { data: assignedRoles } = await supabase
+      .from("user_role_assignments")
+      .select("roles(role_key)")
+      .eq("user_id", userAccount.id)
+      .eq("tenant_id", userAccount.tenant_id);
+
+    const roleKeys = (assignedRoles ?? []).map((row: { roles?: { role_key?: string } }) => row.roles?.role_key).filter(Boolean);
+    if (!roleKeys.some((role: string) => ALLOWED_ROLES.includes(role))) {
+      return response(403, { ok: false, error: { code: "forbidden" } });
+    }
+
     const body = await req.json();
     if (!body.lead_id || !body.partner_profile_id) {
       return response(400, { ok: false, error: { code: "validation_error", message: "lead_id and partner_profile_id are required" } });
@@ -46,14 +69,15 @@ serve(async (req) => {
       })
       .eq("id", body.lead_id)
       .eq("status", "open")
+      .eq("tenant_id", userAccount.tenant_id)
       .select()
       .single();
 
     if (error) throw error;
 
     await supabase.from("audit_logs").insert({
-      tenant_id: Deno.env.get("DEFAULT_TENANT_ID"),
-      actor_user_id: null,
+      tenant_id: userAccount.tenant_id,
+      actor_user_id: userAccount.id,
       source_system: "LEGALNOMICS",
       action: "claim_lead",
       entity_type: "lead",

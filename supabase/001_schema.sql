@@ -50,6 +50,7 @@ create table if not exists public.partner_profiles (
 
 create table if not exists public.b2c_intakes (
   id uuid primary key default gen_random_uuid(),
+  tenant_id uuid references public.tenants(id) on delete cascade,
   created_by uuid references public.profiles(id) on delete set null,
   intake_type text not null,
   full_name text,
@@ -70,6 +71,7 @@ create table if not exists public.b2c_intakes (
 
 create table if not exists public.leads (
   id uuid primary key default gen_random_uuid(),
+  tenant_id uuid references public.tenants(id) on delete cascade,
   intake_id uuid references public.b2c_intakes(id) on delete set null,
   lead_type text not null,
   category text,
@@ -87,6 +89,7 @@ create table if not exists public.leads (
 
 create table if not exists public.matters (
   id uuid primary key default gen_random_uuid(),
+  tenant_id uuid references public.tenants(id) on delete cascade,
   intake_id uuid references public.b2c_intakes(id) on delete set null,
   lead_id uuid references public.leads(id) on delete set null,
   client_profile_id uuid references public.profiles(id) on delete set null,
@@ -104,6 +107,7 @@ create table if not exists public.matters (
 
 create table if not exists public.documents (
   id uuid primary key default gen_random_uuid(),
+  tenant_id uuid references public.tenants(id) on delete cascade,
   matter_id uuid references public.matters(id) on delete cascade,
   intake_id uuid references public.b2c_intakes(id) on delete cascade,
   file_name text not null,
@@ -114,6 +118,7 @@ create table if not exists public.documents (
 
 create table if not exists public.consultation_sessions (
   id uuid primary key default gen_random_uuid(),
+  tenant_id uuid references public.tenants(id) on delete cascade,
   intake_id uuid references public.b2c_intakes(id) on delete set null,
   lead_id uuid references public.leads(id) on delete set null,
   partner_profile_id uuid references public.partner_profiles(id) on delete set null,
@@ -128,6 +133,7 @@ create table if not exists public.consultation_sessions (
 
 create table if not exists public.billing_records (
   id uuid primary key default gen_random_uuid(),
+  tenant_id uuid references public.tenants(id) on delete cascade,
   matter_id uuid not null references public.matters(id) on delete cascade,
   invoice_number text,
   amount numeric(12,2) not null default 0,

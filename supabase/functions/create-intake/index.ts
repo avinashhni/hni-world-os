@@ -7,6 +7,8 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST,OPTIONS",
 };
 
+const ALLOWED_ROLES = ["OWNER", "SUPER_ADMIN", "MANAGEMENT", "LEGAL_MANAGER", "STAFF"];
+
 function response(status: number, payload: Record<string, unknown>) {
   return new Response(JSON.stringify(payload), {
     status,
@@ -33,6 +35,27 @@ serve(async (req) => {
       return response(401, { ok: false, error: { code: "unauthorized" } });
     }
 
+    const { data: userAccount, error: accountError } = await supabase
+      .from("user_accounts")
+      .select("id,tenant_id")
+      .eq("auth_user_id", userInfo.user.id)
+      .single();
+
+    if (accountError || !userAccount) {
+      return response(403, { ok: false, error: { code: "user_not_provisioned" } });
+    }
+
+    const { data: assignedRoles } = await supabase
+      .from("user_role_assignments")
+      .select("roles(role_key)")
+      .eq("user_id", userAccount.id)
+      .eq("tenant_id", userAccount.tenant_id);
+
+    const roleKeys = (assignedRoles ?? []).map((row: { roles?: { role_key?: string } }) => row.roles?.role_key).filter(Boolean);
+    if (!roleKeys.some((role: string) => ALLOWED_ROLES.includes(role))) {
+      return response(403, { ok: false, error: { code: "forbidden" } });
+    }
+
     const body = await req.json();
     if (!body.intake_type || !body.full_name || !body.category) {
       return response(400, {
@@ -44,6 +67,7 @@ serve(async (req) => {
     const { data: intake, error } = await supabase
       .from("b2c_intakes")
       .insert({
+        tenant_id: userAccount.tenant_id,
         created_by: userInfo.user.id,
         intake_type: body.intake_type,
         full_name: body.full_name,
@@ -68,6 +92,7 @@ serve(async (req) => {
     const { data: lead, error: leadError } = await supabase
       .from("leads")
       .insert({
+        tenant_id: userAccount.tenant_id,
         intake_id: intake.id,
         lead_type: body.intake_type,
         category: body.category,
@@ -86,8 +111,8 @@ serve(async (req) => {
     if (leadError) throw leadError;
 
     await supabase.from("audit_logs").insert({
-      tenant_id: Deno.env.get("DEFAULT_TENANT_ID"),
-      actor_user_id: null,
+      tenant_id: userAccount.tenant_id,
+      actor_user_id: userAccount.id,
       source_system: "LEGALNOMICS",
       action: "create_intake",
       entity_type: "b2c_intake",

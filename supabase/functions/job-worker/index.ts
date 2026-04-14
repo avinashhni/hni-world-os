@@ -34,69 +34,123 @@ async function writeAudit(supabase: ReturnType<typeof createClient>, tenantId: s
 }
 
 async function handleWorkflowTransition(supabase: ReturnType<typeof createClient>, job: QueueJob) {
-  const bookingId = String(job.payload.booking_id ?? "");
+  const workflowInstanceId = String(job.payload.workflow_instance_id ?? "");
+  const entityType = String(job.payload.entity_type ?? "");
+  const entityId = String(job.payload.entity_id ?? "");
   const toState = String(job.payload.to_state ?? "");
   const eventName = String(job.payload.event_name ?? "workflow.transition");
-  if (!bookingId || !toState) throw new Error("workflow_transition payload requires booking_id and to_state");
 
-  const { data: booking, error: bookingError } = await supabase
-    .from("bookings")
-    .select("id,current_state")
-    .eq("id", bookingId)
-    .eq("tenant_id", job.tenant_id)
-    .single();
+  if (!workflowInstanceId || !entityType || !entityId || !toState) {
+    throw new Error("workflow_transition payload requires workflow_instance_id, entity_type, entity_id and to_state");
+  }
 
-  if (bookingError || !booking) throw new Error("Booking not found for workflow transition");
-
-  const { error: updateError } = await supabase
-    .from("bookings")
-    .update({ current_state: toState })
-    .eq("id", booking.id)
+  await supabase
+    .from("workflow_instances")
+    .update({ current_state: toState, updated_at: new Date().toISOString(), last_error: null })
+    .eq("id", workflowInstanceId)
     .eq("tenant_id", job.tenant_id);
-  if (updateError) throw updateError;
 
-  await supabase.from("booking_state_history").insert({
-    tenant_id: job.tenant_id,
-    booking_id: booking.id,
-    from_state: booking.current_state,
-    to_state: toState,
-    event_name: eventName,
-    transition_status: "success",
-  });
+  if (entityType === "booking") {
+    const { data: booking, error: bookingError } = await supabase
+      .from("bookings")
+      .select("id,current_state")
+      .eq("id", entityId)
+      .eq("tenant_id", job.tenant_id)
+      .single();
+
+    if (bookingError || !booking) throw new Error("Booking not found for workflow transition");
+
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update({ current_state: toState })
+      .eq("id", booking.id)
+      .eq("tenant_id", job.tenant_id);
+    if (updateError) throw updateError;
+
+    await supabase.from("booking_state_history").insert({
+      tenant_id: job.tenant_id,
+      booking_id: booking.id,
+      from_state: booking.current_state,
+      to_state: toState,
+      event_name: eventName,
+      transition_status: "success",
+    });
+  }
+
+  await supabase
+    .from("workflow_events")
+    .update({ event_status: "completed", processed_at: new Date().toISOString(), error_message: null })
+    .eq("id", String(job.payload.workflow_event_id ?? ""))
+    .eq("tenant_id", job.tenant_id);
 }
 
-async function handleAiExecution(supabase: ReturnType<typeof createClient>, job: QueueJob) {
+async function handleMuskiCommand(supabase: ReturnType<typeof createClient>, job: QueueJob) {
+  const commandId = String(job.payload.command_id ?? "");
   const executionId = String(job.payload.execution_id ?? "");
-  if (!executionId) throw new Error("ai_execution payload requires execution_id");
 
-  const { data: execution, error } = await supabase
-    .from("ai_executions")
-    .select("id,input_payload,module_type,prompt_id")
-    .eq("id", executionId)
+  if (!commandId || !executionId) throw new Error("muski_command payload requires command_id and execution_id");
+
+  const { data: command, error: commandError } = await supabase
+    .from("muski_commands")
+    .select("id,command_key,command_payload,status")
+    .eq("id", commandId)
     .eq("tenant_id", job.tenant_id)
     .single();
-  if (error || !execution) throw new Error("AI execution not found");
 
-  const confidence = Number(job.payload.confidence ?? 0.82);
+  if (commandError || !command) throw new Error("MUSKI command not found");
+  if (command.status === "requires_approval") throw new Error("Command requires approval before execution");
+
+  await supabase
+    .from("muski_commands")
+    .update({ status: "running", updated_at: new Date().toISOString() })
+    .eq("id", command.id)
+    .eq("tenant_id", job.tenant_id);
+
   const decision = {
-    summary: `Processed ${execution.module_type} execution in worker runtime`,
-    actions: ["queue_next_action", "update_workflow_state"],
-    confidence,
-    fallback_used: false,
+    command_key: command.command_key,
+    actions: ["persist_decision", "update_execution", "close_command"],
+    confidence: Number(job.payload.confidence ?? 0.88),
+    approved: true,
   };
 
-  const { error: updateError } = await supabase
+  await supabase.from("muski_execution_history").insert({
+    tenant_id: job.tenant_id,
+    command_id: command.id,
+    execution_stage: "decision",
+    state_payload: { decision },
+    status: "running",
+  });
+
+  const { error: executionUpdateError } = await supabase
     .from("ai_executions")
     .update({
       status: "completed",
       decision,
-      output_payload: { result: "success", worker: "job-worker", processed_at: new Date().toISOString() },
+      output_payload: {
+        result: "success",
+        runtime: "muski_persistent_worker",
+        processed_at: new Date().toISOString(),
+      },
       completed_at: new Date().toISOString(),
     })
-    .eq("id", execution.id)
+    .eq("id", executionId)
     .eq("tenant_id", job.tenant_id);
 
-  if (updateError) throw updateError;
+  if (executionUpdateError) throw executionUpdateError;
+
+  await supabase.from("muski_execution_history").insert({
+    tenant_id: job.tenant_id,
+    command_id: command.id,
+    execution_stage: "complete",
+    state_payload: { execution_id: executionId },
+    status: "completed",
+  });
+
+  await supabase
+    .from("muski_commands")
+    .update({ status: "completed", updated_at: new Date().toISOString() })
+    .eq("id", command.id)
+    .eq("tenant_id", job.tenant_id);
 }
 
 async function handleIntegrationJob(supabase: ReturnType<typeof createClient>, job: QueueJob) {
@@ -138,8 +192,8 @@ async function processJob(supabase: ReturnType<typeof createClient>, job: QueueJ
     case "workflow_transition":
       await handleWorkflowTransition(supabase, job);
       break;
-    case "ai_execution":
-      await handleAiExecution(supabase, job);
+    case "muski_command":
+      await handleMuskiCommand(supabase, job);
       break;
     case "integration":
       await handleIntegrationJob(supabase, job);
@@ -180,6 +234,44 @@ async function claimJobs(supabase: ReturnType<typeof createClient>, limit = 10) 
   return claimed;
 }
 
+async function processClaimedJob(supabase: ReturnType<typeof createClient>, job: QueueJob, result: { processed: number; failed: number; dead_lettered: number }) {
+  try {
+    await processJob(supabase, job);
+    await supabase.from("job_queue").update({ status: "completed", locked_at: null, last_error: null }).eq("id", job.id);
+    await writeAudit(supabase, job.tenant_id, "job.completed", "job_queue", job.id, { queue: job.queue_name });
+    result.processed += 1;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const nextAttempts = job.attempts + 1;
+
+    if (nextAttempts >= MAX_ATTEMPTS) {
+      await supabase.from("job_queue").update({ status: "failed", attempts: nextAttempts, last_error: message, locked_at: null }).eq("id", job.id);
+      await supabase.from("job_dead_letters").insert({
+        tenant_id: job.tenant_id,
+        queue_job_id: job.id,
+        queue_name: job.queue_name,
+        payload: job.payload,
+        attempts: nextAttempts,
+        last_error: message,
+      });
+      result.dead_lettered += 1;
+    } else {
+      const backoff = RETRY_BACKOFF_SECONDS[Math.min(nextAttempts - 1, RETRY_BACKOFF_SECONDS.length - 1)];
+      const availableAt = new Date(Date.now() + backoff * 1000).toISOString();
+      await supabase.from("job_queue").update({
+        status: "queued",
+        attempts: nextAttempts,
+        last_error: message,
+        available_at: availableAt,
+        locked_at: null,
+      }).eq("id", job.id);
+    }
+
+    await writeAudit(supabase, job.tenant_id, "job.failed", "job_queue", job.id, { queue: job.queue_name, error: message });
+    result.failed += 1;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   if (req.method !== "POST") return json(405, { ok: false, error: { code: "method_not_allowed" } });
@@ -192,43 +284,7 @@ serve(async (req) => {
   const claimedJobs = await claimJobs(supabase, Number(Deno.env.get("JOB_WORKER_BATCH") ?? "10"));
   const result = { processed: 0, failed: 0, dead_lettered: 0 };
 
-  for (const job of claimedJobs) {
-    try {
-      await processJob(supabase, job);
-      await supabase.from("job_queue").update({ status: "completed", locked_at: null, last_error: null }).eq("id", job.id);
-      await writeAudit(supabase, job.tenant_id, "job.completed", "job_queue", job.id, { queue: job.queue_name });
-      result.processed += 1;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const nextAttempts = job.attempts + 1;
-
-      if (nextAttempts >= MAX_ATTEMPTS) {
-        await supabase.from("job_queue").update({ status: "failed", attempts: nextAttempts, last_error: message, locked_at: null }).eq("id", job.id);
-        await supabase.from("job_dead_letters").insert({
-          tenant_id: job.tenant_id,
-          queue_job_id: job.id,
-          queue_name: job.queue_name,
-          payload: job.payload,
-          attempts: nextAttempts,
-          last_error: message,
-        });
-        result.dead_lettered += 1;
-      } else {
-        const backoff = RETRY_BACKOFF_SECONDS[Math.min(nextAttempts - 1, RETRY_BACKOFF_SECONDS.length - 1)];
-        const availableAt = new Date(Date.now() + backoff * 1000).toISOString();
-        await supabase.from("job_queue").update({
-          status: "queued",
-          attempts: nextAttempts,
-          last_error: message,
-          available_at: availableAt,
-          locked_at: null,
-        }).eq("id", job.id);
-      }
-
-      await writeAudit(supabase, job.tenant_id, "job.failed", "job_queue", job.id, { queue: job.queue_name, error: message });
-      result.failed += 1;
-    }
-  }
+  await Promise.allSettled(claimedJobs.map((job) => processClaimedJob(supabase, job, result)));
 
   return json(200, { ok: true, jobs_claimed: claimedJobs.length, ...result });
 });
