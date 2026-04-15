@@ -321,24 +321,26 @@ uttEnterprise.onboardSupplier({
   manualInventoryEnabled: true,
 });
 
-const aggregatedOffers = uttEnterprise.searchHotels(
+const aggregatedOffers = uttEnterprise.aggregateSupplierOffers(
   {
     tenantId: "HNI_GLOBAL",
     searchId: "SRCH-9001",
+    destination: "Dubai",
     checkIn: "2026-05-01",
     checkOut: "2026-05-05",
-    rooms: 2,
-    adults: 4,
-    childrenAges: [4, 8],
-    cityCode: "DXB",
+    rooms: [
+      { roomId: "R1", adults: 2, childAges: [4] },
+      { roomId: "R2", adults: 2, childAges: [8] },
+    ],
+    currency: "USD",
     filters: { maxBudget: 420, minStars: 4, amenities: ["wifi", "pool"] },
-    targetMarginPct: 18,
   },
   [
     {
       supplier: "EXPEDIA",
       supplierHotelId: "EX-778",
       hotelName: "Palm Horizon Hotel",
+      location: "Dubai Marina",
       roomType: "Deluxe",
       mealPlan: "Breakfast",
       baseRate: 280,
@@ -351,6 +353,7 @@ const aggregatedOffers = uttEnterprise.searchHotels(
       supplier: "HOTELBEDS",
       supplierHotelId: "HB-441",
       hotelName: "Palm Horizon Hotel",
+      location: "Dubai Marina",
       roomType: "Deluxe",
       mealPlan: "Breakfast",
       baseRate: 268,
@@ -363,6 +366,7 @@ const aggregatedOffers = uttEnterprise.searchHotels(
       supplier: "WEBBEDS",
       supplierHotelId: "WB-122",
       hotelName: "Palm Horizon Hotel",
+      location: "Dubai Marina",
       roomType: "Deluxe",
       mealPlan: "Breakfast",
       baseRate: 275,
@@ -374,66 +378,57 @@ const aggregatedOffers = uttEnterprise.searchHotels(
   ],
 );
 
-const itinerary = uttEnterprise.createDynamicItinerary({
+const pricedOffer = uttEnterprise.priceOffer({
   tenantId: "HNI_GLOBAL",
-  itineraryId: "ITI-9001",
-  customerId: "HNI-GID-1001",
-  nights: 4,
-  rooms: [
-    { roomId: "R1", adults: 2, childAges: [4], selectedOfferId: aggregatedOffers[0].offerId },
-    { roomId: "R2", adults: 2, childAges: [8], selectedOfferId: aggregatedOffers[0].offerId },
-  ],
-  addOns: [{ code: "TRANSFER", label: "Airport Transfer", amount: 80 }],
-  childPolicy: {
-    cwbDiscountPct: 25,
-    cnbDiscountPct: 60,
-    cwbAgeRange: [6, 12],
-    cnbAgeRange: [2, 5],
-  },
+  pricingId: "PRC-9001",
+  offer: aggregatedOffers[0],
+  sellCurrency: "USD",
+  marginPct: 18,
+  exchangeRates: { USD: 1, AED: 3.67, INR: 83 },
+  taxProfile: { gstPct: 18, taxCode: "GST_READY" },
 });
 
 const booking = uttEnterprise.executeBookingLifecycle({
   tenantId: "HNI_GLOBAL",
   bookingId: "BKG-9001",
-  itineraryId: itinerary.itineraryId,
-  customerId: itinerary.customerId,
+  searchId: "SRCH-9001",
+  selectedHotelId: aggregatedOffers[0].hotelId,
+  customerId: "CUS-9001",
+  globalIdentityId: "HNI-GID-1001",
+  customerLayer: "B2C",
   holdMinutes: 30,
-  paymentRef: "PAY-UTT-3321",
+  paymentGuaranteed: true,
+  price: pricedOffer,
 });
 
+const holdReminders = uttEnterprise.evaluateHoldReminders(new Date(Date.now() + 26 * 60_000).toISOString());
 const crmConversion = uttEnterprise.createLeadAndConvertToBooking({
   tenantId: "HNI_GLOBAL",
   leadId: "LEAD-UTT-001",
-  customerId: itinerary.customerId,
+  customerId: booking.customerId,
+  globalIdentityId: booking.globalIdentityId,
   sourceLayer: "B2C",
   bookingId: booking.bookingId,
 });
-const invoice = uttEnterprise.generateInvoice({
+const financeRecord = uttEnterprise.generateFinanceRecord({
   tenantId: "HNI_GLOBAL",
+  financeId: "FIN-UTT-001",
   invoiceId: "INV-UTT-001",
   bookingId: booking.bookingId,
-  costAmount: aggregatedOffers[0].totalCost * 4 * 2,
-  sellAmount: itinerary.grossTotal,
-  gstPct: 18,
 });
-const paidInvoice = uttEnterprise.markInvoicePaid("HNI_GLOBAL", invoice.invoiceId);
-const governanceCheck = uttEnterprise.validateTenantRoleAction({
-  tenantId: "HNI_GLOBAL",
-  userId: "AGENT_UTT_01",
-  requiredScope: "booking:write",
-  action: "booking.confirm",
-  severity: "info",
-});
+const paidFinance = uttEnterprise.markFinancePaid("HNI_GLOBAL", financeRecord.financeId);
 const muskiCommandRoute = uttEnterprise.muskiRouteCommand({
   tenantId: "HNI_GLOBAL",
   commandId: "CMD-UTT-EXEC-01",
-  module: "BOOKING_ENGINE",
-  workerAi: "WRK_UTT_BOOKING_01",
-  intent: "critical supplier override for pricing lock",
+  userId: "ADMIN_UTT_01",
+  role: "ADMIN",
+  command: "show bookings",
 });
 uttEnterprise.pushQueueMetric("HNI_GLOBAL", 284);
+const apiRoutes = uttEnterprise.getApiRoutes();
+const eventFlows = uttEnterprise.getEventFlowMap();
+const bookingLifecycleTestOutput = uttEnterprise.getBookingById("HNI_GLOBAL", booking.bookingId);
 const uttReadiness = uttEnterprise.getReadinessSnapshot("HNI_GLOBAL");
-
 console.log("MUSKI Orchestration hierarchy:", muskiOrchestration.getHierarchy());
 console.log("MUSKI manager assignments:", muskiOrchestration.getAssignments().length);
 console.log("MUSKI decision:", orchestrationDecision);
@@ -449,12 +444,15 @@ console.log("Command control dispatch:", command);
 console.log("Emergency control state:", emergencyState);
 console.log("Global command count:", commandControl.getCommandCount());
 console.log("UTT search aggregated offers:", aggregatedOffers.length);
-console.log("UTT itinerary total:", itinerary.grossTotal);
+console.log("UTT priced sell amount:", pricedOffer.sellAmount);
 console.log("UTT booking status:", booking.status);
 console.log("UTT CRM conversion:", crmConversion.status);
-console.log("UTT invoice payment status:", paidInvoice.paymentStatus);
-console.log("UTT governance role validation:", governanceCheck);
+console.log("UTT finance payment status:", paidFinance.paymentStatus);
+console.log("UTT hold reminders:", holdReminders.length);
 console.log("UTT MUSKI command route:", muskiCommandRoute);
+console.log("UTT API routes:", apiRoutes);
+console.log("UTT event flows:", eventFlows);
+console.log("UTT booking lifecycle test output:", bookingLifecycleTestOutput);
 console.log("UTT readiness snapshot:", uttReadiness);
 
 console.log("Logs:", executionLogger.getAll());

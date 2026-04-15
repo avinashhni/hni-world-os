@@ -1,7 +1,7 @@
 export type UttRole = "ADMIN" | "AGENT" | "CORPORATE_USER";
 export type UttCustomerLayer = "B2C" | "B2B" | "CORPORATE";
-export type UttBookingStage = "SEARCH" | "SELECT" | "HOLD" | "CONFIRM" | "PAYMENT" | "VOUCHER";
-export type UttBookingStatus = "initiated" | "held" | "confirmed" | "payment_pending" | "paid" | "voucher_issued" | "expired";
+export type UttBookingStage = "SEARCH" | "SELECT" | "HOLD" | "CONFIRM" | "VOUCHER";
+export type UttBookingStatus = "search_completed" | "selected" | "held" | "confirmed" | "voucher_issued" | "expired";
 export type UttSupplierCode = "EXPEDIA" | "HOTELBEDS" | "WEBBEDS" | "MANUAL";
 
 interface TenantScopedEntity {
@@ -17,24 +17,27 @@ export interface UttUser extends TenantScopedEntity {
 
 export interface UttSearchRequest extends TenantScopedEntity {
   searchId: string;
+  destination: string;
   checkIn: string;
   checkOut: string;
-  rooms: number;
-  adults: number;
-  childrenAges: number[];
-  cityCode: string;
+  rooms: Array<{
+    roomId: string;
+    adults: number;
+    childAges: number[];
+  }>;
+  currency: string;
   filters: {
     minStars?: number;
     maxBudget?: number;
     amenities?: string[];
   };
-  targetMarginPct: number;
 }
 
 export interface UttSupplierOffer {
   supplier: UttSupplierCode;
   supplierHotelId: string;
   hotelName: string;
+  location: string;
   roomType: string;
   mealPlan: string;
   baseRate: number;
@@ -45,65 +48,41 @@ export interface UttSupplierOffer {
 }
 
 export interface UttAggregatedOffer {
-  offerId: string;
-  canonicalHotelId: string;
-  hotelName: string;
-  bestSupplier: UttSupplierCode;
-  comparedSuppliers: UttSupplierCode[];
-  totalCost: number;
-  sellRate: number;
-  marginAmount: number;
-  marginPct: number;
-  roomsAvailable: number;
-  tags: string[];
+  hotelId: string;
+  name: string;
+  location: string;
+  price: number;
+  currency: string;
+  availability: number;
+  supplier: UttSupplierCode;
 }
 
-export interface UttItineraryRequest extends TenantScopedEntity {
-  itineraryId: string;
-  customerId: string;
-  nights: number;
-  rooms: Array<{
-    roomId: string;
-    adults: number;
-    childAges: number[];
-    selectedOfferId: string;
-  }>;
-  addOns: Array<{ code: string; label: string; amount: number }>;
-  childPolicy: {
-    cwbDiscountPct: number;
-    cnbDiscountPct: number;
-    cwbAgeRange: [number, number];
-    cnbAgeRange: [number, number];
+export interface UttPricingRequest extends TenantScopedEntity {
+  pricingId: string;
+  offer: UttAggregatedOffer;
+  sellCurrency: string;
+  marginPct: number;
+  exchangeRates: Record<string, number>;
+  taxProfile?: {
+    gstPct?: number;
+    taxCode?: string;
   };
 }
 
-export interface UttItineraryQuote {
-  itineraryId: string;
-  customerId: string;
-  nightCount: number;
-  roomBreakdown: Array<{
-    roomId: string;
-    adultAmount: number;
-    childCwbAmount: number;
-    childCnbAmount: number;
-    total: number;
-  }>;
-  addOnTotal: number;
-  grossTotal: number;
-  perPersonAmount: number;
-  perFamilyAmount: number;
-  pdfReadyPayload: Record<string, unknown>;
-}
-
-interface UttBooking extends TenantScopedEntity {
-  bookingId: string;
-  itineraryId: string;
-  customerId: string;
-  status: UttBookingStatus;
-  stage: UttBookingStage;
-  holdExpiresAt?: string;
-  paymentRef?: string;
-  voucherRef?: string;
+export interface UttPriceQuote {
+  pricingId: string;
+  costCurrency: string;
+  sellCurrency: string;
+  costAmount: number;
+  sellAmount: number;
+  marginAmount: number;
+  marginPct: number;
+  roundedRule: "NO_DECIMALS";
+  taxReady: {
+    taxCode: string;
+    gstPct: number;
+    estimatedTax: number;
+  };
 }
 
 interface SupplierContract extends TenantScopedEntity {
@@ -117,22 +96,47 @@ interface SupplierContract extends TenantScopedEntity {
   performanceScore: number;
 }
 
+interface HoldRecord extends TenantScopedEntity {
+  holdId: string;
+  bookingId: string;
+  expiresAt: string;
+  reminderAt: string;
+  status: "active" | "expired";
+}
+
+interface UttBooking extends TenantScopedEntity {
+  bookingId: string;
+  searchId: string;
+  selectedHotelId: string;
+  customerId: string;
+  customerLayer: UttCustomerLayer;
+  globalIdentityId: string;
+  stage: UttBookingStage;
+  status: UttBookingStatus;
+  price: UttPriceQuote;
+  hold?: HoldRecord;
+  voucherRef?: string;
+  paymentGuaranteeRequired: boolean;
+  paymentGuaranteed: boolean;
+}
+
 interface LeadRecord extends TenantScopedEntity {
   leadId: string;
   customerId: string;
+  globalIdentityId: string;
   sourceLayer: UttCustomerLayer;
-  status: "lead" | "inquiry" | "converted";
+  status: "lead" | "converted";
   bookingId?: string;
 }
 
-interface InvoiceRecord extends TenantScopedEntity {
-  invoiceId: string;
+interface FinanceLedger extends TenantScopedEntity {
+  financeId: string;
   bookingId: string;
-  subtotal: number;
-  gstAmount: number;
-  costAmount: number;
-  sellAmount: number;
+  invoiceId: string;
+  vendorPayable: number;
+  customerReceivable: number;
   marginAmount: number;
+  taxReady: UttPriceQuote["taxReady"];
   paymentStatus: "pending" | "paid";
 }
 
@@ -163,15 +167,18 @@ function nextId(prefix: string, sequence: number): string {
   return `${prefix}-${String(sequence).padStart(5, "0")}`;
 }
 
+function roundNoDecimals(amount: number): number {
+  return Math.round(amount);
+}
+
 export class UttEnterpriseOsService {
   private sequence = 1;
   private readonly users = new Map<string, UttUser>();
   private readonly supplierContracts = new Map<string, SupplierContract>();
-  private readonly aggregatedOffers = new Map<string, UttAggregatedOffer>();
-  private readonly itineraries = new Map<string, UttItineraryQuote>();
+  private readonly searchStore = new Map<string, UttAggregatedOffer[]>();
   private readonly bookings = new Map<string, UttBooking>();
   private readonly leads = new Map<string, LeadRecord>();
-  private readonly invoices = new Map<string, InvoiceRecord>();
+  private readonly financeLedgers = new Map<string, FinanceLedger>();
   private readonly auditTrail: AuditEvent[] = [];
   private readonly telemetrySignals: TelemetrySignal[] = [];
   private readonly queueDepthByTenant = new Map<string, number>();
@@ -193,7 +200,7 @@ export class UttEnterpriseOsService {
       performanceScore: 1,
     };
     this.supplierContracts.set(contract.supplierId, contract);
-    this.audit(contract.tenantId, "SYSTEM", "supplier.onboard", "info", {
+    this.audit(contract.tenantId, "SUPPLIER_ENGINE", "supplier.onboard", "info", {
       supplierCode: contract.supplierCode,
       apiEnabled: contract.apiEnabled,
       manualInventoryEnabled: contract.manualInventoryEnabled,
@@ -201,118 +208,81 @@ export class UttEnterpriseOsService {
     return contract;
   }
 
-  searchHotels(request: UttSearchRequest, supplierOffers: UttSupplierOffer[]): UttAggregatedOffer[] {
+  aggregateSupplierOffers(request: UttSearchRequest, supplierOffers: UttSupplierOffer[]): UttAggregatedOffer[] {
     assertIsoDate(request.checkIn, "checkIn");
     assertIsoDate(request.checkOut, "checkOut");
 
-    const filtered = supplierOffers.filter((offer) => {
-      const withinBudget = request.filters.maxBudget ? offer.baseRate + offer.taxes <= request.filters.maxBudget : true;
-      return offer.availableRooms >= request.rooms && withinBudget;
-    });
-
-    const grouped = new Map<string, UttSupplierOffer[]>();
-    for (const offer of filtered) {
-      const key = `${offer.hotelName}:${offer.roomType}`;
-      const existing = grouped.get(key) ?? [];
-      existing.push(offer);
-      grouped.set(key, existing);
+    const totalPax = request.rooms.reduce((sum, room) => sum + room.adults + room.childAges.length, 0);
+    if (!request.rooms.length || totalPax <= 0) {
+      throw new Error("At least one room with occupancy is required");
     }
 
-    const results: UttAggregatedOffer[] = [];
-    for (const [key, offers] of grouped.entries()) {
-      const sorted = [...offers].sort((a, b) => a.baseRate + a.taxes - (b.baseRate + b.taxes));
-      const cheapest = sorted[0];
-      const totalCost = cheapest.baseRate + cheapest.taxes;
-      const marginAmount = (totalCost * request.targetMarginPct) / 100;
-      const sellRate = Number((totalCost + marginAmount).toFixed(2));
+    const normalized = supplierOffers
+      .filter((offer) => offer.availableRooms >= request.rooms.length)
+      .filter((offer) => (request.filters.maxBudget ? offer.baseRate + offer.taxes <= request.filters.maxBudget : true))
+      .map((offer) => ({
+        hotelId: `${offer.supplier}-${offer.supplierHotelId}`,
+        name: offer.hotelName,
+        location: offer.location,
+        price: roundNoDecimals(offer.baseRate + offer.taxes),
+        currency: offer.currency,
+        availability: offer.availableRooms,
+        supplier: offer.supplier,
+      }))
+      .sort((a, b) => a.price - b.price);
 
-      const aggregated: UttAggregatedOffer = {
-        offerId: nextId("UTT-OFFER", this.sequence++),
-        canonicalHotelId: key,
-        hotelName: cheapest.hotelName,
-        bestSupplier: cheapest.supplier,
-        comparedSuppliers: sorted.map((offer) => offer.supplier),
-        totalCost,
-        sellRate,
-        marginAmount: Number(marginAmount.toFixed(2)),
-        marginPct: request.targetMarginPct,
-        roomsAvailable: Math.min(...sorted.map((offer) => offer.availableRooms)),
-        tags: [cheapest.cancellable ? "cancellable" : "non_cancellable", request.cityCode],
-      };
-
-      this.aggregatedOffers.set(aggregated.offerId, aggregated);
-      results.push(aggregated);
-    }
-
+    this.searchStore.set(request.searchId, normalized);
     this.telemetry(request.tenantId, "booking_log", {
-      type: "search_completed",
+      type: "supplier_selected",
       searchId: request.searchId,
-      comparedOffers: supplierOffers.length,
-      aggregatedHotels: results.length,
+      suppliersCompared: supplierOffers.length,
+      results: normalized.length,
+      sorting: "lowest_price_first",
+      marginControlEngine: "prepared_not_active",
     });
 
-    return results;
+    return normalized;
   }
 
-  createDynamicItinerary(input: UttItineraryRequest): UttItineraryQuote {
-    const roomBreakdown = input.rooms.map((room) => {
-      const offer = this.aggregatedOffers.get(room.selectedOfferId);
-      if (!offer) {
-        throw new Error(`Offer not found for room ${room.roomId}`);
-      }
+  priceOffer(input: UttPricingRequest): UttPriceQuote {
+    const rate = input.exchangeRates[input.offer.currency];
+    const targetRate = input.exchangeRates[input.sellCurrency];
+    if (!rate || !targetRate) {
+      throw new Error("Missing exchange rate for pricing conversion");
+    }
 
-      const adultAmount = offer.sellRate * room.adults * input.nights;
-      const cwbChildren = room.childAges.filter(
-        (age) => age >= input.childPolicy.cwbAgeRange[0] && age <= input.childPolicy.cwbAgeRange[1],
-      ).length;
-      const cnbChildren = room.childAges.filter(
-        (age) => age >= input.childPolicy.cnbAgeRange[0] && age <= input.childPolicy.cnbAgeRange[1],
-      ).length;
+    const normalizedBase = input.offer.price / rate;
+    const convertedCost = normalizedBase * targetRate;
+    const marginAmount = (convertedCost * input.marginPct) / 100;
+    const sellAmount = convertedCost + marginAmount;
 
-      const childCwbAmount = offer.sellRate * cwbChildren * input.nights * ((100 - input.childPolicy.cwbDiscountPct) / 100);
-      const childCnbAmount = offer.sellRate * cnbChildren * input.nights * ((100 - input.childPolicy.cnbDiscountPct) / 100);
-      const total = Number((adultAmount + childCwbAmount + childCnbAmount).toFixed(2));
+    const roundedCost = roundNoDecimals(convertedCost);
+    const roundedSell = roundNoDecimals(sellAmount);
+    const roundedMargin = roundNoDecimals(roundedSell - roundedCost);
+    const gstPct = input.taxProfile?.gstPct ?? 0;
 
-      return {
-        roomId: room.roomId,
-        adultAmount: Number(adultAmount.toFixed(2)),
-        childCwbAmount: Number(childCwbAmount.toFixed(2)),
-        childCnbAmount: Number(childCnbAmount.toFixed(2)),
-        total,
-      };
-    });
-
-    const addOnTotal = Number(input.addOns.reduce((sum, addOn) => sum + addOn.amount, 0).toFixed(2));
-    const grossTotal = Number((roomBreakdown.reduce((sum, room) => sum + room.total, 0) + addOnTotal).toFixed(2));
-    const totalPax = input.rooms.reduce((sum, room) => sum + room.adults + room.childAges.length, 0);
-
-    const quote: UttItineraryQuote = {
-      itineraryId: input.itineraryId,
-      customerId: input.customerId,
-      nightCount: input.nights,
-      roomBreakdown,
-      addOnTotal,
-      grossTotal,
-      perPersonAmount: Number((grossTotal / Math.max(totalPax, 1)).toFixed(2)),
-      perFamilyAmount: grossTotal,
-      pdfReadyPayload: {
-        itineraryId: input.itineraryId,
-        customerId: input.customerId,
-        rooms: roomBreakdown,
-        addOns: input.addOns,
-        totals: {
-          grossTotal,
-          perPersonAmount: Number((grossTotal / Math.max(totalPax, 1)).toFixed(2)),
-        },
+    const quote: UttPriceQuote = {
+      pricingId: input.pricingId,
+      costCurrency: input.sellCurrency,
+      sellCurrency: input.sellCurrency,
+      costAmount: roundedCost,
+      sellAmount: roundedSell,
+      marginAmount: roundedMargin,
+      marginPct: input.marginPct,
+      roundedRule: "NO_DECIMALS",
+      taxReady: {
+        taxCode: input.taxProfile?.taxCode ?? "GST_READY",
+        gstPct,
+        estimatedTax: roundNoDecimals((roundedSell * gstPct) / 100),
       },
     };
 
-    this.itineraries.set(input.itineraryId, quote);
     this.telemetry(input.tenantId, "booking_log", {
-      type: "itinerary_generated",
-      itineraryId: input.itineraryId,
-      grossTotal,
-      roomCount: input.rooms.length,
+      type: "pricing_computed",
+      pricingId: input.pricingId,
+      roundedRule: quote.roundedRule,
+      sellAmount: quote.sellAmount,
+      marginAmount: quote.marginAmount,
     });
 
     return quote;
@@ -321,200 +291,330 @@ export class UttEnterpriseOsService {
   executeBookingLifecycle(input: {
     tenantId: string;
     bookingId: string;
-    itineraryId: string;
+    searchId: string;
+    selectedHotelId: string;
     customerId: string;
+    globalIdentityId: string;
+    customerLayer: UttCustomerLayer;
     holdMinutes: number;
-    paymentRef: string;
+    paymentGuaranteed: boolean;
+    price: UttPriceQuote;
   }): UttBooking {
-    const quote = this.itineraries.get(input.itineraryId);
-    if (!quote) {
-      throw new Error(`Itinerary ${input.itineraryId} not found`);
+    const results = this.searchStore.get(input.searchId) ?? [];
+    const selected = results.find((offer) => offer.hotelId === input.selectedHotelId);
+    if (!selected) {
+      throw new Error("Selected offer not found for searchId");
+    }
+
+    const paymentGuaranteeRequired = input.customerLayer !== "B2B";
+    if (paymentGuaranteeRequired && !input.paymentGuaranteed) {
+      throw new Error("B2C/CORPORATE flows require payment guarantee before confirm");
     }
 
     const holdExpiresAt = new Date(Date.now() + input.holdMinutes * 60_000).toISOString();
+    const reminderAt = new Date(Date.now() + Math.max(input.holdMinutes - 5, 1) * 60_000).toISOString();
+    const hold: HoldRecord = {
+      tenantId: input.tenantId,
+      holdId: nextId("HOLD", this.sequence++),
+      bookingId: input.bookingId,
+      expiresAt: holdExpiresAt,
+      reminderAt,
+      status: "active",
+    };
+
     const booking: UttBooking = {
       tenantId: input.tenantId,
       bookingId: input.bookingId,
-      itineraryId: input.itineraryId,
+      searchId: input.searchId,
+      selectedHotelId: input.selectedHotelId,
       customerId: input.customerId,
-      status: "held",
-      stage: "HOLD",
-      holdExpiresAt,
+      globalIdentityId: input.globalIdentityId,
+      customerLayer: input.customerLayer,
+      stage: "SEARCH",
+      status: "search_completed",
+      price: input.price,
+      paymentGuaranteeRequired,
+      paymentGuaranteed: input.paymentGuaranteed,
     };
+
+    this.emitBookingEvent(input.tenantId, "booking_created", { bookingId: booking.bookingId, stage: booking.stage });
+    booking.stage = "SELECT";
+    booking.status = "selected";
+    booking.hold = hold;
+    booking.stage = "HOLD";
+    booking.status = "held";
+    this.emitBookingEvent(input.tenantId, "booking_hold", {
+      bookingId: booking.bookingId,
+      holdId: hold.holdId,
+      expiresAt: hold.expiresAt,
+      reminderAt: hold.reminderAt,
+    });
 
     booking.stage = "CONFIRM";
     booking.status = "confirmed";
-    booking.stage = "PAYMENT";
-    booking.status = "paid";
-    booking.paymentRef = input.paymentRef;
-    booking.stage = "VOUCHER";
-    booking.status = "voucher_issued";
-    booking.voucherRef = `VCH-${input.bookingId}`;
-
-    this.bookings.set(booking.bookingId, booking);
-    this.telemetry(input.tenantId, "booking_log", {
-      type: "booking_lifecycle_completed",
+    this.emitBookingEvent(input.tenantId, "booking_confirmed", {
       bookingId: booking.bookingId,
-      stages: ["SEARCH", "SELECT", "HOLD", "CONFIRM", "PAYMENT", "VOUCHER"],
-      holdExpiresAt,
+      paymentGuaranteeRequired,
+      paymentGuaranteed: booking.paymentGuaranteed,
     });
 
+    this.emitBookingEvent(input.tenantId, "payment_status", {
+      bookingId: booking.bookingId,
+      status: booking.paymentGuaranteed ? "guaranteed" : "not_required",
+    });
+
+    booking.stage = "VOUCHER";
+    booking.status = "voucher_issued";
+    booking.voucherRef = `VCH-${booking.bookingId}`;
+    this.emitBookingEvent(input.tenantId, "voucher_generated", {
+      bookingId: booking.bookingId,
+      voucherRef: booking.voucherRef,
+    });
+
+    this.bookings.set(booking.bookingId, booking);
     return booking;
   }
 
-  checkAndExpireHoldBookings(nowIso: string): UttBooking[] {
+  evaluateHoldReminders(nowIso: string): HoldRecord[] {
     const now = new Date(nowIso).getTime();
-    const expired: UttBooking[] = [];
+    const dueReminders: HoldRecord[] = [];
 
     for (const booking of this.bookings.values()) {
-      if (booking.status !== "held" || !booking.holdExpiresAt) {
+      if (!booking.hold || booking.tenantId !== booking.hold.tenantId) {
         continue;
       }
+      if (booking.hold.status !== "active") {
+        continue;
+      }
+      const reminderTs = new Date(booking.hold.reminderAt).getTime();
+      const expiryTs = new Date(booking.hold.expiresAt).getTime();
 
-      if (new Date(booking.holdExpiresAt).getTime() <= now) {
-        booking.status = "expired";
-        expired.push(booking);
+      if (reminderTs <= now && expiryTs > now) {
+        dueReminders.push(booking.hold);
         this.telemetry(booking.tenantId, "booking_log", {
-          type: "booking_expired",
+          type: "booking_hold_reminder",
           bookingId: booking.bookingId,
-          holdExpiresAt: booking.holdExpiresAt,
+          holdId: booking.hold.holdId,
+          expiresAt: booking.hold.expiresAt,
+        });
+      }
+
+      if (expiryTs <= now) {
+        booking.hold.status = "expired";
+        booking.status = "expired";
+        this.telemetry(booking.tenantId, "booking_log", {
+          type: "booking_hold_expired",
+          bookingId: booking.bookingId,
+          holdId: booking.hold.holdId,
         });
       }
     }
 
-    return expired;
+    return dueReminders;
   }
 
   createLeadAndConvertToBooking(input: {
     tenantId: string;
     leadId: string;
     customerId: string;
+    globalIdentityId: string;
     sourceLayer: UttCustomerLayer;
     bookingId: string;
   }): LeadRecord {
+    const booking = this.bookings.get(input.bookingId);
+    if (!booking || booking.tenantId !== input.tenantId) {
+      throw new Error("Booking not found for CRM conversion in tenant scope");
+    }
+
     const record: LeadRecord = {
       tenantId: input.tenantId,
       leadId: input.leadId,
       customerId: input.customerId,
+      globalIdentityId: input.globalIdentityId,
       sourceLayer: input.sourceLayer,
       status: "converted",
       bookingId: input.bookingId,
     };
     this.leads.set(record.leadId, record);
 
-    this.audit(input.tenantId, "CRM_ENGINE", "crm.lead_to_booking", "info", {
+    this.audit(input.tenantId, "CRM_SYNC_WORKER", "crm.lead_to_customer_conversion", "info", {
       leadId: input.leadId,
-      customerId: input.customerId,
+      sourceLayer: input.sourceLayer,
+      globalIdentityId: input.globalIdentityId,
       bookingId: input.bookingId,
     });
 
     return record;
   }
 
-  generateInvoice(input: {
+  generateFinanceRecord(input: {
     tenantId: string;
+    financeId: string;
     invoiceId: string;
     bookingId: string;
-    costAmount: number;
-    sellAmount: number;
-    gstPct: number;
-  }): InvoiceRecord {
-    const gstAmount = Number(((input.sellAmount * input.gstPct) / 100).toFixed(2));
-    const subtotal = Number((input.sellAmount + gstAmount).toFixed(2));
-    const marginAmount = Number((input.sellAmount - input.costAmount).toFixed(2));
+  }): FinanceLedger {
+    const booking = this.bookings.get(input.bookingId);
+    if (!booking || booking.tenantId !== input.tenantId) {
+      throw new Error("Booking not found for finance generation");
+    }
 
-    const invoice: InvoiceRecord = {
+    const finance: FinanceLedger = {
       tenantId: input.tenantId,
+      financeId: input.financeId,
       invoiceId: input.invoiceId,
       bookingId: input.bookingId,
-      subtotal,
-      gstAmount,
-      costAmount: input.costAmount,
-      sellAmount: input.sellAmount,
-      marginAmount,
+      vendorPayable: booking.price.costAmount,
+      customerReceivable: booking.price.sellAmount,
+      marginAmount: booking.price.marginAmount,
+      taxReady: booking.price.taxReady,
       paymentStatus: "pending",
     };
 
-    this.invoices.set(invoice.invoiceId, invoice);
+    this.financeLedgers.set(finance.financeId, finance);
     this.telemetry(input.tenantId, "queue_perf", {
-      type: "finance_invoice_generated",
+      type: "finance_record_created",
+      financeId: input.financeId,
       invoiceId: input.invoiceId,
-      marginAmount,
-      gstAmount,
+      bookingId: input.bookingId,
+      vendorPayable: finance.vendorPayable,
+      customerReceivable: finance.customerReceivable,
+      marginAmount: finance.marginAmount,
     });
 
-    return invoice;
+    return finance;
   }
 
-  markInvoicePaid(tenantId: string, invoiceId: string): InvoiceRecord {
-    const invoice = this.invoices.get(invoiceId);
-    if (!invoice || invoice.tenantId !== tenantId) {
-      throw new Error("Invoice not found for tenant");
+  markFinancePaid(tenantId: string, financeId: string): FinanceLedger {
+    const finance = this.financeLedgers.get(financeId);
+    if (!finance || finance.tenantId !== tenantId) {
+      throw new Error("Finance record not found for tenant");
     }
-    invoice.paymentStatus = "paid";
+    finance.paymentStatus = "paid";
 
-    this.audit(tenantId, "FINANCE_ENGINE", "finance.payment_tracked", "info", {
-      invoiceId,
-      paymentStatus: invoice.paymentStatus,
+    this.audit(tenantId, "FINANCE_ENGINE_WORKER", "finance.payment_status_updated", "info", {
+      financeId,
+      paymentStatus: finance.paymentStatus,
     });
 
-    return invoice;
+    return finance;
   }
 
   muskiRouteCommand(input: {
     tenantId: string;
     commandId: string;
-    module: string;
-    workerAi: string;
-    intent: string;
-  }): { route: string; recommendation: string; escalation: boolean } {
-    const escalation = /critical|override|high_risk/i.test(input.intent);
-    const recommendation = escalation
-      ? "Escalate to COPSPOWER + Admin approval before worker execution"
-      : "Proceed with normal UTT worker execution";
+    userId: string;
+    role: UttRole;
+    command: "show bookings" | "check supplier status" | "view revenue" | "booking alerts";
+  }): { route: string; allowed: boolean; data: Record<string, unknown> } {
+    const user = this.users.get(input.userId);
+    const allowed = !!user && user.tenantId === input.tenantId && user.role === input.role;
+    if (!allowed) {
+      return {
+        route: "MUSKI -> THE_UTT -> ACCESS_DENIED",
+        allowed: false,
+        data: { reason: "tenant_or_role_mismatch" },
+      };
+    }
 
-    this.audit(input.tenantId, "MUSKI", "muski.command_route", escalation ? "critical" : "info", {
+    let data: Record<string, unknown> = {};
+    if (input.command === "show bookings") {
+      data = {
+        bookings: [...this.bookings.values()]
+          .filter((booking) => booking.tenantId === input.tenantId)
+          .map((booking) => ({ bookingId: booking.bookingId, status: booking.status, stage: booking.stage })),
+      };
+    } else if (input.command === "check supplier status") {
+      data = {
+        suppliers: [...this.supplierContracts.values()]
+          .filter((supplier) => supplier.tenantId === input.tenantId)
+          .map((supplier) => ({ supplierCode: supplier.supplierCode, status: supplier.onboardingStatus })),
+      };
+    } else if (input.command === "view revenue") {
+      const financeRows = [...this.financeLedgers.values()].filter((row) => row.tenantId === input.tenantId);
+      data = {
+        receivable: financeRows.reduce((sum, row) => sum + row.customerReceivable, 0),
+        margin: financeRows.reduce((sum, row) => sum + row.marginAmount, 0),
+      };
+    } else {
+      const activeAlerts = [...this.bookings.values()].filter(
+        (booking) => booking.tenantId === input.tenantId && (booking.status === "held" || booking.status === "expired"),
+      );
+      data = { alerts: activeAlerts.map((booking) => ({ bookingId: booking.bookingId, status: booking.status })) };
+    }
+
+    this.audit(input.tenantId, "MUSKI", "muski.command_route", "info", {
       commandId: input.commandId,
-      module: input.module,
-      workerAi: input.workerAi,
-      escalation,
+      command: input.command,
+      userId: input.userId,
+      allowed,
     });
 
     return {
-      route: `MUSKI -> THE_UTT -> ${input.module} -> ${input.workerAi}`,
-      recommendation,
-      escalation,
+      route: `MUSKI -> UTT_MANAGER_AI -> ${input.command}`,
+      allowed,
+      data,
     };
   }
 
-  validateTenantRoleAction(input: {
-    tenantId: string;
-    userId: string;
-    requiredScope: string;
-    action: string;
-    severity: "info" | "warning" | "critical";
-  }): { allowed: boolean; reason: string } {
-    const user = this.users.get(input.userId);
-    if (!user || user.tenantId !== input.tenantId) {
-      this.audit(input.tenantId, input.userId, "governance.role_validation", "critical", {
-        action: input.action,
-        allowed: false,
-        reason: "tenant_scope_violation",
-      });
-      return { allowed: false, reason: "tenant_scope_violation" };
+  getApiRoutes(): string[] {
+    return [
+      "POST /utt/search",
+      "POST /utt/select",
+      "POST /utt/hold",
+      "POST /utt/confirm",
+      "POST /utt/voucher",
+      "POST /utt/crm/lead-convert",
+      "POST /utt/finance/invoice",
+      "GET /utt/suppliers/status",
+      "GET /utt/bookings",
+      "GET /utt/revenue",
+      "GET /utt/alerts",
+    ];
+  }
+
+  getEventFlowMap(): Array<{ stage: string; emits: string[]; worker: string }> {
+    return [
+      { stage: "SEARCH", emits: ["supplier_selected"], worker: "Supplier Aggregator Worker" },
+      { stage: "HOLD", emits: ["booking_hold"], worker: "Booking Engine Worker" },
+      { stage: "CONFIRM", emits: ["booking_confirmed", "payment_status"], worker: "Booking Engine Worker" },
+      { stage: "VOUCHER", emits: ["voucher_generated"], worker: "Booking Engine Worker" },
+      { stage: "CRM", emits: ["crm.lead_to_customer_conversion"], worker: "CRM Sync Worker" },
+      { stage: "FINANCE", emits: ["finance_record_created"], worker: "Finance Engine Worker" },
+    ];
+  }
+
+  getReadinessSnapshot(tenantId: string): Record<string, unknown> {
+    const supplierCount = [...this.supplierContracts.values()].filter((item) => item.tenantId === tenantId).length;
+    const bookingCount = [...this.bookings.values()].filter((item) => item.tenantId === tenantId).length;
+    const financeCount = [...this.financeLedgers.values()].filter((item) => item.tenantId === tenantId).length;
+
+    return {
+      tenantIsolation: "active",
+      roleValidation: "active",
+      suppliers: supplierCount,
+      bookings: bookingCount,
+      financeRecords: financeCount,
+      telemetrySignals: this.telemetrySignals.filter((item) => item.tenantId === tenantId).length,
+      auditEvents: this.auditTrail.filter((item) => item.tenantId === tenantId).length,
+      queueDepth: this.queueDepthByTenant.get(tenantId) ?? 0,
+      commandFlow: "MUSKI -> UTT Manager AI -> Worker AI",
+      workers: [
+        "Booking Engine Worker",
+        "Supplier Aggregator Worker",
+        "Pricing Engine Worker",
+        "CRM Sync Worker",
+        "Finance Engine Worker",
+        "Telemetry Worker",
+      ],
+    };
+  }
+
+  getBookingById(tenantId: string, bookingId: string): UttBooking {
+    const booking = this.bookings.get(bookingId);
+    if (!booking || booking.tenantId !== tenantId) {
+      throw new Error("Booking not found for tenant");
     }
-
-    const allowed = user.permissionScopes.includes(input.requiredScope);
-    const reason = allowed ? "allowed" : "missing_permission_scope";
-
-    this.audit(input.tenantId, input.userId, "governance.role_validation", input.severity, {
-      action: input.action,
-      requiredScope: input.requiredScope,
-      allowed,
-      reason,
-    });
-
-    return { allowed, reason };
+    return booking;
   }
 
   pushQueueMetric(tenantId: string, queueDepth: number): void {
@@ -525,30 +625,19 @@ export class UttEnterpriseOsService {
     });
   }
 
-  getReadinessSnapshot(tenantId: string): Record<string, unknown> {
-    const supplierCount = [...this.supplierContracts.values()].filter((item) => item.tenantId === tenantId).length;
-    const bookingCount = [...this.bookings.values()].filter((item) => item.tenantId === tenantId).length;
-    const invoiceCount = [...this.invoices.values()].filter((item) => item.tenantId === tenantId).length;
-
-    return {
-      tenantIsolation: "active",
-      roleValidation: "active",
-      supplierContracts: supplierCount,
-      bookings: bookingCount,
-      invoices: invoiceCount,
-      telemetrySignals: this.telemetrySignals.filter((item) => item.tenantId === tenantId).length,
-      auditEvents: this.auditTrail.filter((item) => item.tenantId === tenantId).length,
-      queueDepth: this.queueDepthByTenant.get(tenantId) ?? 0,
-      commandFlow: "MUSKI -> THE_UTT -> Module -> Worker AI",
-    };
-  }
-
   getAuditTrail(tenantId: string): AuditEvent[] {
     return this.auditTrail.filter((item) => item.tenantId === tenantId);
   }
 
   getTelemetrySignals(tenantId: string): TelemetrySignal[] {
     return this.telemetrySignals.filter((item) => item.tenantId === tenantId);
+  }
+
+  private emitBookingEvent(tenantId: string, eventName: string, payload: Record<string, unknown>): void {
+    this.telemetry(tenantId, "booking_log", {
+      eventName,
+      ...payload,
+    });
   }
 
   private audit(
