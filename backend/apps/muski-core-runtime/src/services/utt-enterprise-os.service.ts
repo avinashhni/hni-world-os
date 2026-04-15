@@ -353,6 +353,7 @@ export class UttEnterpriseOsService {
 
     booking.stage = "CONFIRM";
     booking.status = "confirmed";
+    booking.holdClosed = true;
     this.emitBookingEvent(input.tenantId, "booking_confirmed", {
       bookingId: booking.bookingId,
       paymentGuaranteeRequired,
@@ -366,7 +367,6 @@ export class UttEnterpriseOsService {
 
     booking.stage = "VOUCHER";
     booking.status = "voucher_issued";
-    booking.holdClosed = true;
     booking.voucherRef = `VCH-${booking.bookingId}`;
     this.emitBookingEvent(input.tenantId, "voucher_generated", {
       bookingId: booking.bookingId,
@@ -401,7 +401,7 @@ export class UttEnterpriseOsService {
         });
       }
 
-      if (expiryTs <= now && booking.status === "hold_created") {
+      if (expiryTs <= now && booking.hold.status === "active" && booking.holdClosed !== true) {
         booking.hold.status = "expired";
         booking.status = "expired";
         this.telemetry(booking.tenantId, "booking_log", {
@@ -539,7 +539,9 @@ export class UttEnterpriseOsService {
       };
     } else {
       const activeAlerts = [...this.bookings.values()].filter(
-        (booking) => booking.tenantId === input.tenantId && (booking.status === "hold_created" || booking.status === "held" || booking.status === "expired"),
+        (booking) =>
+          booking.tenantId === input.tenantId &&
+          ((booking.hold?.status === "active" && booking.holdClosed !== true) || booking.hold?.status === "expired" || booking.status === "expired"),
       );
       data = { alerts: activeAlerts.map((booking) => ({ bookingId: booking.bookingId, status: booking.status })) };
     }
