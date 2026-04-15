@@ -218,6 +218,10 @@ export class UttEnterpriseOsService {
     dynamicPricingEnabled: false,
     competitorPricingHook: "ready_not_active",
     demandSurgeMultiplierHook: "ready_not_active",
+  }, (eventName, payload) => {
+    if (eventName === "revenue_loss_flag") {
+      this.telemetry(String(payload.tenantId ?? "unknown"), "error_control", payload);
+    }
   });
   private readonly invoiceService = new InvoiceGstService();
   private readonly fraudRiskService = new FraudRiskMonitorService();
@@ -506,7 +510,12 @@ export class UttEnterpriseOsService {
       throw new Error("Selected offer not found");
     }
 
-    const revenue = this.revenueEngine.calculateSellPrice({ supplier: selected.supplier, costPrice: selected.price });
+    const revenue = this.revenueEngine.calculateSellPrice({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      supplier: selected.supplier,
+      costPrice: selected.price,
+    });
     const quote: UttPriceQuote = {
       pricingId: nextId("PRC", this.sequence++),
       costCurrency: selected.currency,
@@ -535,6 +544,19 @@ export class UttEnterpriseOsService {
       paymentGuaranteed: input.customerLayer === "B2B",
       price: quote,
     });
+    booking.stage = "CONFIRM";
+    booking.status = "confirmed";
+    this.persistence.upsertBooking({
+      tenantId: booking.tenantId,
+      bookingId: booking.bookingId,
+      status: booking.status,
+      stage: booking.stage,
+      supplier: selected.supplier,
+      sellAmount: booking.price.sellAmount,
+      costAmount: booking.price.costAmount,
+      marginAmount: booking.price.marginAmount,
+      createdAt: new Date().toISOString(),
+    });
 
     const risk = this.fraudRiskService.evaluate({
       tenantId: input.tenantId,
@@ -550,19 +572,42 @@ export class UttEnterpriseOsService {
       throw new Error(`Fraud/Risk blocked booking: ${risk.flags.join(",")}`);
     }
 
-    const payment = await this.paymentService.createPaymentIntent({
-      tenantId: input.tenantId,
-      bookingId: input.bookingId,
-      amount: quote.sellAmount,
-      currency: quote.sellCurrency,
-      customerLayer: input.customerLayer,
-      countryCode: input.countryCode,
-    });
-    this.emitBookingEvent(input.tenantId, "payment_initiated", { bookingId: input.bookingId, paymentId: payment.paymentId });
-    const capturedPayment = await this.paymentService.capturePayment(payment.paymentId);
-    const verifiedPayment = await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
+    const persistedPayment = this.persistence.getPaymentByBooking(input.tenantId, input.bookingId);
+    const payment = persistedPayment
+      ? this.payments.get(persistedPayment.paymentId) ?? {
+          paymentId: persistedPayment.paymentId,
+          tenantId: persistedPayment.tenantId,
+          bookingId: persistedPayment.bookingId,
+          amount: persistedPayment.amount,
+          currency: persistedPayment.currency,
+          paymentGateway: persistedPayment.paymentGateway as PaymentRecord["paymentGateway"],
+          paymentStatus: persistedPayment.paymentStatus as PaymentRecord["paymentStatus"],
+          createdAt: persistedPayment.updatedAt,
+          updatedAt: persistedPayment.updatedAt,
+        }
+      : await this.paymentService.createPaymentIntent({
+          tenantId: input.tenantId,
+          bookingId: input.bookingId,
+          bookingStatus: booking.status,
+          amount: quote.sellAmount,
+          currency: quote.sellCurrency,
+          customerLayer: input.customerLayer,
+          countryCode: input.countryCode,
+        });
+
+    if (!persistedPayment) {
+      this.emitBookingEvent(input.tenantId, "payment_initiated", {
+        tenantId: input.tenantId,
+        bookingId: input.bookingId,
+        paymentId: payment.paymentId,
+      });
+    }
+    const capturedPayment = payment.paymentStatus === "verified" ? payment : await this.paymentService.capturePayment(payment.paymentId);
+    const verifiedPayment =
+      capturedPayment.paymentStatus === "verified" ? capturedPayment : await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
     const paymentFailed = verifiedPayment.paymentStatus === "failed";
     this.emitBookingEvent(input.tenantId, paymentFailed ? "payment_failed" : "payment_success", {
+      tenantId: input.tenantId,
       bookingId: input.bookingId,
       paymentId: verifiedPayment.paymentId,
       gateway: verifiedPayment.paymentGateway,
@@ -600,40 +645,75 @@ export class UttEnterpriseOsService {
       createdAt: new Date().toISOString(),
     });
 
-    const invoice = this.invoiceService.generateInvoice({
+    const existingInvoice = this.persistence.getInvoiceByBooking(input.tenantId, booking.bookingId);
+    const invoice =
+      existingInvoice && this.invoices.get(existingInvoice.invoiceId)
+        ? this.invoices.get(existingInvoice.invoiceId)!
+        : existingInvoice
+          ? (() => {
+              const restoredInvoice: UttInvoice = {
+              tenantId: existingInvoice.tenantId,
+              invoiceId: existingInvoice.invoiceId,
+              bookingId: existingInvoice.bookingId,
+              customer: { customerId: existingInvoice.customerId, name: input.customerName },
+              amount: existingInvoice.amount,
+              GST: existingInvoice.gst,
+              total: existingInvoice.total,
+              vendorPayable: booking.price.costAmount,
+              margin: existingInvoice.margin,
+              createdAt: existingInvoice.createdAt,
+              };
+              this.invoices.set(restoredInvoice.invoiceId, restoredInvoice);
+              return restoredInvoice;
+            })()
+        : (() => {
+            const generated = this.invoiceService.generateInvoice({
+              tenantId: input.tenantId,
+              bookingId: booking.bookingId,
+              customer: { customerId: input.customerId, name: input.customerName },
+              amount: booking.price.sellAmount,
+              gstPercent: input.gstPercent,
+              supplierCost: booking.price.costAmount,
+            });
+            const invoiceRow: UttInvoice = { tenantId: input.tenantId, ...generated };
+            this.invoices.set(generated.invoiceId, invoiceRow);
+            this.emitBookingEvent(input.tenantId, "invoice_generated", {
+              tenantId: input.tenantId,
+              bookingId: booking.bookingId,
+              invoiceId: generated.invoiceId,
+              total: generated.total,
+              margin: generated.margin,
+            });
+            this.persistence.upsertInvoice({
+              tenantId: input.tenantId,
+              invoiceId: generated.invoiceId,
+              bookingId: booking.bookingId,
+              customerId: input.customerId,
+              amount: generated.amount,
+              gst: generated.GST,
+              total: generated.total,
+              margin: generated.margin,
+              createdAt: generated.createdAt,
+            });
+            return invoiceRow;
+          })();
+
+    booking.status = "voucher_issued";
+    booking.stage = "VOUCHER";
+    this.emitBookingEvent(input.tenantId, "revenue_calculated", {
       tenantId: input.tenantId,
       bookingId: booking.bookingId,
-      customer: { customerId: input.customerId, name: input.customerName },
-      amount: booking.price.sellAmount,
-      gstPercent: input.gstPercent,
-      supplierCost: booking.price.costAmount,
-    });
-    const invoiceRow: UttInvoice = { tenantId: input.tenantId, ...invoice };
-    this.invoices.set(invoice.invoiceId, invoiceRow);
-    this.emitBookingEvent(input.tenantId, "invoice_generated", {
-      bookingId: booking.bookingId,
-      invoiceId: invoice.invoiceId,
-      total: invoice.total,
       margin: invoice.margin,
-    });
-    this.persistence.upsertInvoice({
-      tenantId: input.tenantId,
-      invoiceId: invoice.invoiceId,
-      bookingId: booking.bookingId,
-      customerId: input.customerId,
-      amount: invoice.amount,
-      gst: invoice.GST,
-      total: invoice.total,
-      margin: invoice.margin,
-      createdAt: invoice.createdAt,
+      lossFlag: revenue.lossFlag,
     });
     this.emitBookingEvent(input.tenantId, "booking_confirmed", {
+      tenantId: input.tenantId,
       bookingId: booking.bookingId,
       paymentId: verifiedPayment.paymentId,
       invoiceId: invoice.invoiceId,
     });
 
-    return { booking, payment: verifiedPayment, invoice: invoiceRow };
+    return { booking, payment: verifiedPayment, invoice };
   }
 
   evaluateHoldReminders(nowIso: string): HoldRecord[] {
@@ -969,6 +1049,7 @@ export class UttEnterpriseOsService {
 
   private emitBookingEvent(tenantId: string, eventName: string, payload: Record<string, unknown>): void {
     this.telemetry(tenantId, "booking_log", {
+      tenantId,
       eventName,
       ...payload,
     });

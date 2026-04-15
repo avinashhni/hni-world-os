@@ -33,7 +33,8 @@ create table if not exists public.utt_payments (
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (tenant_id, payment_id)
+  unique (tenant_id, payment_id),
+  unique (tenant_id, booking_id)
 );
 
 create table if not exists public.utt_suppliers (
@@ -60,9 +61,12 @@ create table if not exists public.utt_invoices (
   vendor_payable numeric(12,2) not null,
   margin_amount numeric(12,2) not null,
   created_at timestamptz not null default now(),
-  unique (tenant_id, invoice_id)
+  unique (tenant_id, invoice_id),
+  unique (tenant_id, booking_id)
 );
 
 create index if not exists idx_utt_bookings_tenant_status on public.utt_bookings (tenant_id, status);
 create index if not exists idx_utt_payments_tenant_status on public.utt_payments (tenant_id, payment_status);
+create index if not exists idx_utt_payments_booking on public.utt_payments (booking_id);
 create index if not exists idx_utt_invoices_tenant_booking on public.utt_invoices (tenant_id, booking_id);
+create index if not exists idx_utt_invoices_booking on public.utt_invoices (booking_id);

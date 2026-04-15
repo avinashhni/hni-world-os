@@ -36,25 +36,36 @@ export class ExpediaAdapter implements SupplierAdapter {
       currency: request.currency,
     }).toString();
 
-    const response = await this.httpClient.get<{ hotels: ExpediaHotelResult[] }>(
-      `${this.config.baseUrl}/v1/hotels/search?${query}`,
-      {
-        "x-api-key": this.config.apiKey,
-        "x-timeout-ms": String(this.config.timeoutMs),
-      },
-    );
+    try {
+      const response = await this.httpClient.get<{ hotels: ExpediaHotelResult[] }>(
+        `${this.config.baseUrl}/v1/hotels/search?${query}`,
+        {
+          "x-api-key": this.config.apiKey,
+          "x-timeout-ms": String(this.config.timeoutMs),
+        },
+      );
 
-    return response.hotels.map((hotel) => ({
-      hotelId: hotel.id,
-      name: hotel.name,
-      location: hotel.location,
-      price: hotel.totalPrice,
-      currency: hotel.currency,
-      availability: hotel.availableRooms,
-      supplier: this.supplier,
-      cancellationPolicy: hotel.cancellationPolicy,
-      refundable: hotel.refundable,
-    }));
+      return (response.hotels ?? []).map((hotel) => ({
+        hotelId: hotel.id,
+        name: hotel.name,
+        location: hotel.location,
+        price: hotel.totalPrice,
+        currency: hotel.currency,
+        availability: hotel.availableRooms,
+        supplierCode: this.supplier,
+        supplier: this.supplier,
+        cancellationPolicy: hotel.cancellationPolicy,
+        refundable: hotel.refundable,
+      }));
+    } catch (error) {
+      console.warn("supplier_api_failed", {
+        tenantId: request.tenantId,
+        bookingId: request.bookingId ?? null,
+        supplierCode: this.supplier,
+        error: error instanceof Error ? error.message : "supplier_api_failed",
+      });
+      return [];
+    }
   }
 
   async healthCheck(): Promise<{ supplier: "EXPEDIA"; healthy: boolean; message: string }> {

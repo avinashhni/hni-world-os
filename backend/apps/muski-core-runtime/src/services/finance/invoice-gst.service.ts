@@ -29,20 +29,26 @@ export class InvoiceGstService {
   private sequence = 1;
 
   generateInvoice(input: InvoiceInput): InvoiceRecord {
-    const gstAmount = Number(((input.amount * input.gstPercent) / 100).toFixed(2));
-    const total = Number((input.amount + gstAmount).toFixed(2));
-    const margin = Number((input.amount - input.supplierCost).toFixed(2));
+    const amount = this.roundTo2(input.amount);
+    const supplierCost = this.roundTo2(input.supplierCost);
+    const gstAmount = this.roundTo2((amount * input.gstPercent) / 100);
+    const total = this.roundTo2(amount + gstAmount);
+    const margin = this.roundTo2(amount - supplierCost);
 
     return {
       invoiceId: `INV-${String(this.sequence++).padStart(6, "0")}`,
       bookingId: input.bookingId,
       customer: input.customer,
-      amount: input.amount,
+      amount,
       GST: gstAmount,
       total,
-      vendorPayable: input.supplierCost,
+      vendorPayable: supplierCost,
       margin,
       createdAt: new Date().toISOString(),
     };
+  }
+
+  private roundTo2(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
   }
 }

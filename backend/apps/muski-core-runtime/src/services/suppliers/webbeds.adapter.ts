@@ -29,32 +29,43 @@ export class WebbedsAdapter implements SupplierAdapter {
   ) {}
 
   async searchHotels(request: SupplierSearchRequest): Promise<UnifiedSupplierOffer[]> {
-    const response = await this.httpClient.post<{ hotels: WebbedsHotelResult[] }>(
-      `${this.config.baseUrl}/api/search`,
-      {
-        destination: request.destination,
-        checkIn: request.checkIn,
-        checkOut: request.checkOut,
-        rooms: request.rooms,
-        currency: request.currency,
-      },
-      {
-        authorization: `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString("base64")}`,
-        "x-timeout-ms": String(this.config.timeoutMs),
-      },
-    );
+    try {
+      const response = await this.httpClient.post<{ hotels: WebbedsHotelResult[] }>(
+        `${this.config.baseUrl}/api/search`,
+        {
+          destination: request.destination,
+          checkIn: request.checkIn,
+          checkOut: request.checkOut,
+          rooms: request.rooms,
+          currency: request.currency,
+        },
+        {
+          authorization: `Basic ${Buffer.from(`${this.config.username}:${this.config.password}`).toString("base64")}`,
+          "x-timeout-ms": String(this.config.timeoutMs),
+        },
+      );
 
-    return response.hotels.map((hotel) => ({
-      hotelId: hotel.hotelCode,
-      name: hotel.name,
-      location: hotel.destinationName,
-      price: hotel.amount,
-      currency: hotel.currency,
-      availability: hotel.availability,
-      supplier: this.supplier,
-      cancellationPolicy: hotel.cancellationPolicy,
-      refundable: hotel.refundable,
-    }));
+      return (response.hotels ?? []).map((hotel) => ({
+        hotelId: hotel.hotelCode,
+        name: hotel.name,
+        location: hotel.destinationName,
+        price: hotel.amount,
+        currency: hotel.currency,
+        availability: hotel.availability,
+        supplierCode: this.supplier,
+        supplier: this.supplier,
+        cancellationPolicy: hotel.cancellationPolicy,
+        refundable: hotel.refundable,
+      }));
+    } catch (error) {
+      console.warn("supplier_api_failed", {
+        tenantId: request.tenantId,
+        bookingId: request.bookingId ?? null,
+        supplierCode: this.supplier,
+        error: error instanceof Error ? error.message : "supplier_api_failed",
+      });
+      return [];
+    }
   }
 
   async healthCheck(): Promise<{ supplier: "WEBBEDS"; healthy: boolean; message: string }> {

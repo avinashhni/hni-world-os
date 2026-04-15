@@ -29,32 +29,43 @@ export class HotelbedsAdapter implements SupplierAdapter {
   ) {}
 
   async searchHotels(request: SupplierSearchRequest): Promise<UnifiedSupplierOffer[]> {
-    const response = await this.httpClient.post<{ hotels: HotelbedsHotelResult[] }>(
-      `${this.config.baseUrl}/hotel-api/1.0/hotels`,
-      {
-        destination: request.destination,
-        stay: { checkIn: request.checkIn, checkOut: request.checkOut },
-        occupancies: [{ rooms: request.rooms }],
-        currency: request.currency,
-      },
-      {
-        "x-api-key": this.config.apiKey,
-        "x-signature": this.config.secret,
-        "x-timeout-ms": String(this.config.timeoutMs),
-      },
-    );
+    try {
+      const response = await this.httpClient.post<{ hotels: HotelbedsHotelResult[] }>(
+        `${this.config.baseUrl}/hotel-api/1.0/hotels`,
+        {
+          destination: request.destination,
+          stay: { checkIn: request.checkIn, checkOut: request.checkOut },
+          occupancies: [{ rooms: request.rooms }],
+          currency: request.currency,
+        },
+        {
+          "x-api-key": this.config.apiKey,
+          "x-signature": this.config.secret,
+          "x-timeout-ms": String(this.config.timeoutMs),
+        },
+      );
 
-    return response.hotels.map((hotel) => ({
-      hotelId: hotel.code,
-      name: hotel.hotelName,
-      location: hotel.city,
-      price: hotel.net,
-      currency: hotel.currency,
-      availability: hotel.allotment,
-      supplier: this.supplier,
-      cancellationPolicy: hotel.cancellationPolicy,
-      refundable: hotel.refundable,
-    }));
+      return (response.hotels ?? []).map((hotel) => ({
+        hotelId: hotel.code,
+        name: hotel.hotelName,
+        location: hotel.city,
+        price: hotel.net,
+        currency: hotel.currency,
+        availability: hotel.allotment,
+        supplierCode: this.supplier,
+        supplier: this.supplier,
+        cancellationPolicy: hotel.cancellationPolicy,
+        refundable: hotel.refundable,
+      }));
+    } catch (error) {
+      console.warn("supplier_api_failed", {
+        tenantId: request.tenantId,
+        bookingId: request.bookingId ?? null,
+        supplierCode: this.supplier,
+        error: error instanceof Error ? error.message : "supplier_api_failed",
+      });
+      return [];
+    }
   }
 
   async healthCheck(): Promise<{ supplier: "HOTELBEDS"; healthy: boolean; message: string }> {

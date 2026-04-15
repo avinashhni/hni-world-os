@@ -77,7 +77,14 @@ export class UttPersistenceService {
 
   upsertPayment(record: PersistentPaymentRecord): void {
     const state = this.readState();
-    state.payments = [...state.payments.filter((item) => !(item.tenantId === record.tenantId && item.paymentId === record.paymentId)), record];
+    state.payments = [
+      ...state.payments.filter(
+        (item) =>
+          !(item.tenantId === record.tenantId && item.paymentId === record.paymentId) &&
+          !(item.tenantId === record.tenantId && item.bookingId === record.bookingId),
+      ),
+      record,
+    ];
     this.writeState(state);
   }
 
@@ -89,12 +96,27 @@ export class UttPersistenceService {
 
   upsertInvoice(record: PersistentInvoiceRecord): void {
     const state = this.readState();
-    state.invoices = [...state.invoices.filter((item) => !(item.tenantId === record.tenantId && item.invoiceId === record.invoiceId)), record];
+    state.invoices = [
+      ...state.invoices.filter(
+        (item) =>
+          !(item.tenantId === record.tenantId && item.invoiceId === record.invoiceId) &&
+          !(item.tenantId === record.tenantId && item.bookingId === record.bookingId),
+      ),
+      record,
+    ];
     this.writeState(state);
   }
 
   getState(): UttPersistentState {
     return this.readState();
+  }
+
+  getPaymentByBooking(tenantId: string, bookingId: string): PersistentPaymentRecord | undefined {
+    return this.readState().payments.find((payment) => payment.tenantId === tenantId && payment.bookingId === bookingId);
+  }
+
+  getInvoiceByBooking(tenantId: string, bookingId: string): PersistentInvoiceRecord | undefined {
+    return this.readState().invoices.find((invoice) => invoice.tenantId === tenantId && invoice.bookingId === bookingId);
   }
 
   private ensurePersistenceFile(): void {
