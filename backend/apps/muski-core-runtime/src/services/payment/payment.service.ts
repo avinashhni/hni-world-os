@@ -4,6 +4,7 @@ export type PaymentStatus = "initiated" | "authorized" | "captured" | "failed" |
 export interface PaymentIntentRequest {
   tenantId: string;
   bookingId: string;
+  bookingStatus: "confirmed" | "voucher_issued";
   amount: number;
   currency: string;
   customerLayer: "B2C" | "B2B" | "CORPORATE";
@@ -30,6 +31,7 @@ interface PaymentGatewayClient {
 
 export class PaymentService {
   private readonly paymentStore = new Map<string, PaymentRecord>();
+  private readonly paymentByTenantBooking = new Map<string, PaymentRecord>();
   private sequence = 1;
 
   constructor(
@@ -38,6 +40,15 @@ export class PaymentService {
   ) {}
 
   async createPaymentIntent(input: PaymentIntentRequest): Promise<PaymentRecord> {
+    if (input.bookingStatus !== "confirmed" && input.bookingStatus !== "voucher_issued") {
+      throw new Error(`Payment blocked. Invalid booking status: ${input.bookingStatus}`);
+    }
+    const bookingKey = this.tenantBookingKey(input.tenantId, input.bookingId);
+    const existingPayment = this.paymentByTenantBooking.get(bookingKey);
+    if (existingPayment) {
+      return existingPayment;
+    }
+
     const gateway = input.countryCode === "IN" ? "RAZORPAY" : "STRIPE";
     const client = gateway === "RAZORPAY" ? this.razorpayClient : this.stripeClient;
     const gatewayResult = await client.createIntent(input);
@@ -56,6 +67,7 @@ export class PaymentService {
     };
 
     this.paymentStore.set(record.paymentId, record);
+    this.paymentByTenantBooking.set(bookingKey, record);
     return record;
   }
 
@@ -91,5 +103,9 @@ export class PaymentService {
       throw new Error(`Payment not found: ${paymentId}`);
     }
     return payment;
+  }
+
+  private tenantBookingKey(tenantId: string, bookingId: string): string {
+    return `${tenantId}::${bookingId}`;
   }
 }

@@ -2,6 +2,7 @@ export type SupplierCode = "EXPEDIA" | "HOTELBEDS" | "WEBBEDS";
 
 export interface SupplierSearchRequest {
   tenantId: string;
+  bookingId?: string;
   destination: string;
   checkIn: string;
   checkOut: string;
@@ -16,6 +17,7 @@ export interface UnifiedSupplierOffer {
   price: number;
   currency: string;
   availability: number;
+  supplierCode: SupplierCode;
   supplier: SupplierCode;
   cancellationPolicy: string;
   refundable: boolean;
