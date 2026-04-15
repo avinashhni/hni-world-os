@@ -624,17 +624,16 @@ export class UttEnterpriseOsService {
       });
     }
 
-    const capturedPayment =
-      paymentIntent.paymentStatus === "verified" || paymentIntent.paymentStatus === "failed"
+    const attemptedPayment =
+      paymentIntent.paymentStatus === "verified"
         ? paymentIntent
-        : await this.paymentService.capturePayment(paymentIntent.paymentId);
+        : paymentIntent.paymentStatus === "initiated" || paymentIntent.paymentStatus === "authorized"
+          ? await this.paymentService.capturePayment(paymentIntent.paymentId)
+          : paymentIntent;
     const verifiedPayment =
-      capturedPayment.paymentStatus === "verified" || capturedPayment.paymentStatus === "failed"
-        ? capturedPayment
-        : await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
-    if (verifiedPayment.paymentStatus === "failed" && input.customerLayer !== "B2B") {
-      throw new Error("B2C payment verification failed");
-    }
+      attemptedPayment.paymentStatus === "verified"
+        ? attemptedPayment
+        : await this.paymentService.verifyPayment(attemptedPayment.paymentId, input.signature);
 
     if (verifiedPayment.paymentStatus === "verified" && !this.hasBookingEvent(input.tenantId, input.bookingId, "payment_success")) {
       this.emitBookingEvent(input.tenantId, "payment_success", {
@@ -645,7 +644,7 @@ export class UttEnterpriseOsService {
         status: verifiedPayment.paymentStatus,
       });
     }
-    if (verifiedPayment.paymentStatus === "failed" && !this.hasBookingEvent(input.tenantId, input.bookingId, "payment_failed")) {
+    if (verifiedPayment.paymentStatus === "failed") {
       this.emitBookingEvent(input.tenantId, "payment_failed", {
         tenantId: input.tenantId,
         bookingId: input.bookingId,
@@ -653,6 +652,9 @@ export class UttEnterpriseOsService {
         gateway: verifiedPayment.paymentGateway,
         status: verifiedPayment.paymentStatus,
       });
+      if (input.customerLayer !== "B2B") {
+        throw new Error("B2C payment verification failed");
+      }
     }
 
     this.payments.set(verifiedPayment.paymentId, verifiedPayment);
@@ -670,7 +672,7 @@ export class UttEnterpriseOsService {
     booking.paymentGuaranteed = verifiedPayment.paymentStatus === "verified";
 
     const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
-    const existingInvoice = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ?? this.restorePersistedInvoice(persistedInvoice, booking, input.customerName);
+    const existingInvoice = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ?? this.restorePersistedInvoice(persistedInvoice, booking);
     const invoice =
       existingInvoice ??
       this.invoiceService.generateInvoice({
@@ -693,17 +695,19 @@ export class UttEnterpriseOsService {
       });
     }
 
-    this.persistence.upsertInvoice({
-      tenantId: input.tenantId,
-      invoiceId: invoice.invoiceId,
-      bookingId: booking.bookingId,
-      customerId: input.customerId,
-      amount: invoice.amount,
-      gst: invoice.GST,
-      total: invoice.total,
-      margin: invoice.margin,
-      createdAt: invoice.createdAt,
-    });
+    if (!existingInvoice) {
+      this.persistence.upsertInvoice({
+        tenantId: input.tenantId,
+        invoiceId: invoice.invoiceId,
+        bookingId: booking.bookingId,
+        customerId: invoice.customer.customerId,
+        amount: invoice.amount,
+        gst: invoice.GST,
+        total: invoice.total,
+        margin: invoice.margin,
+        createdAt: invoice.createdAt,
+      });
+    }
 
     booking.stage = "VOUCHER";
     booking.status = "voucher_issued";
@@ -1108,7 +1112,6 @@ export class UttEnterpriseOsService {
   private restorePersistedInvoice(
     persistedInvoice: ReturnType<UttPersistenceService["getInvoiceByBooking"]>,
     booking: UttBooking,
-    customerName: string,
   ): UttInvoice | undefined {
     if (!persistedInvoice) {
       return undefined;
@@ -1118,7 +1121,7 @@ export class UttEnterpriseOsService {
       tenantId: persistedInvoice.tenantId,
       invoiceId: persistedInvoice.invoiceId,
       bookingId: persistedInvoice.bookingId,
-      customer: { customerId: persistedInvoice.customerId, name: customerName },
+      customer: { customerId: persistedInvoice.customerId, name: persistedInvoice.customerId },
       amount: persistedInvoice.amount,
       GST: persistedInvoice.gst,
       total: persistedInvoice.total,
