@@ -93,6 +93,10 @@ export class PaymentService {
     return this.requirePayment(paymentId);
   }
 
+  getPaymentByBooking(tenantId: string, bookingId: string): PaymentRecord | undefined {
+    return this.paymentByTenantBooking.get(this.tenantBookingKey(tenantId, bookingId));
+  }
+
   listFailedPayments(tenantId: string): PaymentRecord[] {
     return [...this.paymentStore.values()].filter((payment) => payment.tenantId === tenantId && payment.paymentStatus === "failed");
   }
