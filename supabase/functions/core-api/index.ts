@@ -258,6 +258,24 @@ function buildProviderRuntime(providerType: string, providerKey: string) {
   };
 }
 
+async function writeApiStatus(
+  supabase: ReturnType<typeof createClient>,
+  tenantId: string | null,
+  routeKey: string,
+  status: "ok" | "warning" | "error",
+  latencyMs: number,
+  payload: Json,
+) {
+  await supabase.from("api_status_checks").insert({
+    tenant_id: tenantId,
+    service_name: "core-api",
+    route_key: routeKey,
+    status,
+    latency_ms: latencyMs,
+    status_payload: payload,
+  });
+}
+
 async function authenticateRequest(supabase: ReturnType<typeof createClient>, req: Request): Promise<RuntimeContext | Response> {
   const authHeader = req.headers.get("Authorization") ?? "";
   const token = authHeader.replace("Bearer ", "").trim();
@@ -440,6 +458,13 @@ async function executeWorkflowTransition(
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const start = Date.now();
+  let routeKey = "unknown";
+  let context: RuntimeContext | null = null;
+  const supabase = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
 
   try {
     const url = new URL(req.url);
@@ -451,16 +476,11 @@ serve(async (req) => {
       return badRequest("Invalid route. Use /core-api/{module}/{action}", 404, "route_not_found");
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    );
-
     const authResult = await authenticateRequest(supabase, req);
     if (authResult instanceof Response) return authResult;
 
-    const context = authResult;
-    const routeKey = `${moduleName}.${actionName}`;
+    context = authResult;
+    routeKey = `${moduleName}.${actionName}`;
     const requiredRoles = ROLE_ACCESS[routeKey];
     if (requiredRoles && !hasRole(context.roleKeys, requiredRoles)) {
       return badRequest("Forbidden for current role", 403, "forbidden");
@@ -841,11 +861,23 @@ serve(async (req) => {
         queue_job_id: queueJob?.id,
         command_id: command.id,
       });
+      await writeApiStatus(supabase, context.tenantId, routeKey, "ok", Date.now() - start, { module_type: payload.module_type as string });
       return ok({ execution, command, queue_job_id: queueJob?.id }, 202);
     }
 
     return badRequest(`Unsupported route for module=${moduleName} action=${actionName}`, 404, "route_not_supported");
   } catch (error) {
-    return badRequest(String(error), 500, "internal_error");
+    const message = error instanceof Error ? error.message : String(error);
+    await supabase.from("error_logs").insert({
+      tenant_id: context?.tenantId,
+      source_system: "CORE_API",
+      source_entity: routeKey,
+      severity: "error",
+      error_code: "route_execution_failed",
+      error_message: message,
+      error_payload: { route_key: routeKey, latency_ms: Date.now() - start },
+    });
+    await writeApiStatus(supabase, context?.tenantId ?? null, routeKey, "error", Date.now() - start, { error: message });
+    return badRequest(message, 500, "internal_error");
   }
 });

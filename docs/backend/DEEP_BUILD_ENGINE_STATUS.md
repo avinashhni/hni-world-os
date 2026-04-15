@@ -39,9 +39,11 @@ Async integration execution worker at `supabase/functions/job-worker/index.ts` n
 - Normalized webhook payload persistence for downstream adapters.
 
 ### Workflow engine behavior
-- Booking transition guard: `SEARCH -> HOLD -> CONFIRM -> TICKET -> COMPLETE`.
+- Booking transition guard: `SEARCH -> HOLD -> CONFIRM -> EXECUTE -> COMPLETE -> AUDIT`.
 - Failed transition logging in `booking_state_history` with failure reason.
 - Workflow event persistence tables for async event-driven execution.
+- Failure capture table: `error_logs` with source-level severity tracking.
+- Retry and dead-letter handling active via `job_queue` + `job_dead_letters`.
 
 ### Security and governance
 - RLS enabled across deep-build tables.
@@ -53,6 +55,14 @@ Async integration execution worker at `supabase/functions/job-worker/index.ts` n
 - Indexed hot paths (tenant, state, status, time).
 - Queue table (`job_queue`) for async job processing.
 - Integration webhook ingestion table for eventual processing workers.
+- Monitoring tables for enterprise control plane:
+  - `monitoring_alerts`
+  - `worker_health_metrics`
+  - `api_status_checks`
+  - `queue_depth_snapshots`
+  - `admin_override_actions`
+  - `emergency_controls`
+  - `retry_execution_requests`
 
 ## Pending live integrations
 - Expedia / Hotelbeds credentials.
