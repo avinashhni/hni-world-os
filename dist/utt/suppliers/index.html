@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE UTT Suppliers</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/utt/suppliers/',
+      activeFamily: 'utt',
+      title: 'THE UTT — Suppliers',
+      breadcrumb: ['HNI WORLD OS', 'THE UTT', 'Suppliers'],
+      status: 'Supplier Connectivity Active',
+      chips: ['Expedia + Multi-supplier', 'Read-only mode'],
+      backHref: '/utt/dashboard/',
+      backLabel: 'Back to UTT Dashboard',
+      contentHtml: `
+        <section class="hero-card"><h2>Supplier Integration (Expedia, etc.)</h2><p>Travel supplier status, onboarding state, and integration channel readiness.</p></section>
+        <section class="info-card"><h3>Supplier Registry</h3><div class="muski-table-wrap"><table class="muski-table" id="uttSupplierTable"></table></div></section>
+      `
+    });
+  </script>
+  <script src="/utt/app.js"></script>
+  <script>uttBootstrap();</script>
+</body>
+</html>

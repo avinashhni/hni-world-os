@@ -10,7 +10,8 @@ const muskiState = {
     { module: "CORE", health: "healthy", queueDepth: 4, activeAgents: 12, alerts: 0 },
     { module: "MUSKI", health: "healthy", queueDepth: 6, activeAgents: 9, alerts: 0 },
     { module: "AIRNOMICS", health: "degraded", queueDepth: 11, activeAgents: 15, alerts: 2 },
-    { module: "EDUNOMICS", health: "healthy", queueDepth: 3, activeAgents: 10, alerts: 0 }
+    { module: "EDUNOMICS", health: "healthy", queueDepth: 3, activeAgents: 10, alerts: 0 },
+    { module: "THE UTT", health: "healthy", queueDepth: 5, activeAgents: 11, alerts: 0 }
   ],
   agents: [
     { id: "MUSKI_MASTER", layer: "MUSKI", reportsTo: "BOARD", scope: "Global governance & orchestration" },
@@ -26,7 +27,8 @@ const muskiState = {
     MODULE_AI: { execute: true, approve: false, escalate: true, visibility: "module" },
     AUDITOR: { execute: false, approve: false, escalate: false, visibility: "audit" }
   },
-  auditLogs: []
+  auditLogs: [],
+  uttCommandLog: []
 };
 
 function makeId(prefix) {
@@ -176,6 +178,16 @@ function renderAudit() {
   document.getElementById("auditLogList").innerHTML = logs || '<div class="muski-log-item">No logs yet.</div>';
 }
 
+function renderUttCommandLog() {
+  const target = document.getElementById("muskiUttCommandLog");
+  if (!target) return;
+  const logs = muskiState.uttCommandLog
+    .slice(0, 8)
+    .map((l) => `<div class="muski-log-item"><strong>${l.command}</strong> • ${l.result}<br/><span class="muski-muted">${new Date(l.ts).toLocaleString()} | ${l.scope}</span></div>`)
+    .join("");
+  target.innerHTML = logs || '<div class="muski-log-item">No THE UTT commands routed yet.</div>';
+}
+
 function refreshAll() {
   renderNav();
   renderKPIs();
@@ -185,6 +197,7 @@ function refreshAll() {
   renderTelemetry();
   renderRolePanel();
   renderAudit();
+  renderUttCommandLog();
 }
 
 window.muskiSetRole = function muskiSetRole(role) {
@@ -305,6 +318,24 @@ window.muskiClearLogs = function muskiClearLogs() {
 
 window.muskiRefresh = function muskiRefresh() {
   logAudit("REFRESH", "Execution monitor refreshed", {});
+  refreshAll();
+};
+
+window.muskiRunUttCommand = function muskiRunUttCommand(commandLabel) {
+  const role = muskiState.roles[muskiState.sessionRole];
+  if (!role?.execute) {
+    logAudit("DENIED", "THE UTT command denied by execution policy", { role: muskiState.sessionRole, command: commandLabel });
+    refreshAll();
+    return;
+  }
+
+  muskiState.uttCommandLog.unshift({
+    command: commandLabel,
+    scope: "THE_UTT",
+    result: "Command routed to Travel OS orchestration lane.",
+    ts: new Date().toISOString()
+  });
+  logAudit("UTT_COMMAND", "THE UTT command routed through MUSKI", { role: muskiState.sessionRole, command: commandLabel });
   refreshAll();
 };
 

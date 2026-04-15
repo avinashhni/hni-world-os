@@ -75,6 +75,17 @@
 
         <section class="content-grid two">
           <article class="info-card">
+            <h3>THE UTT Command Routing</h3>
+            <p>Route enterprise travel commands through MUSKI with role-aware execution permissions.</p>
+            <div class="button-row">
+              <button class="secondary-btn" onclick="muskiRunUttCommand('Show bookings')">Show bookings</button>
+              <button class="secondary-btn" onclick="muskiRunUttCommand('Check supplier status')">Check supplier status</button>
+              <button class="secondary-btn" onclick="muskiRunUttCommand('View revenue')">View revenue</button>
+            </div>
+            <div class="muski-log-list" id="muskiUttCommandLog"></div>
+          </article>
+
+          <article class="info-card">
             <h3>Role-Based Control Panel</h3>
             <p>Switch execution persona to preview command rights and visibility scope for each enterprise role.</p>
             <div class="button-row" id="roleButtons"></div>

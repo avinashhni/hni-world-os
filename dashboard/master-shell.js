@@ -9,18 +9,18 @@
   const ROLE_PERMISSIONS = {
     owner: {
       label: 'Owner',
-      canAccess: ['governance', 'dashboard', 'muski', 'legalnomics', 'airnomics', 'edunomics'],
-      canSwitchFamilies: ['core', 'legalnomics', 'airnomics', 'edunomics', 'muski']
+      canAccess: ['governance', 'dashboard', 'muski', 'legalnomics', 'airnomics', 'edunomics', 'utt'],
+      canSwitchFamilies: ['core', 'legalnomics', 'airnomics', 'edunomics', 'muski', 'utt']
     },
     governance_admin: {
       label: 'Governance Admin',
-      canAccess: ['governance', 'dashboard', 'muski', 'legalnomics', 'airnomics', 'edunomics'],
-      canSwitchFamilies: ['core', 'legalnomics', 'airnomics', 'edunomics', 'muski']
+      canAccess: ['governance', 'dashboard', 'muski', 'legalnomics', 'airnomics', 'edunomics', 'utt'],
+      canSwitchFamilies: ['core', 'legalnomics', 'airnomics', 'edunomics', 'muski', 'utt']
     },
     os_director: {
       label: 'OS Director',
-      canAccess: ['dashboard', 'muski', 'legalnomics', 'airnomics', 'edunomics'],
-      canSwitchFamilies: ['legalnomics', 'airnomics', 'edunomics', 'muski']
+      canAccess: ['dashboard', 'muski', 'legalnomics', 'airnomics', 'edunomics', 'utt'],
+      canSwitchFamilies: ['legalnomics', 'airnomics', 'edunomics', 'muski', 'utt']
     },
     legal_ops: {
       label: 'Legal Ops',
@@ -36,6 +36,11 @@
       label: 'Edu Ops',
       canAccess: ['muski', 'edunomics'],
       canSwitchFamilies: ['edunomics', 'muski']
+    },
+    travel_ops: {
+      label: 'Travel Ops',
+      canAccess: ['muski', 'utt'],
+      canSwitchFamilies: ['utt', 'muski']
     },
     observer: {
       label: 'Observer',
@@ -66,7 +71,8 @@
       items: [
         { key: 'legalnomics', href: '/legalnomics/', label: 'AI LEGALNOMICS OS', family: 'legalnomics', matchPrefixes: ['/legalnomics/'] },
         { key: 'airnomics', href: '/airnomics/', label: 'AI AIRNOMICS OS', family: 'airnomics', matchPrefixes: ['/airnomics/'] },
-        { key: 'edunomics', href: '/edunomics/', label: 'AI EDUNOMICS OS', family: 'edunomics', matchPrefixes: ['/edunomics/'] }
+        { key: 'edunomics', href: '/edunomics/', label: 'AI EDUNOMICS OS', family: 'edunomics', matchPrefixes: ['/edunomics/'] },
+        { key: 'utt', href: '/utt/', label: '🌐 THE UTT (Travel OS)', family: 'utt', matchPrefixes: ['/utt/'] }
       ]
     }
   ];
@@ -77,7 +83,8 @@
     muski: ['/muski/'],
     legalnomics: ['/legalnomics/'],
     airnomics: ['/airnomics/'],
-    edunomics: ['/edunomics/']
+    edunomics: ['/edunomics/'],
+    utt: ['/utt/']
   };
 
   const FAMILY_DEFAULT_ROUTES = {
@@ -86,7 +93,8 @@
     muski: '/muski/',
     legalnomics: '/legalnomics/',
     airnomics: '/airnomics/',
-    edunomics: '/edunomics/'
+    edunomics: '/edunomics/',
+    utt: '/utt/'
   };
 
   const FAMILY_ACCESS_KEYS = {
@@ -95,7 +103,8 @@
     muski: ['muski'],
     legalnomics: ['legalnomics'],
     airnomics: ['airnomics'],
-    edunomics: ['edunomics']
+    edunomics: ['edunomics'],
+    utt: ['utt']
   };
 
 
