@@ -1,7 +1,7 @@
 export type UttRole = "ADMIN" | "AGENT" | "CORPORATE_USER";
 export type UttCustomerLayer = "B2C" | "B2B" | "CORPORATE";
 export type UttBookingStage = "SEARCH" | "SELECT" | "HOLD" | "CONFIRM" | "VOUCHER";
-export type UttBookingStatus = "search_completed" | "selected" | "held" | "confirmed" | "voucher_issued" | "expired";
+export type UttBookingStatus = "search_completed" | "selected" | "hold_created" | "held" | "confirmed" | "voucher_issued" | "expired";
 export type UttSupplierCode = "EXPEDIA" | "HOTELBEDS" | "WEBBEDS" | "MANUAL";
 
 interface TenantScopedEntity {
@@ -118,6 +118,7 @@ interface UttBooking extends TenantScopedEntity {
   voucherRef?: string;
   paymentGuaranteeRequired: boolean;
   paymentGuaranteed: boolean;
+  holdClosed?: boolean;
 }
 
 interface LeadRecord extends TenantScopedEntity {
@@ -342,7 +343,7 @@ export class UttEnterpriseOsService {
     booking.status = "selected";
     booking.hold = hold;
     booking.stage = "HOLD";
-    booking.status = "held";
+    booking.status = "hold_created";
     this.emitBookingEvent(input.tenantId, "booking_hold", {
       bookingId: booking.bookingId,
       holdId: hold.holdId,
@@ -365,6 +366,7 @@ export class UttEnterpriseOsService {
 
     booking.stage = "VOUCHER";
     booking.status = "voucher_issued";
+    booking.holdClosed = true;
     booking.voucherRef = `VCH-${booking.bookingId}`;
     this.emitBookingEvent(input.tenantId, "voucher_generated", {
       bookingId: booking.bookingId,
@@ -399,7 +401,7 @@ export class UttEnterpriseOsService {
         });
       }
 
-      if (expiryTs <= now) {
+      if (expiryTs <= now && booking.status === "hold_created") {
         booking.hold.status = "expired";
         booking.status = "expired";
         this.telemetry(booking.tenantId, "booking_log", {
@@ -537,7 +539,7 @@ export class UttEnterpriseOsService {
       };
     } else {
       const activeAlerts = [...this.bookings.values()].filter(
-        (booking) => booking.tenantId === input.tenantId && (booking.status === "held" || booking.status === "expired"),
+        (booking) => booking.tenantId === input.tenantId && (booking.status === "hold_created" || booking.status === "held" || booking.status === "expired"),
       );
       data = { alerts: activeAlerts.map((booking) => ({ bookingId: booking.bookingId, status: booking.status })) };
     }
