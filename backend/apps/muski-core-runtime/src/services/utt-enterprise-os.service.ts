@@ -505,6 +505,60 @@ export class UttEnterpriseOsService {
     signature: string;
     gstPercent: number;
   }): Promise<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }> {
+    const existingBooking = this.bookings.get(input.bookingId);
+    if (existingBooking && existingBooking.tenantId === input.tenantId && existingBooking.status === "voucher_issued") {
+      const existingPayment = this.paymentService.getPaymentByBooking(input.tenantId, input.bookingId);
+      const persistedPayment = this.persistence.getPaymentByBooking(input.tenantId, input.bookingId);
+      const payment =
+        existingPayment ??
+        (persistedPayment
+          ? {
+              paymentId: persistedPayment.paymentId,
+              tenantId: persistedPayment.tenantId,
+              bookingId: persistedPayment.bookingId,
+              amount: persistedPayment.amount,
+              currency: persistedPayment.currency,
+              paymentGateway: persistedPayment.paymentGateway as PaymentRecord["paymentGateway"],
+              paymentStatus: persistedPayment.paymentStatus as PaymentRecord["paymentStatus"],
+              createdAt: persistedPayment.updatedAt,
+              updatedAt: persistedPayment.updatedAt,
+            }
+          : undefined);
+      if (!payment) {
+        throw new Error(`Payment not found for booking: ${input.bookingId}`);
+      }
+
+      const existingInvoice = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId);
+      const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
+      const invoice =
+        existingInvoice ??
+        (persistedInvoice
+          ? {
+              tenantId: persistedInvoice.tenantId,
+              invoiceId: persistedInvoice.invoiceId,
+              bookingId: persistedInvoice.bookingId,
+              customer: { customerId: persistedInvoice.customerId, name: input.customerName },
+              amount: persistedInvoice.amount,
+              GST: persistedInvoice.gst,
+              total: persistedInvoice.total,
+              vendorPayable: existingBooking.price.costAmount,
+              margin: persistedInvoice.margin,
+              createdAt: persistedInvoice.createdAt,
+            }
+          : undefined);
+      if (!invoice) {
+        throw new Error(`Invoice not found for booking: ${input.bookingId}`);
+      }
+
+      this.payments.set(payment.paymentId, payment);
+      this.invoices.set(invoice.invoiceId, invoice);
+      return {
+        booking: existingBooking,
+        payment,
+        invoice,
+      };
+    }
+
     const selected = (this.searchStore.get(input.searchId) ?? []).find((offer) => offer.hotelId === input.selectedHotelId);
     if (!selected) {
       throw new Error("Selected offer not found");
@@ -606,13 +660,16 @@ export class UttEnterpriseOsService {
     const verifiedPayment =
       capturedPayment.paymentStatus === "verified" ? capturedPayment : await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
     const paymentFailed = verifiedPayment.paymentStatus === "failed";
-    this.emitBookingEvent(input.tenantId, paymentFailed ? "payment_failed" : "payment_success", {
-      tenantId: input.tenantId,
-      bookingId: input.bookingId,
-      paymentId: verifiedPayment.paymentId,
-      gateway: verifiedPayment.paymentGateway,
-      status: verifiedPayment.paymentStatus,
-    });
+    const paymentAlreadyVerified = persistedPayment?.paymentStatus === "verified";
+    if (paymentFailed || !paymentAlreadyVerified) {
+      this.emitBookingEvent(input.tenantId, paymentFailed ? "payment_failed" : "payment_success", {
+        tenantId: input.tenantId,
+        bookingId: input.bookingId,
+        paymentId: verifiedPayment.paymentId,
+        gateway: verifiedPayment.paymentGateway,
+        status: verifiedPayment.paymentStatus,
+      });
+    }
     this.payments.set(verifiedPayment.paymentId, verifiedPayment);
     this.persistence.upsertPayment({
       tenantId: input.tenantId,
@@ -675,7 +732,7 @@ export class UttEnterpriseOsService {
               gstPercent: input.gstPercent,
               supplierCost: booking.price.costAmount,
             });
-            const invoiceRow: UttInvoice = { tenantId: input.tenantId, ...generated };
+            const invoiceRow: UttInvoice = generated;
             this.invoices.set(generated.invoiceId, invoiceRow);
             this.emitBookingEvent(input.tenantId, "invoice_generated", {
               tenantId: input.tenantId,
