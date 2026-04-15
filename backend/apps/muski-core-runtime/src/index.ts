@@ -19,6 +19,12 @@ import { ScalingQueueOptimizerService } from "./services/scaling-queue-optimizer
 import { AsyncProcessingService } from "./services/async-processing.service";
 import { DbOptimizationService } from "./services/db-optimization.service";
 import { LoadBalancingReadinessService } from "./services/load-balancing-readiness.service";
+import { MuskiOrchestrationService } from "./services/muski-orchestration.service";
+import { CopspowerGovernanceService } from "./services/copspower-governance.service";
+import { CrossOsIntelligenceBusService } from "./services/cross-os-intelligence-bus.service";
+import { UnifiedCrmIdentityService } from "./services/unified-crm-identity.service";
+import { TelemetryMonitoringService } from "./services/telemetry-monitoring.service";
+import { GlobalCommandControlService } from "./services/global-command-control.service";
 
 const agentRegistry = new AgentRegistryService();
 const taskIntake = new TaskIntakeService();
@@ -35,6 +41,12 @@ const queueOptimizer = new ScalingQueueOptimizerService<{ taskId: string; tenant
 const asyncProcessor = new AsyncProcessingService();
 const dbOptimizer = new DbOptimizationService();
 const loadBalancing = new LoadBalancingReadinessService();
+const muskiOrchestration = new MuskiOrchestrationService();
+const copspower = new CopspowerGovernanceService();
+const intelligenceBus = new CrossOsIntelligenceBusService();
+const unifiedCrmIdentity = new UnifiedCrmIdentityService();
+const telemetry = new TelemetryMonitoringService();
+const commandControl = new GlobalCommandControlService();
 
 const businessEngine = new BusinessEngineService();
 const decisionEngine = new AiDecisionEngineService();
@@ -185,6 +197,99 @@ console.log("Audit System:", auditSystem.getEventsByTenant("HNI_GLOBAL").length)
 console.log("Business workflows:", businessEngine.getRegisteredWorkflows());
 console.log("Unified identities:", businessEngine.getUnifiedIdentityCount());
 console.log("Cross-OS activities:", businessEngine.getCrossOsActivityCount());
+
+const orchestrationRoute = muskiOrchestration.routeCommand({
+  commandId: "CMD-HNI-001",
+  targetOs: "LEGALNOMICS",
+  targetModule: "case_execution",
+  workerAgentId: "WRK_LEGAL_CASE_09",
+  intent: "critical case override review",
+  rolePermissionScope: ["OWNER", "GOVERNANCE_ADMIN", "OS_DIRECTOR"],
+});
+const orchestrationDecision = muskiOrchestration.decide(orchestrationRoute.commandId, {
+  confidence: 0.46,
+  riskScore: 0.82,
+  overrideRequested: true,
+});
+
+const governanceDecision = copspower.evaluateAction({
+  actionId: "ACT-HNI-909",
+  tenantId: "HNI_GLOBAL",
+  actorId: "MUSKI_MASTER",
+  actorRole: "OS_DIRECTOR",
+  actionType: "identity_override",
+  severity: "critical",
+  createdAt: new Date().toISOString(),
+});
+
+const emittedEvent = intelligenceBus.emit({
+  eventId: "EVT-HNI-2501",
+  tenantId: "HNI_GLOBAL",
+  sourceOs: "LEGALNOMICS",
+  targetOs: "EDUNOMICS",
+  eventType: "customer_case_outcome",
+  payload: { globalIdentityId: "HNI-GID-1001", caseId: "CASE-8842", verdict: "success" },
+});
+const intelligenceResult = intelligenceBus.process(emittedEvent);
+
+unifiedCrmIdentity.upsertIdentity({
+  globalIdentityId: "HNI-GID-1001",
+  tenantId: "HNI_GLOBAL",
+  type: "customer",
+  displayName: "Unified Customer 1001",
+  tags: ["high_value", "cross_os_active"],
+});
+unifiedCrmIdentity.recordInteraction({
+  globalIdentityId: "HNI-GID-1001",
+  osCode: "DOCTORNOMICS",
+  interactionType: "treatment_estimate_requested",
+  transactionRef: "DOC-EST-322",
+  at: new Date().toISOString(),
+  metadata: { amount: 2400, currency: "USD" },
+});
+
+telemetry.capture({
+  tenantId: "HNI_GLOBAL",
+  signalType: "api_status_checks",
+  payload: { endpoint: "/core-api/execute", status: 200 },
+});
+telemetry.capture({
+  tenantId: "HNI_GLOBAL",
+  signalType: "worker_health_metrics",
+  payload: { workerPool: "muski_global", healthyWorkers: 32, unhealthyWorkers: 0 },
+});
+telemetry.capture({
+  tenantId: "HNI_GLOBAL",
+  signalType: "queue_depth_snapshots",
+  payload: { queueName: "ai_execution", queueDepth: 1600 },
+});
+
+const command = commandControl.dispatch({
+  commandId: "CMDCTL-111",
+  tenantId: "HNI_GLOBAL",
+  issuedBy: "MUSKI_MASTER",
+  scope: "system",
+  target: "GLOBAL_OWNER_DASHBOARD",
+  instruction: "execute_global_health_reconciliation",
+  via: "voice",
+});
+const emergencyState = commandControl.setEmergencyControl("HNI_GLOBAL", true, true);
+
+console.log("MUSKI Orchestration hierarchy:", muskiOrchestration.getHierarchy());
+console.log("MUSKI manager assignments:", muskiOrchestration.getAssignments().length);
+console.log("MUSKI decision:", orchestrationDecision);
+console.log("COPSPOWER governance decision:", governanceDecision);
+console.log("COPSPOWER audit logs:", copspower.getAuditLogsByTenant("HNI_GLOBAL").length);
+console.log("Cross-OS bus result:", intelligenceResult);
+console.log("Cross-OS bus events:", intelligenceBus.getEventCount());
+console.log("Unified CRM identities:", unifiedCrmIdentity.getIdentityCount());
+console.log("Unified CRM profile:", unifiedCrmIdentity.getProfile("HNI-GID-1001"));
+console.log("Telemetry signals:", telemetry.getTenantSignals("HNI_GLOBAL").length);
+console.log("Telemetry anomalies:", telemetry.getTenantAnomalies("HNI_GLOBAL").length);
+console.log("Command control dispatch:", command);
+console.log("Emergency control state:", emergencyState);
+console.log("Global command count:", commandControl.getCommandCount());
+
 console.log("Logs:", executionLogger.getAll());
 console.log("Agents:", agentRegistry.getAllAgents());
 console.log("Tasks:", taskIntake.getAllTasks());

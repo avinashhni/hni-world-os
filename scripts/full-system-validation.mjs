@@ -469,6 +469,41 @@ function checkPhase16CrossOsIntelligenceLayer() {
   return `${requiredHandlers.length} intelligence handlers and ${requiredConnectors.length} cross-OS connectors validated`;
 }
 
+function checkSharedFoundationCompletion() {
+  const requiredServices = [
+    "backend/apps/muski-core-runtime/src/services/muski-orchestration.service.ts",
+    "backend/apps/muski-core-runtime/src/services/copspower-governance.service.ts",
+    "backend/apps/muski-core-runtime/src/services/cross-os-intelligence-bus.service.ts",
+    "backend/apps/muski-core-runtime/src/services/unified-crm-identity.service.ts",
+    "backend/apps/muski-core-runtime/src/services/telemetry-monitoring.service.ts",
+    "backend/apps/muski-core-runtime/src/services/global-command-control.service.ts",
+  ];
+  const missingServices = requiredServices.filter((file) => !existsSync(join(root, file)));
+  assert(missingServices.length === 0, `Missing shared foundation services: ${missingServices.join(", ")}`);
+
+  const orchestrationService = readFileSync(join(root, requiredServices[0]), "utf8");
+  assert(/WORKER_AI\"\s*\|\s*\"MANAGER_AI\"\s*\|\s*\"OS_MANAGER_AI\"\s*\|\s*\"MUSKI\"/.test(orchestrationService), "MUSKI hierarchy is incomplete");
+  assert(orchestrationService.includes("THE_UTT") && orchestrationService.includes("LEGALNOMICS"), "Manager AI domain assignments missing required OS mapping");
+
+  const governanceService = readFileSync(join(root, requiredServices[1]), "utf8");
+  assert(/\"OWNER\"\s*\|\s*\"GOVERNANCE_ADMIN\"\s*\|\s*\"OS_DIRECTOR\"\s*\|\s*\"OPS_ROLE\"/.test(governanceService), "COPSPOWER role model is incomplete");
+  assert(governanceService.includes("tenant_isolation_verified"), "COPSPOWER compliance checks missing tenant isolation");
+
+  const intelligenceBusService = readFileSync(join(root, requiredServices[2]), "utf8");
+  assert(intelligenceBusService.includes("event_listener") && intelligenceBusService.includes("intelligence_processor"), "Cross-OS intelligence bus processor chain is incomplete");
+
+  const crmService = readFileSync(join(root, requiredServices[3]), "utf8");
+  assert(crmService.includes("\"user\" | \"customer\" | \"corporate\" | \"partner\""), "Unified identity types are incomplete");
+
+  const telemetryService = readFileSync(join(root, requiredServices[4]), "utf8");
+  assert(telemetryService.includes("monitoring_alerts") && telemetryService.includes("queue_depth_snapshots"), "Telemetry signal coverage is incomplete");
+
+  const commandService = readFileSync(join(root, requiredServices[5]), "utf8");
+  assert(commandService.includes("killSwitchActive") && commandService.includes("recoveryMode"), "Global command layer missing emergency controls");
+
+  return `${requiredServices.length} shared foundation services validated for orchestration, governance, intelligence, CRM identity, telemetry, and command control`;
+}
+
 
 async function main() {
   runCheck('Module structure health', () => {
@@ -492,6 +527,7 @@ async function main() {
   runCheck("Deep execution readiness", checkDeepExecutionReadiness);
   runCheck("Phase 15 business engine execution", checkPhase15BusinessEngineExecution);
   runCheck("Phase 16 cross-OS intelligence layer", checkPhase16CrossOsIntelligenceLayer);
+  runCheck("Shared foundation completion", checkSharedFoundationCompletion);
   runCheck('Deployment readiness audit', checkDeploymentReadiness);
   runCheck('Route integrity audit', checkRouteIntegrity);
 
