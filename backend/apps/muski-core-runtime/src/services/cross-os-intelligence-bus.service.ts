@@ -30,7 +30,7 @@ export class CrossOsIntelligenceBusService {
   }
 
   process(event: IntelligenceEvent): IntelligenceProcessingResult {
-    const fingerprint = `${event.tenantId}:${event.sourceOs}:${event.targetOs}:${event.eventType}:${JSON.stringify(event.payload)}`;
+    const fingerprint = `${event.tenantId}:${event.eventId}:${event.sourceOs}:${event.targetOs}:${event.eventType}:${JSON.stringify(event.payload)}`;
     const deduplicated = this.seenFingerprints.has(fingerprint);
     if (!deduplicated) {
       this.seenFingerprints.add(fingerprint);

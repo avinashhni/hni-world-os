@@ -11,6 +11,7 @@ export interface GlobalIdentity {
 }
 
 export interface CrmInteraction {
+  tenantId: string;
   globalIdentityId: string;
   osCode: string;
   interactionType: string;
@@ -23,9 +24,14 @@ export class UnifiedCrmIdentityService {
   private readonly identities = new Map<string, GlobalIdentity>();
   private readonly interactions: CrmInteraction[] = [];
 
+  private identityKey(tenantId: string, globalIdentityId: string): string {
+    return `${tenantId}:${globalIdentityId}`;
+  }
+
   upsertIdentity(input: Omit<GlobalIdentity, "createdAt" | "updatedAt">): GlobalIdentity {
     const now = new Date().toISOString();
-    const existing = this.identities.get(input.globalIdentityId);
+    const key = this.identityKey(input.tenantId, input.globalIdentityId);
+    const existing = this.identities.get(key);
 
     const next: GlobalIdentity = {
       ...input,
@@ -33,7 +39,7 @@ export class UnifiedCrmIdentityService {
       updatedAt: now,
     };
 
-    this.identities.set(input.globalIdentityId, next);
+    this.identities.set(key, next);
     return next;
   }
 
@@ -41,10 +47,13 @@ export class UnifiedCrmIdentityService {
     this.interactions.push(event);
   }
 
-  getProfile(globalIdentityId: string): { identity: GlobalIdentity | null; interactions: CrmInteraction[] } {
+  getProfile(tenantId: string, globalIdentityId: string): { identity: GlobalIdentity | null; interactions: CrmInteraction[] } {
+    const key = this.identityKey(tenantId, globalIdentityId);
     return {
-      identity: this.identities.get(globalIdentityId) ?? null,
-      interactions: this.interactions.filter((item) => item.globalIdentityId === globalIdentityId),
+      identity: this.identities.get(key) ?? null,
+      interactions: this.interactions.filter(
+        (item) => item.tenantId === tenantId && item.globalIdentityId === globalIdentityId,
+      ),
     };
   }
 

@@ -240,6 +240,7 @@ unifiedCrmIdentity.upsertIdentity({
   tags: ["high_value", "cross_os_active"],
 });
 unifiedCrmIdentity.recordInteraction({
+  tenantId: "HNI_GLOBAL",
   globalIdentityId: "HNI-GID-1001",
   osCode: "DOCTORNOMICS",
   interactionType: "treatment_estimate_requested",
@@ -283,7 +284,7 @@ console.log("COPSPOWER audit logs:", copspower.getAuditLogsByTenant("HNI_GLOBAL"
 console.log("Cross-OS bus result:", intelligenceResult);
 console.log("Cross-OS bus events:", intelligenceBus.getEventCount());
 console.log("Unified CRM identities:", unifiedCrmIdentity.getIdentityCount());
-console.log("Unified CRM profile:", unifiedCrmIdentity.getProfile("HNI-GID-1001"));
+console.log("Unified CRM profile:", unifiedCrmIdentity.getProfile("HNI_GLOBAL", "HNI-GID-1001"));
 console.log("Telemetry signals:", telemetry.getTenantSignals("HNI_GLOBAL").length);
 console.log("Telemetry anomalies:", telemetry.getTenantAnomalies("HNI_GLOBAL").length);
 console.log("Command control dispatch:", command);
