@@ -506,166 +506,138 @@ export class UttEnterpriseOsService {
     gstPercent: number;
   }): Promise<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }> {
     const existingBooking = this.bookings.get(input.bookingId);
-    const persistedPayment = this.persistence.getPaymentByBooking(input.tenantId, input.bookingId);
-    const existingPayment =
-      this.paymentService.getPaymentByBooking(input.tenantId, input.bookingId) ??
-      (persistedPayment
-        ? {
-            paymentId: persistedPayment.paymentId,
-            tenantId: persistedPayment.tenantId,
-            bookingId: persistedPayment.bookingId,
-            amount: persistedPayment.amount,
-            currency: persistedPayment.currency,
-            paymentGateway: persistedPayment.paymentGateway as PaymentRecord["paymentGateway"],
-            paymentStatus: persistedPayment.paymentStatus as PaymentRecord["paymentStatus"],
-            createdAt: persistedPayment.updatedAt,
-            updatedAt: persistedPayment.updatedAt,
-          }
-        : undefined);
-    const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
-    const existingInvoice =
-      this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ??
-      (persistedInvoice
-        ? {
-            tenantId: persistedInvoice.tenantId,
-            invoiceId: persistedInvoice.invoiceId,
-            bookingId: persistedInvoice.bookingId,
-            customer: { customerId: persistedInvoice.customerId, name: input.customerName },
-            amount: persistedInvoice.amount,
-            GST: persistedInvoice.gst,
-            total: persistedInvoice.total,
-            vendorPayable: existingBooking?.price.costAmount ?? persistedInvoice.amount - persistedInvoice.margin,
-            margin: persistedInvoice.margin,
-            createdAt: persistedInvoice.createdAt,
-          }
-        : undefined);
-
-    if (
-      existingBooking &&
-      existingBooking.tenantId === input.tenantId &&
-      existingBooking.status === "voucher_issued" &&
-      existingPayment &&
-      existingInvoice
-    ) {
-      this.payments.set(existingPayment.paymentId, existingPayment);
-      this.invoices.set(existingInvoice.invoiceId, existingInvoice);
-      return {
-        booking: existingBooking,
-        payment: existingPayment,
-        invoice: existingInvoice,
-      };
+    if (existingBooking && existingBooking.tenantId !== input.tenantId) {
+      throw new Error("Booking exists outside tenant scope");
     }
 
-    let booking: UttBooking;
-    let bookingSupplier: UttSupplierCode = "MANUAL";
-    let revenue: { marginAmount: number; lossFlag: boolean } = {
-      marginAmount: 0,
-      lossFlag: false,
-    };
-    let quote: UttPriceQuote;
-
-    if (existingBooking && existingBooking.tenantId === input.tenantId) {
-      booking = existingBooking;
-      quote = existingBooking.price;
-      bookingSupplier = (this.searchStore.get(input.searchId) ?? []).find((offer) => offer.hotelId === input.selectedHotelId)?.supplier ?? "MANUAL";
-      booking.stage = "CONFIRM";
-      booking.status = "confirmed";
-    } else {
-      const selected = (this.searchStore.get(input.searchId) ?? []).find((offer) => offer.hotelId === input.selectedHotelId);
-      if (!selected) {
-        throw new Error("Selected offer not found");
-      }
-      bookingSupplier = selected.supplier;
-
-      revenue = this.revenueEngine.calculateSellPrice({
-        tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        supplier: selected.supplier,
-        costPrice: selected.price,
-      });
-      quote = {
-        pricingId: nextId("PRC", this.sequence++),
-        costCurrency: selected.currency,
-        sellCurrency: selected.currency,
-        costAmount: roundNoDecimals(revenue.costPrice),
-        sellAmount: roundNoDecimals(revenue.sellPrice),
-        marginAmount: roundNoDecimals(revenue.marginAmount),
-        marginPct: revenue.marginPercent,
-        roundedRule: "NO_DECIMALS",
-        taxReady: {
-          taxCode: "GST_READY",
-          gstPct: input.gstPercent,
-          estimatedTax: roundNoDecimals((revenue.sellPrice * input.gstPercent) / 100),
-        },
-      };
-
-      booking = this.executeBookingLifecycle({
-        tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        searchId: input.searchId,
-        selectedHotelId: input.selectedHotelId,
-        customerId: input.customerId,
-        globalIdentityId: input.globalIdentityId,
-        customerLayer: input.customerLayer,
-        holdMinutes: input.holdMinutes,
-        paymentGuaranteed: input.customerLayer === "B2B",
-        price: quote,
-      });
-      booking.stage = "CONFIRM";
-      booking.status = "confirmed";
-      this.persistence.upsertBooking({
-        tenantId: booking.tenantId,
-        bookingId: booking.bookingId,
-        status: booking.status,
-        stage: booking.stage,
-        supplier: selected.supplier,
-        sellAmount: booking.price.sellAmount,
-        costAmount: booking.price.costAmount,
-        marginAmount: booking.price.marginAmount,
-        createdAt: new Date().toISOString(),
-      });
-
-      const risk = this.fraudRiskService.evaluate({
-        tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        bookingTenantId: booking.tenantId,
-        customerId: input.customerId,
-        retriesIn5Minutes: 0,
-        quotedPrice: quote.sellAmount,
-        baselinePrice: quote.costAmount,
-      });
-      if (risk.blocked) {
-        this.emitBookingEvent(input.tenantId, "payment_failed", { bookingId: input.bookingId, reason: risk.flags.join(",") });
-        throw new Error(`Fraud/Risk blocked booking: ${risk.flags.join(",")}`);
-      }
+    const selected = (this.searchStore.get(input.searchId) ?? []).find((offer) => offer.hotelId === input.selectedHotelId);
+    if (!selected && !existingBooking) {
+      throw new Error("Selected offer not found");
     }
+    const bookingSupplier = selected?.supplier ?? "MANUAL";
 
-    const payment = existingPayment
-      ? existingPayment
-      : await this.paymentService.createPaymentIntent({
+    const nowIso = new Date().toISOString();
+    const holdExpiresAt = new Date(Date.now() + input.holdMinutes * 60_000).toISOString();
+    const reminderAt = new Date(Date.now() + Math.max(input.holdMinutes - 5, 1) * 60_000).toISOString();
+
+    const revenue = selected
+      ? this.revenueEngine.calculateSellPrice({
           tenantId: input.tenantId,
           bookingId: input.bookingId,
-          bookingStatus: booking.status,
-          amount: quote.sellAmount,
-          currency: quote.sellCurrency,
-          customerLayer: input.customerLayer,
-          countryCode: input.countryCode,
-        });
+          supplier: selected.supplier,
+          costPrice: selected.price,
+        })
+      : undefined;
+
+    const quote: UttPriceQuote = existingBooking?.price ?? {
+      pricingId: nextId("PRC", this.sequence++),
+      costCurrency: selected?.currency ?? "USD",
+      sellCurrency: selected?.currency ?? "USD",
+      costAmount: roundNoDecimals(revenue?.costPrice ?? 0),
+      sellAmount: roundNoDecimals(revenue?.sellPrice ?? 0),
+      marginAmount: roundNoDecimals(revenue?.marginAmount ?? 0),
+      marginPct: revenue?.marginPercent ?? 0,
+      roundedRule: "NO_DECIMALS",
+      taxReady: {
+        taxCode: "GST_READY",
+        gstPct: input.gstPercent,
+        estimatedTax: roundNoDecimals(((revenue?.sellPrice ?? 0) * input.gstPercent) / 100),
+      },
+    };
+
+    const booking: UttBooking = existingBooking ?? {
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      searchId: input.searchId,
+      selectedHotelId: input.selectedHotelId,
+      customerId: input.customerId,
+      globalIdentityId: input.globalIdentityId,
+      customerLayer: input.customerLayer,
+      stage: "SEARCH",
+      status: "search_completed",
+      price: quote,
+      paymentGuaranteeRequired: input.customerLayer !== "B2B",
+      paymentGuaranteed: false,
+    };
+    this.bookings.set(booking.bookingId, booking);
+
+    if (!booking.hold) {
+      booking.hold = {
+        tenantId: input.tenantId,
+        holdId: nextId("HOLD", this.sequence++),
+        bookingId: booking.bookingId,
+        expiresAt: holdExpiresAt,
+        reminderAt,
+        status: "active",
+      };
+    }
+
+    if (booking.status !== "voucher_issued" && booking.status !== "confirmed") {
+      booking.stage = "SELECT";
+      booking.status = "selected";
+      booking.stage = "HOLD";
+      booking.status = "hold_created";
+      this.emitBookingEvent(input.tenantId, "booking_hold", {
+        bookingId: booking.bookingId,
+        holdId: booking.hold.holdId,
+        expiresAt: booking.hold.expiresAt,
+        reminderAt: booking.hold.reminderAt,
+      });
+      booking.stage = "CONFIRM";
+      booking.status = "confirmed";
+    }
+
+    const risk = this.fraudRiskService.evaluate({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      bookingTenantId: booking.tenantId,
+      customerId: input.customerId,
+      retriesIn5Minutes: 0,
+      quotedPrice: quote.sellAmount,
+      baselinePrice: quote.costAmount,
+    });
+    if (risk.blocked) {
+      this.emitBookingEvent(input.tenantId, "payment_failed", { bookingId: input.bookingId, reason: risk.flags.join(",") });
+      throw new Error(`Fraud/Risk blocked booking: ${risk.flags.join(",")}`);
+    }
+
+    const persistedPayment = this.persistence.getPaymentByBooking(input.tenantId, input.bookingId);
+    const existingPayment = this.paymentService.getPaymentByBooking(input.tenantId, input.bookingId) ?? this.restorePersistedPayment(persistedPayment);
+
+    const paymentIntent =
+      existingPayment ??
+      (await this.paymentService.createPaymentIntent({
+        tenantId: input.tenantId,
+        bookingId: input.bookingId,
+        bookingStatus: "confirmed",
+        amount: quote.sellAmount,
+        currency: quote.sellCurrency,
+        customerLayer: input.customerLayer,
+        countryCode: input.countryCode,
+      }));
 
     if (!existingPayment) {
       this.emitBookingEvent(input.tenantId, "payment_initiated", {
         tenantId: input.tenantId,
         bookingId: input.bookingId,
-        paymentId: payment.paymentId,
+        paymentId: paymentIntent.paymentId,
       });
     }
-    const capturedPayment = payment.paymentStatus === "verified" ? payment : await this.paymentService.capturePayment(payment.paymentId);
+
+    const capturedPayment =
+      paymentIntent.paymentStatus === "verified" || paymentIntent.paymentStatus === "failed"
+        ? paymentIntent
+        : await this.paymentService.capturePayment(paymentIntent.paymentId);
     const verifiedPayment =
-      capturedPayment.paymentStatus === "verified" ? capturedPayment : await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
-    const paymentFailed = verifiedPayment.paymentStatus === "failed";
-    const paymentAlreadyVerified = existingPayment?.paymentStatus === "verified";
-    if (paymentFailed || !paymentAlreadyVerified) {
-      this.emitBookingEvent(input.tenantId, paymentFailed ? "payment_failed" : "payment_success", {
+      capturedPayment.paymentStatus === "verified" || capturedPayment.paymentStatus === "failed"
+        ? capturedPayment
+        : await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
+    if (verifiedPayment.paymentStatus === "failed" && input.customerLayer !== "B2B") {
+      throw new Error("B2C payment verification failed");
+    }
+
+    if (verifiedPayment.paymentStatus === "verified" && !this.hasBookingEvent(input.tenantId, input.bookingId, "payment_success")) {
+      this.emitBookingEvent(input.tenantId, "payment_success", {
         tenantId: input.tenantId,
         bookingId: input.bookingId,
         paymentId: verifiedPayment.paymentId,
@@ -673,6 +645,16 @@ export class UttEnterpriseOsService {
         status: verifiedPayment.paymentStatus,
       });
     }
+    if (verifiedPayment.paymentStatus === "failed" && !this.hasBookingEvent(input.tenantId, input.bookingId, "payment_failed")) {
+      this.emitBookingEvent(input.tenantId, "payment_failed", {
+        tenantId: input.tenantId,
+        bookingId: input.bookingId,
+        paymentId: verifiedPayment.paymentId,
+        gateway: verifiedPayment.paymentGateway,
+        status: verifiedPayment.paymentStatus,
+      });
+    }
+
     this.payments.set(verifiedPayment.paymentId, verifiedPayment);
     this.persistence.upsertPayment({
       tenantId: input.tenantId,
@@ -682,14 +664,52 @@ export class UttEnterpriseOsService {
       paymentStatus: verifiedPayment.paymentStatus,
       amount: verifiedPayment.amount,
       currency: verifiedPayment.currency,
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
     });
 
-    if (input.customerLayer !== "B2B" && paymentFailed) {
-      throw new Error("B2C payment verification failed");
+    booking.paymentGuaranteed = verifiedPayment.paymentStatus === "verified";
+
+    const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
+    const existingInvoice = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ?? this.restorePersistedInvoice(persistedInvoice, booking, input.customerName);
+    const invoice =
+      existingInvoice ??
+      this.invoiceService.generateInvoice({
+        tenantId: input.tenantId,
+        bookingId: booking.bookingId,
+        customer: { customerId: input.customerId, name: input.customerName },
+        amount: booking.price.sellAmount,
+        gstPercent: input.gstPercent,
+        supplierCost: booking.price.costAmount,
+      });
+    this.invoices.set(invoice.invoiceId, invoice);
+
+    if (!existingInvoice && !this.hasBookingEvent(input.tenantId, input.bookingId, "invoice_generated")) {
+      this.emitBookingEvent(input.tenantId, "invoice_generated", {
+        tenantId: input.tenantId,
+        bookingId: booking.bookingId,
+        invoiceId: invoice.invoiceId,
+        total: invoice.total,
+        margin: invoice.margin,
+      });
     }
 
-    booking.paymentGuaranteed = verifiedPayment.paymentStatus === "verified";
+    this.persistence.upsertInvoice({
+      tenantId: input.tenantId,
+      invoiceId: invoice.invoiceId,
+      bookingId: booking.bookingId,
+      customerId: input.customerId,
+      amount: invoice.amount,
+      gst: invoice.GST,
+      total: invoice.total,
+      margin: invoice.margin,
+      createdAt: invoice.createdAt,
+    });
+
+    booking.stage = "VOUCHER";
+    booking.status = "voucher_issued";
+    booking.voucherRef = booking.voucherRef ?? `VCH-${booking.bookingId}`;
+    booking.holdClosed = true;
+
     this.persistence.upsertBooking({
       tenantId: booking.tenantId,
       bookingId: booking.bookingId,
@@ -702,74 +722,7 @@ export class UttEnterpriseOsService {
       sellAmount: booking.price.sellAmount,
       costAmount: booking.price.costAmount,
       marginAmount: booking.price.marginAmount,
-      createdAt: new Date().toISOString(),
-    });
-
-    const invoice =
-      existingInvoice && this.invoices.get(existingInvoice.invoiceId)
-        ? this.invoices.get(existingInvoice.invoiceId)!
-        : existingInvoice
-          ? (() => {
-              const restoredInvoice: UttInvoice = {
-                tenantId: existingInvoice.tenantId,
-                invoiceId: existingInvoice.invoiceId,
-                bookingId: existingInvoice.bookingId,
-                customer: existingInvoice.customer,
-                amount: existingInvoice.amount,
-                GST: existingInvoice.GST,
-                total: existingInvoice.total,
-                vendorPayable: existingInvoice.vendorPayable,
-                margin: existingInvoice.margin,
-                createdAt: existingInvoice.createdAt,
-              };
-              this.invoices.set(restoredInvoice.invoiceId, restoredInvoice);
-              return restoredInvoice;
-            })()
-        : (() => {
-            const generated = this.invoiceService.generateInvoice({
-              tenantId: input.tenantId,
-              bookingId: booking.bookingId,
-              customer: { customerId: input.customerId, name: input.customerName },
-              amount: booking.price.sellAmount,
-              gstPercent: input.gstPercent,
-              supplierCost: booking.price.costAmount,
-            });
-            const invoiceRow: UttInvoice = generated;
-            this.invoices.set(generated.invoiceId, invoiceRow);
-            this.emitBookingEvent(input.tenantId, "invoice_generated", {
-              tenantId: input.tenantId,
-              bookingId: booking.bookingId,
-              invoiceId: generated.invoiceId,
-              total: generated.total,
-              margin: generated.margin,
-            });
-            this.persistence.upsertInvoice({
-              tenantId: input.tenantId,
-              invoiceId: generated.invoiceId,
-              bookingId: booking.bookingId,
-              customerId: input.customerId,
-              amount: generated.amount,
-              gst: generated.GST,
-              total: generated.total,
-              margin: generated.margin,
-              createdAt: generated.createdAt,
-            });
-            return invoiceRow;
-          })();
-
-    booking.status = "voucher_issued";
-    booking.stage = "VOUCHER";
-    this.emitBookingEvent(input.tenantId, "revenue_calculated", {
-      tenantId: input.tenantId,
-      bookingId: booking.bookingId,
-      margin: invoice.margin,
-      lossFlag: revenue.lossFlag,
-    });
-    this.emitBookingEvent(input.tenantId, "booking_confirmed", {
-      tenantId: input.tenantId,
-      bookingId: booking.bookingId,
-      paymentId: verifiedPayment.paymentId,
-      invoiceId: invoice.invoiceId,
+      createdAt: nowIso,
     });
 
     return { booking, payment: verifiedPayment, invoice };
@@ -799,7 +752,13 @@ export class UttEnterpriseOsService {
         });
       }
 
-      if (expiryTs <= now && booking.hold && booking.hold.status === "active" && booking.holdClosed !== true) {
+      if (
+        expiryTs <= now &&
+        booking.hold &&
+        booking.hold.status === "active" &&
+        booking.holdClosed !== true &&
+        booking.status !== "voucher_issued"
+      ) {
         booking.hold.status = "expired";
         booking.status = "expired";
         this.telemetry(booking.tenantId, "booking_log", {
@@ -1112,6 +1071,63 @@ export class UttEnterpriseOsService {
       eventName,
       ...payload,
     });
+  }
+
+  private hasBookingEvent(tenantId: string, bookingId: string, eventName: string): boolean {
+    return this.telemetrySignals.some(
+      (signal) =>
+        signal.tenantId === tenantId &&
+        signal.signalType === "booking_log" &&
+        signal.payload.eventName === eventName &&
+        signal.payload.bookingId === bookingId,
+    );
+  }
+
+  private restorePersistedPayment(
+    persistedPayment: ReturnType<UttPersistenceService["getPaymentByBooking"]>,
+  ): PaymentRecord | undefined {
+    if (!persistedPayment) {
+      return undefined;
+    }
+
+    const restored: PaymentRecord = {
+      paymentId: persistedPayment.paymentId,
+      tenantId: persistedPayment.tenantId,
+      bookingId: persistedPayment.bookingId,
+      amount: persistedPayment.amount,
+      currency: persistedPayment.currency,
+      paymentGateway: persistedPayment.paymentGateway as PaymentRecord["paymentGateway"],
+      paymentStatus: persistedPayment.paymentStatus as PaymentRecord["paymentStatus"],
+      createdAt: persistedPayment.updatedAt,
+      updatedAt: persistedPayment.updatedAt,
+    };
+    this.payments.set(restored.paymentId, restored);
+    return restored;
+  }
+
+  private restorePersistedInvoice(
+    persistedInvoice: ReturnType<UttPersistenceService["getInvoiceByBooking"]>,
+    booking: UttBooking,
+    customerName: string,
+  ): UttInvoice | undefined {
+    if (!persistedInvoice) {
+      return undefined;
+    }
+
+    const restored: UttInvoice = {
+      tenantId: persistedInvoice.tenantId,
+      invoiceId: persistedInvoice.invoiceId,
+      bookingId: persistedInvoice.bookingId,
+      customer: { customerId: persistedInvoice.customerId, name: customerName },
+      amount: persistedInvoice.amount,
+      GST: persistedInvoice.gst,
+      total: persistedInvoice.total,
+      vendorPayable: booking.price.costAmount,
+      margin: persistedInvoice.margin,
+      createdAt: persistedInvoice.createdAt,
+    };
+    this.invoices.set(restored.invoiceId, restored);
+    return restored;
   }
 
   private audit(
