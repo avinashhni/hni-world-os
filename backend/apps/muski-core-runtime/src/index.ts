@@ -25,6 +25,7 @@ import { CrossOsIntelligenceBusService } from "./services/cross-os-intelligence-
 import { UnifiedCrmIdentityService } from "./services/unified-crm-identity.service";
 import { TelemetryMonitoringService } from "./services/telemetry-monitoring.service";
 import { GlobalCommandControlService } from "./services/global-command-control.service";
+import { UttEnterpriseOsService } from "./services/utt-enterprise-os.service";
 
 const agentRegistry = new AgentRegistryService();
 const taskIntake = new TaskIntakeService();
@@ -47,6 +48,7 @@ const intelligenceBus = new CrossOsIntelligenceBusService();
 const unifiedCrmIdentity = new UnifiedCrmIdentityService();
 const telemetry = new TelemetryMonitoringService();
 const commandControl = new GlobalCommandControlService();
+const uttEnterprise = new UttEnterpriseOsService();
 
 const businessEngine = new BusinessEngineService();
 const decisionEngine = new AiDecisionEngineService();
@@ -276,6 +278,162 @@ const command = commandControl.dispatch({
 });
 const emergencyState = commandControl.setEmergencyControl("HNI_GLOBAL", true, true);
 
+uttEnterprise.registerUser({
+  tenantId: "HNI_GLOBAL",
+  userId: "ADMIN_UTT_01",
+  role: "ADMIN",
+  customerLayer: "CORPORATE",
+  permissionScopes: ["booking:write", "invoice:write", "supplier:write", "audit:read"],
+});
+uttEnterprise.registerUser({
+  tenantId: "HNI_GLOBAL",
+  userId: "AGENT_UTT_01",
+  role: "AGENT",
+  customerLayer: "B2B",
+  permissionScopes: ["booking:write", "quote:write", "crm:write"],
+});
+
+uttEnterprise.onboardSupplier({
+  tenantId: "HNI_GLOBAL",
+  supplierId: "SUP-EXPEDIA-01",
+  supplierCode: "EXPEDIA",
+  supplierName: "Expedia Connectivity",
+  commissionPct: 12,
+  apiEnabled: true,
+  manualInventoryEnabled: false,
+});
+uttEnterprise.onboardSupplier({
+  tenantId: "HNI_GLOBAL",
+  supplierId: "SUP-HOTELBEDS-01",
+  supplierCode: "HOTELBEDS",
+  supplierName: "Hotelbeds Global",
+  commissionPct: 11.5,
+  apiEnabled: true,
+  manualInventoryEnabled: true,
+});
+uttEnterprise.onboardSupplier({
+  tenantId: "HNI_GLOBAL",
+  supplierId: "SUP-WEBBEDS-01",
+  supplierCode: "WEBBEDS",
+  supplierName: "WebBeds Supply",
+  commissionPct: 10.5,
+  apiEnabled: true,
+  manualInventoryEnabled: true,
+});
+
+const aggregatedOffers = uttEnterprise.searchHotels(
+  {
+    tenantId: "HNI_GLOBAL",
+    searchId: "SRCH-9001",
+    checkIn: "2026-05-01",
+    checkOut: "2026-05-05",
+    rooms: 2,
+    adults: 4,
+    childrenAges: [4, 8],
+    cityCode: "DXB",
+    filters: { maxBudget: 420, minStars: 4, amenities: ["wifi", "pool"] },
+    targetMarginPct: 18,
+  },
+  [
+    {
+      supplier: "EXPEDIA",
+      supplierHotelId: "EX-778",
+      hotelName: "Palm Horizon Hotel",
+      roomType: "Deluxe",
+      mealPlan: "Breakfast",
+      baseRate: 280,
+      taxes: 24,
+      currency: "USD",
+      cancellable: true,
+      availableRooms: 10,
+    },
+    {
+      supplier: "HOTELBEDS",
+      supplierHotelId: "HB-441",
+      hotelName: "Palm Horizon Hotel",
+      roomType: "Deluxe",
+      mealPlan: "Breakfast",
+      baseRate: 268,
+      taxes: 30,
+      currency: "USD",
+      cancellable: true,
+      availableRooms: 8,
+    },
+    {
+      supplier: "WEBBEDS",
+      supplierHotelId: "WB-122",
+      hotelName: "Palm Horizon Hotel",
+      roomType: "Deluxe",
+      mealPlan: "Breakfast",
+      baseRate: 275,
+      taxes: 27,
+      currency: "USD",
+      cancellable: false,
+      availableRooms: 12,
+    },
+  ],
+);
+
+const itinerary = uttEnterprise.createDynamicItinerary({
+  tenantId: "HNI_GLOBAL",
+  itineraryId: "ITI-9001",
+  customerId: "HNI-GID-1001",
+  nights: 4,
+  rooms: [
+    { roomId: "R1", adults: 2, childAges: [4], selectedOfferId: aggregatedOffers[0].offerId },
+    { roomId: "R2", adults: 2, childAges: [8], selectedOfferId: aggregatedOffers[0].offerId },
+  ],
+  addOns: [{ code: "TRANSFER", label: "Airport Transfer", amount: 80 }],
+  childPolicy: {
+    cwbDiscountPct: 25,
+    cnbDiscountPct: 60,
+    cwbAgeRange: [6, 12],
+    cnbAgeRange: [2, 5],
+  },
+});
+
+const booking = uttEnterprise.executeBookingLifecycle({
+  tenantId: "HNI_GLOBAL",
+  bookingId: "BKG-9001",
+  itineraryId: itinerary.itineraryId,
+  customerId: itinerary.customerId,
+  holdMinutes: 30,
+  paymentRef: "PAY-UTT-3321",
+});
+
+const crmConversion = uttEnterprise.createLeadAndConvertToBooking({
+  tenantId: "HNI_GLOBAL",
+  leadId: "LEAD-UTT-001",
+  customerId: itinerary.customerId,
+  sourceLayer: "B2C",
+  bookingId: booking.bookingId,
+});
+const invoice = uttEnterprise.generateInvoice({
+  tenantId: "HNI_GLOBAL",
+  invoiceId: "INV-UTT-001",
+  bookingId: booking.bookingId,
+  costAmount: aggregatedOffers[0].totalCost * 4 * 2,
+  sellAmount: itinerary.grossTotal,
+  gstPct: 18,
+});
+const paidInvoice = uttEnterprise.markInvoicePaid("HNI_GLOBAL", invoice.invoiceId);
+const governanceCheck = uttEnterprise.validateTenantRoleAction({
+  tenantId: "HNI_GLOBAL",
+  userId: "AGENT_UTT_01",
+  requiredScope: "booking:write",
+  action: "booking.confirm",
+  severity: "info",
+});
+const muskiCommandRoute = uttEnterprise.muskiRouteCommand({
+  tenantId: "HNI_GLOBAL",
+  commandId: "CMD-UTT-EXEC-01",
+  module: "BOOKING_ENGINE",
+  workerAi: "WRK_UTT_BOOKING_01",
+  intent: "critical supplier override for pricing lock",
+});
+uttEnterprise.pushQueueMetric("HNI_GLOBAL", 284);
+const uttReadiness = uttEnterprise.getReadinessSnapshot("HNI_GLOBAL");
+
 console.log("MUSKI Orchestration hierarchy:", muskiOrchestration.getHierarchy());
 console.log("MUSKI manager assignments:", muskiOrchestration.getAssignments().length);
 console.log("MUSKI decision:", orchestrationDecision);
@@ -290,6 +448,14 @@ console.log("Telemetry anomalies:", telemetry.getTenantAnomalies("HNI_GLOBAL").l
 console.log("Command control dispatch:", command);
 console.log("Emergency control state:", emergencyState);
 console.log("Global command count:", commandControl.getCommandCount());
+console.log("UTT search aggregated offers:", aggregatedOffers.length);
+console.log("UTT itinerary total:", itinerary.grossTotal);
+console.log("UTT booking status:", booking.status);
+console.log("UTT CRM conversion:", crmConversion.status);
+console.log("UTT invoice payment status:", paidInvoice.paymentStatus);
+console.log("UTT governance role validation:", governanceCheck);
+console.log("UTT MUSKI command route:", muskiCommandRoute);
+console.log("UTT readiness snapshot:", uttReadiness);
 
 console.log("Logs:", executionLogger.getAll());
 console.log("Agents:", agentRegistry.getAllAgents());
