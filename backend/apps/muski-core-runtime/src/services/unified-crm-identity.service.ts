@@ -21,17 +21,27 @@ export interface CrmInteraction {
 }
 
 export class UnifiedCrmIdentityService {
-  private readonly identities = new Map<string, GlobalIdentity>();
+  private readonly identitiesByTenant = new Map<string, Map<string, GlobalIdentity>>();
   private readonly interactions: CrmInteraction[] = [];
 
-  private identityKey(tenantId: string, globalIdentityId: string): string {
-    return `${tenantId}:${globalIdentityId}`;
+  private getOrCreateTenantIdentityStore(tenantId: string): Map<string, GlobalIdentity> {
+    let tenantIdentities = this.identitiesByTenant.get(tenantId);
+    if (!tenantIdentities) {
+      tenantIdentities = new Map<string, GlobalIdentity>();
+      this.identitiesByTenant.set(tenantId, tenantIdentities);
+    }
+
+    return tenantIdentities;
+  }
+
+  private getTenantIdentityStore(tenantId: string): Map<string, GlobalIdentity> | undefined {
+    return this.identitiesByTenant.get(tenantId);
   }
 
   upsertIdentity(input: Omit<GlobalIdentity, "createdAt" | "updatedAt">): GlobalIdentity {
     const now = new Date().toISOString();
-    const key = this.identityKey(input.tenantId, input.globalIdentityId);
-    const existing = this.identities.get(key);
+    const tenantIdentities = this.getOrCreateTenantIdentityStore(input.tenantId);
+    const existing = tenantIdentities.get(input.globalIdentityId);
 
     const next: GlobalIdentity = {
       ...input,
@@ -39,7 +49,7 @@ export class UnifiedCrmIdentityService {
       updatedAt: now,
     };
 
-    this.identities.set(key, next);
+    tenantIdentities.set(input.globalIdentityId, next);
     return next;
   }
 
@@ -48,9 +58,9 @@ export class UnifiedCrmIdentityService {
   }
 
   getProfile(tenantId: string, globalIdentityId: string): { identity: GlobalIdentity | null; interactions: CrmInteraction[] } {
-    const key = this.identityKey(tenantId, globalIdentityId);
+    const tenantIdentities = this.getTenantIdentityStore(tenantId);
     return {
-      identity: this.identities.get(key) ?? null,
+      identity: tenantIdentities?.get(globalIdentityId) ?? null,
       interactions: this.interactions.filter(
         (item) => item.tenantId === tenantId && item.globalIdentityId === globalIdentityId,
       ),
@@ -58,6 +68,11 @@ export class UnifiedCrmIdentityService {
   }
 
   getIdentityCount(): number {
-    return this.identities.size;
+    let total = 0;
+    for (const tenantIdentities of this.identitiesByTenant.values()) {
+      total += tenantIdentities.size;
+    }
+
+    return total;
   }
 }
