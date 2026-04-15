@@ -80,6 +80,15 @@
     edunomics: '/edunomics/'
   };
 
+  const FAMILY_ACCESS_KEYS = {
+    core: ['dashboard', 'governance'],
+    governance: ['governance', 'dashboard'],
+    muski: ['muski'],
+    legalnomics: ['legalnomics'],
+    airnomics: ['airnomics'],
+    edunomics: ['edunomics']
+  };
+
 
   function normalizeRoute(route, fallback = '/') {
     if (!route || typeof route !== 'string') return fallback;
@@ -111,9 +120,14 @@
     }
   }
 
-  function getCurrentRole() {
-    const role = readStorage(STORAGE_KEYS.role, 'owner');
-    return ROLE_PERMISSIONS[role] ? role : 'owner';
+  function getCurrentRole(identity) {
+    const role = readStorage(STORAGE_KEYS.role, identity?.role || 'observer');
+    const requestedRole = ROLE_PERMISSIONS[role] ? role : 'observer';
+    const allowedRoles = Array.isArray(identity?.allowedRoles)
+      ? identity.allowedRoles.filter((entry) => ROLE_PERMISSIONS[entry])
+      : [];
+    if (allowedRoles.length === 0) return requestedRole;
+    return allowedRoles.includes(requestedRole) ? requestedRole : allowedRoles[0];
   }
 
   function setRouteContinuity(currentRoute, family) {
@@ -141,11 +155,12 @@
     }
   }
 
-  function getIdentity(role) {
+  function getIdentity() {
     const fallback = JSON.stringify({
       name: 'HNI Enterprise User',
       id: 'HNI-ID-0001',
-      role
+      role: 'observer',
+      allowedRoles: ['observer']
     });
     const raw = readStorage(STORAGE_KEYS.identity, fallback);
     try {
@@ -153,6 +168,24 @@
     } catch (_) {
       return JSON.parse(fallback);
     }
+  }
+
+  function resolveAuthorizedRoute(rolePolicy) {
+    const allowedRoute = NAV_SECTIONS.flatMap((section) => section.items)
+      .find((item) => rolePolicy.canAccess.includes(item.key) && rolePolicy.canSwitchFamilies.includes(item.family));
+    if (allowedRoute) return getStableFamilyRoute(allowedRoute.family, allowedRoute.href);
+    return '/dashboard/';
+  }
+
+  function enforceFamilyAccess(activeFamily, rolePolicy, currentRole) {
+    const accessKeys = FAMILY_ACCESS_KEYS[activeFamily] || [];
+    const canAccessFamily = accessKeys.length > 0 && accessKeys.some((key) => rolePolicy.canAccess.includes(key));
+    if (canAccessFamily) return false;
+    const redirectRoute = resolveAuthorizedRoute(rolePolicy);
+    writeStorage(STORAGE_KEYS.family, (NAV_SECTIONS.flatMap((section) => section.items).find((item) => item.href === redirectRoute) || {}).family || 'core');
+    alert(`Access denied for ${ROLE_PERMISSIONS[currentRole].label} in ${String(activeFamily).toUpperCase()} family.`);
+    window.location.href = redirectRoute;
+    return true;
   }
 
 
@@ -214,10 +247,12 @@
     const target = document.getElementById(config.mountId || 'app');
     if (!target) return;
 
-    const currentRole = getCurrentRole();
-    const rolePolicy = ROLE_PERMISSIONS[currentRole];
     const activeFamily = config.activeFamily || readStorage(STORAGE_KEYS.family, 'core');
-    const identity = getIdentity(currentRole);
+    const identity = getIdentity();
+    const currentRole = getCurrentRole(identity);
+    const rolePolicy = ROLE_PERMISSIONS[currentRole];
+    writeStorage(STORAGE_KEYS.role, currentRole);
+    if (enforceFamilyAccess(activeFamily, rolePolicy, currentRole)) return;
     const familyFallbackRoute = FAMILY_DEFAULT_ROUTES[activeFamily] || '/dashboard/';
     const currentRoute = normalizeRoute(config.currentRoute, familyFallbackRoute);
     const routePrefixes = FAMILY_ROUTE_ROOTS[activeFamily] || [familyFallbackRoute];
