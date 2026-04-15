@@ -1,3 +1,11 @@
+import { InvoiceGstService } from "./finance/invoice-gst.service";
+import { PaymentService, type PaymentRecord } from "./payment/payment.service";
+import { UttPersistenceService } from "./persistence/utt-persistence.service";
+import { RevenueEngineService } from "./revenue/revenue-engine.service";
+import { FraudRiskMonitorService } from "./risk/fraud-risk-monitor.service";
+import { SupplierAggregationWorker } from "./suppliers/supplier-aggregation.worker";
+import type { SupplierAdapter, UnifiedSupplierOffer } from "./suppliers/supplier.types";
+
 export type UttRole = "ADMIN" | "AGENT" | "CORPORATE_USER";
 export type UttCustomerLayer = "B2C" | "B2B" | "CORPORATE";
 export type UttBookingStage = "SEARCH" | "SELECT" | "HOLD" | "CONFIRM" | "VOUCHER";
@@ -55,6 +63,8 @@ export interface UttAggregatedOffer {
   currency: string;
   availability: number;
   supplier: UttSupplierCode;
+  cancellationPolicy?: string;
+  refundable?: boolean;
 }
 
 export interface UttPricingRequest extends TenantScopedEntity {
@@ -141,6 +151,21 @@ interface FinanceLedger extends TenantScopedEntity {
   paymentStatus: "pending" | "paid";
 }
 
+interface UttInvoice extends TenantScopedEntity {
+  invoiceId: string;
+  bookingId: string;
+  customer: {
+    customerId: string;
+    name: string;
+  };
+  amount: number;
+  GST: number;
+  total: number;
+  vendorPayable: number;
+  margin: number;
+  createdAt: string;
+}
+
 interface AuditEvent extends TenantScopedEntity {
   eventId: string;
   actor: string;
@@ -180,9 +205,39 @@ export class UttEnterpriseOsService {
   private readonly bookings = new Map<string, UttBooking>();
   private readonly leads = new Map<string, LeadRecord>();
   private readonly financeLedgers = new Map<string, FinanceLedger>();
+  private readonly payments = new Map<string, PaymentRecord>();
+  private readonly invoices = new Map<string, UttInvoice>();
   private readonly auditTrail: AuditEvent[] = [];
   private readonly telemetrySignals: TelemetrySignal[] = [];
   private readonly queueDepthByTenant = new Map<string, number>();
+  private readonly supplierAggregationWorker: SupplierAggregationWorker;
+  private readonly paymentService: PaymentService;
+  private readonly revenueEngine = new RevenueEngineService({
+    globalMarginPercent: 12,
+    supplierMarginOverride: { EXPEDIA: 10, HOTELBEDS: 11, WEBBEDS: 9.5 },
+    dynamicPricingEnabled: false,
+    competitorPricingHook: "ready_not_active",
+    demandSurgeMultiplierHook: "ready_not_active",
+  });
+  private readonly invoiceService = new InvoiceGstService();
+  private readonly fraudRiskService = new FraudRiskMonitorService();
+  private readonly persistence = new UttPersistenceService();
+
+  constructor(supplierAdapters: SupplierAdapter[] = []) {
+    this.supplierAggregationWorker = new SupplierAggregationWorker(supplierAdapters);
+    this.paymentService = new PaymentService(
+      {
+        createIntent: async () => ({ gatewayPaymentId: nextId("RZP", this.sequence++) }),
+        capture: async () => ({ status: "captured" }),
+        verify: async () => ({ valid: true }),
+      },
+      {
+        createIntent: async () => ({ gatewayPaymentId: nextId("STP", this.sequence++) }),
+        capture: async () => ({ status: "captured" }),
+        verify: async () => ({ valid: true }),
+      },
+    );
+  }
 
   registerUser(user: UttUser): UttUser {
     this.users.set(user.userId, user);
@@ -205,6 +260,13 @@ export class UttEnterpriseOsService {
       supplierCode: contract.supplierCode,
       apiEnabled: contract.apiEnabled,
       manualInventoryEnabled: contract.manualInventoryEnabled,
+    });
+    this.persistence.upsertSupplier({
+      tenantId: contract.tenantId,
+      supplierCode: contract.supplierCode,
+      status: contract.onboardingStatus,
+      healthy: contract.apiEnabled,
+      updatedAt: new Date().toISOString(),
     });
     return contract;
   }
@@ -229,7 +291,18 @@ export class UttEnterpriseOsService {
         currency: offer.currency,
         availability: offer.availableRooms,
         supplier: offer.supplier,
+        cancellationPolicy: offer.cancellable ? "standard_refund_policy" : "non_refundable",
+        refundable: offer.cancellable,
       }))
+      .filter(
+        (offer, index, arr) =>
+          arr.findIndex(
+            (item) =>
+              item.hotelId === offer.hotelId ||
+              (item.name.toLowerCase() === offer.name.toLowerCase() &&
+                item.location.toLowerCase() === offer.location.toLowerCase()),
+          ) === index,
+      )
       .sort((a, b) => a.price - b.price);
 
     this.searchStore.set(request.searchId, normalized);
@@ -243,6 +316,31 @@ export class UttEnterpriseOsService {
     });
 
     return normalized;
+  }
+
+  async aggregateSupplierOffersFromApi(
+    request: UttSearchRequest,
+  ): Promise<{ offers: UttAggregatedOffer[]; failures: Array<{ supplier: string; error: string }> }> {
+    const aggregated = await this.supplierAggregationWorker.aggregate({
+      tenantId: request.tenantId,
+      destination: request.destination,
+      checkIn: request.checkIn,
+      checkOut: request.checkOut,
+      rooms: request.rooms.length,
+      currency: request.currency,
+    });
+
+    const offers = aggregated.offers.map((offer) => this.mapUnifiedSupplierOffer(offer));
+    this.searchStore.set(request.searchId, offers);
+    if (aggregated.failures.length > 0) {
+      this.telemetry(request.tenantId, "error_control", {
+        type: "supplier_api_failover",
+        searchId: request.searchId,
+        failures: aggregated.failures,
+      });
+    }
+
+    return { offers, failures: aggregated.failures };
   }
 
   priceOffer(input: UttPricingRequest): UttPriceQuote {
@@ -375,7 +473,167 @@ export class UttEnterpriseOsService {
     });
 
     this.bookings.set(booking.bookingId, booking);
+    this.persistence.upsertBooking({
+      tenantId: booking.tenantId,
+      bookingId: booking.bookingId,
+      status: booking.status,
+      stage: booking.stage,
+      supplier: selected.supplier,
+      sellAmount: booking.price.sellAmount,
+      costAmount: booking.price.costAmount,
+      marginAmount: booking.price.marginAmount,
+      createdAt: new Date().toISOString(),
+    });
     return booking;
+  }
+
+  async executeBookingPaymentInvoiceLifecycle(input: {
+    tenantId: string;
+    bookingId: string;
+    searchId: string;
+    selectedHotelId: string;
+    customerId: string;
+    customerName: string;
+    globalIdentityId: string;
+    customerLayer: UttCustomerLayer;
+    holdMinutes: number;
+    countryCode?: string;
+    signature: string;
+    gstPercent: number;
+  }): Promise<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }> {
+    const selected = (this.searchStore.get(input.searchId) ?? []).find((offer) => offer.hotelId === input.selectedHotelId);
+    if (!selected) {
+      throw new Error("Selected offer not found");
+    }
+
+    const revenue = this.revenueEngine.calculateSellPrice({ supplier: selected.supplier, costPrice: selected.price });
+    const quote: UttPriceQuote = {
+      pricingId: nextId("PRC", this.sequence++),
+      costCurrency: selected.currency,
+      sellCurrency: selected.currency,
+      costAmount: roundNoDecimals(revenue.costPrice),
+      sellAmount: roundNoDecimals(revenue.sellPrice),
+      marginAmount: roundNoDecimals(revenue.marginAmount),
+      marginPct: revenue.marginPercent,
+      roundedRule: "NO_DECIMALS",
+      taxReady: {
+        taxCode: "GST_READY",
+        gstPct: input.gstPercent,
+        estimatedTax: roundNoDecimals((revenue.sellPrice * input.gstPercent) / 100),
+      },
+    };
+
+    const booking = this.executeBookingLifecycle({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      searchId: input.searchId,
+      selectedHotelId: input.selectedHotelId,
+      customerId: input.customerId,
+      globalIdentityId: input.globalIdentityId,
+      customerLayer: input.customerLayer,
+      holdMinutes: input.holdMinutes,
+      paymentGuaranteed: input.customerLayer === "B2B",
+      price: quote,
+    });
+
+    const risk = this.fraudRiskService.evaluate({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      bookingTenantId: booking.tenantId,
+      customerId: input.customerId,
+      retriesIn5Minutes: 0,
+      quotedPrice: quote.sellAmount,
+      baselinePrice: quote.costAmount,
+    });
+    if (risk.blocked) {
+      this.emitBookingEvent(input.tenantId, "payment_failed", { bookingId: input.bookingId, reason: risk.flags.join(",") });
+      throw new Error(`Fraud/Risk blocked booking: ${risk.flags.join(",")}`);
+    }
+
+    const payment = await this.paymentService.createPaymentIntent({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      amount: quote.sellAmount,
+      currency: quote.sellCurrency,
+      customerLayer: input.customerLayer,
+      countryCode: input.countryCode,
+    });
+    this.emitBookingEvent(input.tenantId, "payment_initiated", { bookingId: input.bookingId, paymentId: payment.paymentId });
+    const capturedPayment = await this.paymentService.capturePayment(payment.paymentId);
+    const verifiedPayment = await this.paymentService.verifyPayment(capturedPayment.paymentId, input.signature);
+    const paymentFailed = verifiedPayment.paymentStatus === "failed";
+    this.emitBookingEvent(input.tenantId, paymentFailed ? "payment_failed" : "payment_success", {
+      bookingId: input.bookingId,
+      paymentId: verifiedPayment.paymentId,
+      gateway: verifiedPayment.paymentGateway,
+      status: verifiedPayment.paymentStatus,
+    });
+    this.payments.set(verifiedPayment.paymentId, verifiedPayment);
+    this.persistence.upsertPayment({
+      tenantId: input.tenantId,
+      paymentId: verifiedPayment.paymentId,
+      bookingId: input.bookingId,
+      paymentGateway: verifiedPayment.paymentGateway,
+      paymentStatus: verifiedPayment.paymentStatus,
+      amount: verifiedPayment.amount,
+      currency: verifiedPayment.currency,
+      updatedAt: new Date().toISOString(),
+    });
+
+    if (input.customerLayer !== "B2B" && paymentFailed) {
+      throw new Error("B2C payment verification failed");
+    }
+
+    booking.paymentGuaranteed = verifiedPayment.paymentStatus === "verified";
+    this.persistence.upsertBooking({
+      tenantId: booking.tenantId,
+      bookingId: booking.bookingId,
+      status: booking.status,
+      stage: booking.stage,
+      paymentId: verifiedPayment.paymentId,
+      paymentStatus: verifiedPayment.paymentStatus,
+      paymentGateway: verifiedPayment.paymentGateway,
+      supplier: selected.supplier,
+      sellAmount: booking.price.sellAmount,
+      costAmount: booking.price.costAmount,
+      marginAmount: booking.price.marginAmount,
+      createdAt: new Date().toISOString(),
+    });
+
+    const invoice = this.invoiceService.generateInvoice({
+      tenantId: input.tenantId,
+      bookingId: booking.bookingId,
+      customer: { customerId: input.customerId, name: input.customerName },
+      amount: booking.price.sellAmount,
+      gstPercent: input.gstPercent,
+      supplierCost: booking.price.costAmount,
+    });
+    const invoiceRow: UttInvoice = { tenantId: input.tenantId, ...invoice };
+    this.invoices.set(invoice.invoiceId, invoiceRow);
+    this.emitBookingEvent(input.tenantId, "invoice_generated", {
+      bookingId: booking.bookingId,
+      invoiceId: invoice.invoiceId,
+      total: invoice.total,
+      margin: invoice.margin,
+    });
+    this.persistence.upsertInvoice({
+      tenantId: input.tenantId,
+      invoiceId: invoice.invoiceId,
+      bookingId: booking.bookingId,
+      customerId: input.customerId,
+      amount: invoice.amount,
+      gst: invoice.GST,
+      total: invoice.total,
+      margin: invoice.margin,
+      createdAt: invoice.createdAt,
+    });
+    this.emitBookingEvent(input.tenantId, "booking_confirmed", {
+      bookingId: booking.bookingId,
+      paymentId: verifiedPayment.paymentId,
+      invoiceId: invoice.invoiceId,
+    });
+
+    return { booking, payment: verifiedPayment, invoice: invoiceRow };
   }
 
   evaluateHoldReminders(nowIso: string): HoldRecord[] {
@@ -507,7 +765,15 @@ export class UttEnterpriseOsService {
     commandId: string;
     userId: string;
     role: UttRole;
-    command: "show bookings" | "check supplier status" | "view revenue" | "booking alerts";
+    command:
+      | "show bookings"
+      | "check supplier status"
+      | "view revenue"
+      | "booking alerts"
+      | "show revenue"
+      | "payment status"
+      | "failed transactions"
+      | "supplier API health";
   }): { route: string; allowed: boolean; data: Record<string, unknown> } {
     const user = this.users.get(input.userId);
     const allowed = !!user && user.tenantId === input.tenantId && user.role === input.role;
@@ -532,11 +798,40 @@ export class UttEnterpriseOsService {
           .filter((supplier) => supplier.tenantId === input.tenantId)
           .map((supplier) => ({ supplierCode: supplier.supplierCode, status: supplier.onboardingStatus })),
       };
-    } else if (input.command === "view revenue") {
+    } else if (input.command === "view revenue" || input.command === "show revenue") {
       const financeRows = [...this.financeLedgers.values()].filter((row) => row.tenantId === input.tenantId);
       data = {
         receivable: financeRows.reduce((sum, row) => sum + row.customerReceivable, 0),
         margin: financeRows.reduce((sum, row) => sum + row.marginAmount, 0),
+      };
+    } else if (input.command === "payment status") {
+      data = {
+        payments: [...this.payments.values()]
+          .filter((payment) => payment.tenantId === input.tenantId)
+          .map((payment) => ({
+            paymentId: payment.paymentId,
+            bookingId: payment.bookingId,
+            status: payment.paymentStatus,
+            gateway: payment.paymentGateway,
+          })),
+      };
+    } else if (input.command === "failed transactions") {
+      data = {
+        failedTransactions: this.paymentService.listFailedPayments(input.tenantId).map((payment) => ({
+          paymentId: payment.paymentId,
+          bookingId: payment.bookingId,
+          status: payment.paymentStatus,
+        })),
+      };
+    } else if (input.command === "supplier API health") {
+      const persisted = this.persistence.getState().suppliers.filter((supplier) => supplier.tenantId === input.tenantId);
+      data = {
+        suppliers: persisted.map((supplier) => ({
+          supplierCode: supplier.supplierCode,
+          healthy: supplier.healthy,
+          status: supplier.status,
+          updatedAt: supplier.updatedAt,
+        })),
       };
     } else {
       const activeAlerts = [...this.bookings.values()].filter(
@@ -564,15 +859,22 @@ export class UttEnterpriseOsService {
   getApiRoutes(): string[] {
     return [
       "POST /utt/search",
+      "POST /utt/search/suppliers/live",
       "POST /utt/select",
       "POST /utt/hold",
       "POST /utt/confirm",
       "POST /utt/voucher",
+      "POST /utt/payment/intent",
+      "POST /utt/payment/capture",
+      "POST /utt/payment/verify",
       "POST /utt/crm/lead-convert",
       "POST /utt/finance/invoice",
       "GET /utt/suppliers/status",
+      "GET /utt/suppliers/health",
       "GET /utt/bookings",
       "GET /utt/revenue",
+      "GET /utt/payments/status",
+      "GET /utt/payments/failed",
       "GET /utt/alerts",
     ];
   }
@@ -581,10 +883,12 @@ export class UttEnterpriseOsService {
     return [
       { stage: "SEARCH", emits: ["supplier_selected"], worker: "Supplier Aggregator Worker" },
       { stage: "HOLD", emits: ["booking_hold"], worker: "Booking Engine Worker" },
-      { stage: "CONFIRM", emits: ["booking_confirmed", "payment_status"], worker: "Booking Engine Worker" },
+      { stage: "PAYMENT", emits: ["payment_initiated", "payment_success", "payment_failed"], worker: "Payment Worker" },
+      { stage: "CONFIRM", emits: ["booking_confirmed"], worker: "Booking Engine Worker" },
       { stage: "VOUCHER", emits: ["voucher_generated"], worker: "Booking Engine Worker" },
       { stage: "CRM", emits: ["crm.lead_to_customer_conversion"], worker: "CRM Sync Worker" },
-      { stage: "FINANCE", emits: ["finance_record_created"], worker: "Finance Engine Worker" },
+      { stage: "FINANCE", emits: ["finance_record_created", "invoice_generated"], worker: "Invoice + GST Worker" },
+      { stage: "RISK", emits: ["risk_assessed"], worker: "Fraud / Risk Monitor Worker" },
     ];
   }
 
@@ -602,15 +906,40 @@ export class UttEnterpriseOsService {
       telemetrySignals: this.telemetrySignals.filter((item) => item.tenantId === tenantId).length,
       auditEvents: this.auditTrail.filter((item) => item.tenantId === tenantId).length,
       queueDepth: this.queueDepthByTenant.get(tenantId) ?? 0,
+      persistedTables: ["bookings", "payments", "suppliers", "invoices"],
+      persistedRows: {
+        bookings: this.persistence.getState().bookings.filter((item) => item.tenantId === tenantId).length,
+        payments: this.persistence.getState().payments.filter((item) => item.tenantId === tenantId).length,
+        suppliers: this.persistence.getState().suppliers.filter((item) => item.tenantId === tenantId).length,
+        invoices: this.persistence.getState().invoices.filter((item) => item.tenantId === tenantId).length,
+      },
+      revenueConfig: this.revenueEngine.getConfig(),
       commandFlow: "MUSKI -> UTT Manager AI -> Worker AI",
       workers: [
         "Booking Engine Worker",
         "Supplier Aggregator Worker",
-        "Pricing Engine Worker",
+        "Rate Normalization Worker",
+        "Payment Worker",
+        "Revenue Engine Worker",
         "CRM Sync Worker",
-        "Finance Engine Worker",
+        "Invoice + GST Worker",
+        "Fraud / Risk Monitor Worker",
         "Telemetry Worker",
       ],
+    };
+  }
+
+  private mapUnifiedSupplierOffer(offer: UnifiedSupplierOffer): UttAggregatedOffer {
+    return {
+      hotelId: `${offer.supplier}-${offer.hotelId}`,
+      name: offer.name,
+      location: offer.location,
+      price: roundNoDecimals(offer.price),
+      currency: offer.currency,
+      availability: offer.availability,
+      supplier: offer.supplier,
+      cancellationPolicy: offer.cancellationPolicy,
+      refundable: offer.refundable,
     };
   }
 
