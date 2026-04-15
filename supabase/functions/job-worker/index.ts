@@ -11,6 +11,7 @@ type QueueJob = {
 
 const MAX_ATTEMPTS = 5;
 const RETRY_BACKOFF_SECONDS = [30, 120, 300, 900, 1800];
+const CONTROL_BLOCKED_BACKOFF_SECONDS = 180;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -430,9 +431,32 @@ async function claimJobs(supabase: ReturnType<typeof createClient>, limit = 10) 
     .limit(limit);
 
   if (error) throw error;
+  const eligibleJobs = jobs ?? [];
+  const byTenant = new Map<string, QueueJob[]>();
+  for (const rawJob of eligibleJobs) {
+    const queue = byTenant.get(rawJob.tenant_id) ?? [];
+    queue.push(rawJob as QueueJob);
+    byTenant.set(rawJob.tenant_id, queue);
+  }
+
+  const fairOrdered: QueueJob[] = [];
+  while (fairOrdered.length < limit) {
+    let added = 0;
+    for (const [tenantId, queue] of byTenant.entries()) {
+      const next = queue.shift();
+      if (next) {
+        fairOrdered.push(next);
+        added += 1;
+      }
+      if (queue.length === 0) byTenant.delete(tenantId);
+      if (fairOrdered.length >= limit) break;
+    }
+    if (added === 0) break;
+  }
+
   const claimed: QueueJob[] = [];
 
-  for (const job of jobs ?? []) {
+  for (const job of fairOrdered) {
     const { data: updated, error: claimError } = await supabase
       .from("job_queue")
       .update({ status: "running", locked_at: nowIso })
@@ -450,16 +474,42 @@ async function claimJobs(supabase: ReturnType<typeof createClient>, limit = 10) 
 async function processClaimedJob(
   supabase: ReturnType<typeof createClient>,
   job: QueueJob,
-  result: { processed: number; failed: number; dead_lettered: number },
+  result: { processed: number; failed_by_error: number; retried: number; dead_lettered: number; paused_by_control: number },
   killSwitchCache: Map<string, TenantKillSwitchState>,
 ) {
   try {
     const killSwitchState = await getTenantKillSwitchState(supabase, job.tenant_id, killSwitchCache);
     if (killSwitchState.globalBlocked) {
-      throw new Error("worker_global_execution_kill_switch_active");
+      const availableAt = new Date(Date.now() + CONTROL_BLOCKED_BACKOFF_SECONDS * 1000).toISOString();
+      await supabase.from("job_queue").update({
+        status: "queued",
+        available_at: availableAt,
+        last_error: "control_blocked:worker_global_execution_kill_switch_active",
+        locked_at: null,
+      }).eq("id", job.id);
+      await writeAudit(supabase, job.tenant_id, "job.paused_by_control", "job_queue", job.id, {
+        queue: job.queue_name,
+        control_reason: "worker_global_execution_kill_switch_active",
+        control_scope: "global",
+      });
+      result.paused_by_control += 1;
+      return;
     }
     if (killSwitchState.tenantBlocked) {
-      throw new Error("tenant_execution_kill_switch_active");
+      const availableAt = new Date(Date.now() + CONTROL_BLOCKED_BACKOFF_SECONDS * 1000).toISOString();
+      await supabase.from("job_queue").update({
+        status: "queued",
+        available_at: availableAt,
+        last_error: "control_blocked:tenant_execution_kill_switch_active",
+        locked_at: null,
+      }).eq("id", job.id);
+      await writeAudit(supabase, job.tenant_id, "job.paused_by_control", "job_queue", job.id, {
+        queue: job.queue_name,
+        control_reason: "tenant_execution_kill_switch_active",
+        control_scope: "tenant",
+      });
+      result.paused_by_control += 1;
+      return;
     }
 
     await processJob(supabase, job);
@@ -480,6 +530,11 @@ async function processClaimedJob(
         attempts: nextAttempts,
         last_error: message,
       });
+      await writeAudit(supabase, job.tenant_id, "job.dead_lettered", "job_queue", job.id, {
+        queue: job.queue_name,
+        error: message,
+        attempts: nextAttempts,
+      });
       result.dead_lettered += 1;
     } else {
       const backoff = RETRY_BACKOFF_SECONDS[Math.min(nextAttempts - 1, RETRY_BACKOFF_SECONDS.length - 1)];
@@ -491,9 +546,16 @@ async function processClaimedJob(
         available_at: availableAt,
         locked_at: null,
       }).eq("id", job.id);
+      await writeAudit(supabase, job.tenant_id, "job.retried", "job_queue", job.id, {
+        queue: job.queue_name,
+        error: message,
+        attempts: nextAttempts,
+        next_available_at: availableAt,
+      });
+      result.retried += 1;
     }
 
-    await writeAudit(supabase, job.tenant_id, "job.failed", "job_queue", job.id, { queue: job.queue_name, error: message });
+    await writeAudit(supabase, job.tenant_id, "job.failed_by_error", "job_queue", job.id, { queue: job.queue_name, error: message });
     await supabase.from("error_logs").insert({
       tenant_id: job.tenant_id,
       source_system: "MUSKI_WORKER",
@@ -508,25 +570,27 @@ async function processClaimedJob(
         max_attempts: MAX_ATTEMPTS,
       },
     });
-    result.failed += 1;
+    result.failed_by_error += 1;
   }
 }
 
 async function writeWorkerMonitoring(
   supabase: ReturnType<typeof createClient>,
   claimedJobs: QueueJob[],
-  result: { processed: number; failed: number; dead_lettered: number },
+  result: { processed: number; failed_by_error: number; retried: number; dead_lettered: number; paused_by_control: number },
 ) {
   const tenantIds = Array.from(new Set(claimedJobs.map((job) => job.tenant_id)));
   await supabase.from("worker_health_metrics").insert({
     worker_name: "supabase_job_worker",
     jobs_claimed: claimedJobs.length,
     jobs_processed: result.processed,
-    jobs_failed: result.failed,
+    jobs_failed: result.failed_by_error,
     jobs_dead_lettered: result.dead_lettered,
     meta: {
       tenant_count: tenantIds.length,
       queues: Array.from(new Set(claimedJobs.map((job) => job.queue_name))),
+      jobs_retried: result.retried,
+      jobs_paused_by_control: result.paused_by_control,
     },
   });
 
@@ -538,15 +602,16 @@ async function writeWorkerMonitoring(
 
     if (queueCounts.error || !queueCounts.data) continue;
 
-    const grouped = new Map<string, { queued: number; running: number; failed: number; completed: number }>();
+    const grouped = new Map<string, { queued: number; running: number; failed: number; completed: number; paused: number }>();
     for (const row of queueCounts.data) {
       const queueName = String(row.queue_name);
       const status = String(row.status);
-      const current = grouped.get(queueName) ?? { queued: 0, running: 0, failed: 0, completed: 0 };
+      const current = grouped.get(queueName) ?? { queued: 0, running: 0, failed: 0, completed: 0, paused: 0 };
       if (status === "queued") current.queued += 1;
       if (status === "running") current.running += 1;
       if (status === "failed") current.failed += 1;
       if (status === "completed") current.completed += 1;
+      if (status === "paused") current.paused += 1;
       grouped.set(queueName, current);
     }
 
@@ -575,7 +640,7 @@ serve(async (req) => {
   );
 
   const claimedJobs = await claimJobs(supabase, Number(Deno.env.get("JOB_WORKER_BATCH") ?? "10"));
-  const result = { processed: 0, failed: 0, dead_lettered: 0 };
+  const result = { processed: 0, failed_by_error: 0, retried: 0, dead_lettered: 0, paused_by_control: 0 };
   const killSwitchCache = new Map<string, TenantKillSwitchState>();
 
   await Promise.allSettled(claimedJobs.map((job) => processClaimedJob(supabase, job, result, killSwitchCache)));

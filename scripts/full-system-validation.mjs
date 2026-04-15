@@ -365,6 +365,10 @@ function checkDeepExecutionReadiness() {
   assert(/processClaimedJob\(supabase,\s*job,\s*result,\s*killSwitchCache\)/.test(workerRuntime), "Queue worker must apply kill switch checks during per-job processing");
   assert(!/return json\(423,\s*\{[\s\S]*execution_kill_switch_active/.test(workerRuntime), "Queue worker must not short-circuit all tenants before job inspection");
   assert(/ENABLE_GLOBAL_WORKER_KILL_SWITCH/.test(workerRuntime) && /worker_global_execution_kill_switch/.test(workerRuntime), "Queue worker missing explicit global kill switch control path");
+  assert(/job\.paused_by_control/.test(workerRuntime), "Queue worker must audit control-blocked jobs as paused_by_control");
+  assert(/job\.failed_by_error/.test(workerRuntime) && /job\.retried/.test(workerRuntime) && /job\.dead_lettered/.test(workerRuntime), "Queue worker must distinguish failed_by_error, retried, and dead_lettered audits");
+  assert(/attempts:\s*nextAttempts/.test(workerRuntime) && /control_blocked/.test(workerRuntime), "Queue worker control-blocked path must not increment attempts and must persist control_blocked reason");
+  assert(/while \(fairOrdered\.length < limit\)/.test(workerRuntime), "Queue worker must distribute claims fairly across tenants");
   assert(
     /queue_name:\s*"ai_execution"/.test(coreApi) || /queue_name:\s*"muski_command"/.test(coreApi),
     "AI queue intake not wired into job queue",
