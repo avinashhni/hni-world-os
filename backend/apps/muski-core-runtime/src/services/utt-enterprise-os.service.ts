@@ -672,9 +672,13 @@ export class UttEnterpriseOsService {
     booking.paymentGuaranteed = verifiedPayment.paymentStatus === "verified";
 
     const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
+    if (persistedInvoice && !persistedInvoice.customerName) {
+      persistedInvoice.customerName = input.customerName;
+      this.persistence.upsertInvoice(persistedInvoice);
+    }
     const existingInvoice =
       this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ??
-      this.restorePersistedInvoice(persistedInvoice, booking, input.customerName);
+      this.restorePersistedInvoice(persistedInvoice, booking);
     const invoice =
       existingInvoice ??
       this.invoiceService.generateInvoice({
@@ -1115,10 +1119,14 @@ export class UttEnterpriseOsService {
   private restorePersistedInvoice(
     persistedInvoice: ReturnType<UttPersistenceService["getInvoiceByBooking"]>,
     booking: UttBooking,
-    fallbackCustomerName: string,
   ): UttInvoice | undefined {
     if (!persistedInvoice) {
       return undefined;
+    }
+    if (!persistedInvoice.customerName) {
+      throw new Error(
+        `Persisted invoice ${persistedInvoice.invoiceId} for booking ${persistedInvoice.bookingId} is missing immutable customerName.`,
+      );
     }
 
     const restored: UttInvoice = {
@@ -1127,7 +1135,7 @@ export class UttEnterpriseOsService {
       bookingId: persistedInvoice.bookingId,
       customer: {
         customerId: persistedInvoice.customerId,
-        name: persistedInvoice.customerName ?? fallbackCustomerName,
+        name: persistedInvoice.customerName,
       },
       amount: persistedInvoice.amount,
       GST: persistedInvoice.gst,
