@@ -40,6 +40,7 @@ export interface PersistentInvoiceRecord {
   invoiceId: string;
   bookingId: string;
   customerId: string;
+  customerName: string;
   amount: number;
   gst: number;
   total: number;
