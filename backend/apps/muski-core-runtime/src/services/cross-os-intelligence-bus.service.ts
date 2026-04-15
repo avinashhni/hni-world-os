@@ -19,6 +19,20 @@ export interface IntelligenceProcessingResult {
 export class CrossOsIntelligenceBusService {
   private readonly events: IntelligenceEvent[] = [];
   private readonly seenFingerprints = new Set<string>();
+  private static stableStringify(value: unknown): string {
+    if (value === null || typeof value !== "object") {
+      return JSON.stringify(value);
+    }
+
+    if (Array.isArray(value)) {
+      return `[${value.map((item) => CrossOsIntelligenceBusService.stableStringify(item)).join(",")}]`;
+    }
+
+    const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries
+      .map(([key, item]) => `${JSON.stringify(key)}:${CrossOsIntelligenceBusService.stableStringify(item)}`)
+      .join(",")}}`;
+  }
 
   emit(event: Omit<IntelligenceEvent, "createdAt">): IntelligenceEvent {
     const next: IntelligenceEvent = {
@@ -30,7 +44,7 @@ export class CrossOsIntelligenceBusService {
   }
 
   process(event: IntelligenceEvent): IntelligenceProcessingResult {
-    const fingerprint = `${event.tenantId}:${event.eventId}:${event.sourceOs}:${event.targetOs}:${event.eventType}:${JSON.stringify(event.payload)}`;
+    const fingerprint = `${event.tenantId}:${event.eventId}:${event.sourceOs}:${event.targetOs}:${event.eventType}:${CrossOsIntelligenceBusService.stableStringify(event.payload)}`;
     const deduplicated = this.seenFingerprints.has(fingerprint);
     if (!deduplicated) {
       this.seenFingerprints.add(fingerprint);
