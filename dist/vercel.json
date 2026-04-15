@@ -5,6 +5,7 @@
     { "source": "/", "destination": "/dashboard/" },
     { "source": "/legalnomics", "destination": "/legalnomics/" },
     { "source": "/edunomics", "destination": "/edunomics/" },
-    { "source": "/airnomics", "destination": "/airnomics/" }
+    { "source": "/airnomics", "destination": "/airnomics/" },
+    { "source": "/utt", "destination": "/utt/" }
   ]
 }
