@@ -374,6 +374,51 @@ async function processJob(supabase: ReturnType<typeof createClient>, job: QueueJ
   }
 }
 
+type TenantKillSwitchState = {
+  tenantBlocked: boolean;
+  globalBlocked: boolean;
+};
+
+async function getTenantKillSwitchState(
+  supabase: ReturnType<typeof createClient>,
+  tenantId: string,
+  cache: Map<string, TenantKillSwitchState>,
+) {
+  const cached = cache.get(tenantId);
+  if (cached) return cached;
+
+  const tenantControl = await supabase
+    .from("emergency_controls")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .eq("control_key", "global_execution_kill_switch")
+    .eq("is_active", true)
+    .limit(1);
+
+  const globalKillSwitchEnabled = Deno.env.get("ENABLE_GLOBAL_WORKER_KILL_SWITCH") === "true";
+  const globalControlTenantId = Deno.env.get("GLOBAL_CONTROL_TENANT_ID") ?? "";
+
+  let globalBlocked = false;
+  if (globalKillSwitchEnabled && globalControlTenantId) {
+    const globalControl = await supabase
+      .from("emergency_controls")
+      .select("id")
+      .eq("tenant_id", globalControlTenantId)
+      .eq("control_key", "worker_global_execution_kill_switch")
+      .eq("is_active", true)
+      .limit(1);
+
+    globalBlocked = !globalControl.error && (globalControl.data ?? []).length > 0;
+  }
+
+  const state = {
+    tenantBlocked: !tenantControl.error && (tenantControl.data ?? []).length > 0,
+    globalBlocked,
+  };
+  cache.set(tenantId, state);
+  return state;
+}
+
 async function claimJobs(supabase: ReturnType<typeof createClient>, limit = 10) {
   const nowIso = new Date().toISOString();
   const { data: jobs, error } = await supabase
@@ -402,8 +447,21 @@ async function claimJobs(supabase: ReturnType<typeof createClient>, limit = 10) 
   return claimed;
 }
 
-async function processClaimedJob(supabase: ReturnType<typeof createClient>, job: QueueJob, result: { processed: number; failed: number; dead_lettered: number }) {
+async function processClaimedJob(
+  supabase: ReturnType<typeof createClient>,
+  job: QueueJob,
+  result: { processed: number; failed: number; dead_lettered: number },
+  killSwitchCache: Map<string, TenantKillSwitchState>,
+) {
   try {
+    const killSwitchState = await getTenantKillSwitchState(supabase, job.tenant_id, killSwitchCache);
+    if (killSwitchState.globalBlocked) {
+      throw new Error("worker_global_execution_kill_switch_active");
+    }
+    if (killSwitchState.tenantBlocked) {
+      throw new Error("tenant_execution_kill_switch_active");
+    }
+
     await processJob(supabase, job);
     await supabase.from("job_queue").update({ status: "completed", locked_at: null, last_error: null }).eq("id", job.id);
     await writeAudit(supabase, job.tenant_id, "job.completed", "job_queue", job.id, { queue: job.queue_name });
@@ -516,24 +574,11 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  const killSwitch = await supabase
-    .from("emergency_controls")
-    .select("is_active")
-    .eq("control_key", "global_execution_kill_switch")
-    .eq("is_active", true)
-    .limit(1);
-
-  if (!killSwitch.error && (killSwitch.data ?? []).length > 0) {
-    return json(423, {
-      ok: false,
-      error: { code: "execution_kill_switch_active", message: "Execution disabled by emergency control" },
-    });
-  }
-
   const claimedJobs = await claimJobs(supabase, Number(Deno.env.get("JOB_WORKER_BATCH") ?? "10"));
   const result = { processed: 0, failed: 0, dead_lettered: 0 };
+  const killSwitchCache = new Map<string, TenantKillSwitchState>();
 
-  await Promise.allSettled(claimedJobs.map((job) => processClaimedJob(supabase, job, result)));
+  await Promise.allSettled(claimedJobs.map((job) => processClaimedJob(supabase, job, result, killSwitchCache)));
   await writeWorkerMonitoring(supabase, claimedJobs, result);
 
   return json(200, { ok: true, jobs_claimed: claimedJobs.length, ...result });

@@ -361,6 +361,10 @@ function checkDeepExecutionReadiness() {
   assert(/error_logs/.test(workerRuntime), "Queue worker missing error_logs failure capture");
   assert(/queue_depth_snapshots/.test(workerRuntime) && /worker_health_metrics/.test(workerRuntime), "Queue worker missing monitoring metric persistence");
   assert(/emergency_controls/.test(workerRuntime), "Queue worker missing emergency kill switch enforcement");
+  assert(/eq\("tenant_id",\s*tenantId\)/.test(workerRuntime), "Queue worker kill switch checks must be tenant scoped");
+  assert(/processClaimedJob\(supabase,\s*job,\s*result,\s*killSwitchCache\)/.test(workerRuntime), "Queue worker must apply kill switch checks during per-job processing");
+  assert(!/return json\(423,\s*\{[\s\S]*execution_kill_switch_active/.test(workerRuntime), "Queue worker must not short-circuit all tenants before job inspection");
+  assert(/ENABLE_GLOBAL_WORKER_KILL_SWITCH/.test(workerRuntime) && /worker_global_execution_kill_switch/.test(workerRuntime), "Queue worker missing explicit global kill switch control path");
   assert(
     /queue_name:\s*"ai_execution"/.test(coreApi) || /queue_name:\s*"muski_command"/.test(coreApi),
     "AI queue intake not wired into job queue",
