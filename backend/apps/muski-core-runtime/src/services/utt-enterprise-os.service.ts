@@ -672,7 +672,9 @@ export class UttEnterpriseOsService {
     booking.paymentGuaranteed = verifiedPayment.paymentStatus === "verified";
 
     const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
-    const existingInvoice = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ?? this.restorePersistedInvoice(persistedInvoice, booking);
+    const existingInvoice =
+      this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId) ??
+      this.restorePersistedInvoice(persistedInvoice, booking, input.customerName);
     const invoice =
       existingInvoice ??
       this.invoiceService.generateInvoice({
@@ -701,6 +703,7 @@ export class UttEnterpriseOsService {
         invoiceId: invoice.invoiceId,
         bookingId: booking.bookingId,
         customerId: invoice.customer.customerId,
+        customerName: invoice.customer.name,
         amount: invoice.amount,
         gst: invoice.GST,
         total: invoice.total,
@@ -1112,6 +1115,7 @@ export class UttEnterpriseOsService {
   private restorePersistedInvoice(
     persistedInvoice: ReturnType<UttPersistenceService["getInvoiceByBooking"]>,
     booking: UttBooking,
+    fallbackCustomerName: string,
   ): UttInvoice | undefined {
     if (!persistedInvoice) {
       return undefined;
@@ -1121,7 +1125,10 @@ export class UttEnterpriseOsService {
       tenantId: persistedInvoice.tenantId,
       invoiceId: persistedInvoice.invoiceId,
       bookingId: persistedInvoice.bookingId,
-      customer: { customerId: persistedInvoice.customerId, name: persistedInvoice.customerId },
+      customer: {
+        customerId: persistedInvoice.customerId,
+        name: persistedInvoice.customerName ?? fallbackCustomerName,
+      },
       amount: persistedInvoice.amount,
       GST: persistedInvoice.gst,
       total: persistedInvoice.total,
