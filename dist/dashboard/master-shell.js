@@ -44,6 +44,15 @@
     }
   };
 
+  const SHELL_STATE = {
+    identity: null,
+    currentRole: 'owner',
+    activeFamily: 'core',
+    currentRoute: '/dashboard/',
+    config: null,
+    warningMessage: ''
+  };
+
   const NAV_SECTIONS = [
     {
       title: 'Central Governance',
@@ -106,6 +115,8 @@
 
   function readStorage(key, fallback) {
     try {
+      const sessionValue = sessionStorage.getItem(key);
+      if (sessionValue) return sessionValue;
       return localStorage.getItem(key) || fallback;
     } catch (_) {
       return fallback;
@@ -115,19 +126,15 @@
   function writeStorage(key, value) {
     try {
       localStorage.setItem(key, value);
+      sessionStorage.setItem(key, value);
     } catch (_) {
       // Ignore storage failures in restricted browser contexts.
     }
   }
 
   function getCurrentRole(identity) {
-    const role = readStorage(STORAGE_KEYS.role, identity?.role || 'observer');
-    const requestedRole = ROLE_PERMISSIONS[role] ? role : 'observer';
-    const allowedRoles = Array.isArray(identity?.allowedRoles)
-      ? identity.allowedRoles.filter((entry) => ROLE_PERMISSIONS[entry])
-      : [];
-    if (allowedRoles.length === 0) return requestedRole;
-    return allowedRoles.includes(requestedRole) ? requestedRole : allowedRoles[0];
+    const role = readStorage(STORAGE_KEYS.role, identity?.role || 'owner');
+    return ROLE_PERMISSIONS[role] ? role : 'owner';
   }
 
   function setRouteContinuity(currentRoute, family) {
@@ -159,8 +166,8 @@
     const fallback = JSON.stringify({
       name: 'HNI Enterprise User',
       id: 'HNI-ID-0001',
-      role: 'observer',
-      allowedRoles: ['observer']
+      role: 'owner',
+      allowedRoles: Object.keys(ROLE_PERMISSIONS)
     });
     const raw = readStorage(STORAGE_KEYS.identity, fallback);
     try {
@@ -177,15 +184,9 @@
     return '/dashboard/';
   }
 
-  function enforceFamilyAccess(activeFamily, rolePolicy, currentRole) {
+  function hasFamilyAccess(activeFamily, rolePolicy) {
     const accessKeys = FAMILY_ACCESS_KEYS[activeFamily] || [];
-    const canAccessFamily = accessKeys.length > 0 && accessKeys.some((key) => rolePolicy.canAccess.includes(key));
-    if (canAccessFamily) return false;
-    const redirectRoute = resolveAuthorizedRoute(rolePolicy);
-    writeStorage(STORAGE_KEYS.family, (NAV_SECTIONS.flatMap((section) => section.items).find((item) => item.href === redirectRoute) || {}).family || 'core');
-    alert(`Access denied for ${ROLE_PERMISSIONS[currentRole].label} in ${String(activeFamily).toUpperCase()} family.`);
-    window.location.href = redirectRoute;
-    return true;
+    return accessKeys.length > 0 && accessKeys.some((key) => rolePolicy.canAccess.includes(key));
   }
 
 
@@ -214,15 +215,14 @@
     const normalizedCurrentRoute = normalizeRoute(currentRoute, '/');
     return NAV_SECTIONS.map((section) => {
       const links = section.items
-        .filter((item) => rolePolicy.canAccess.includes(item.key))
         .map((route) => {
           const active = (route.matchPrefixes || [route.href]).some((prefix) => normalizedCurrentRoute.startsWith(prefix)) ? 'active' : '';
+          const canEnter = hasFamilyAccess(route.family, rolePolicy);
           const continuityHref = getStableFamilyRoute(route.family, route.href);
-          return `<a class="shell-nav-link ${active}" data-family="${route.family}" href="${continuityHref}">${route.label}</a>`;
+          const lockChip = canEnter ? '' : '<span class="shell-locked-chip">Restricted</span>';
+          return `<a class="shell-nav-link ${active} ${canEnter ? '' : 'shell-nav-link-restricted'}" data-family="${route.family}" data-access="${canEnter ? 'allowed' : 'restricted'}" href="${continuityHref}">${route.label}${lockChip}</a>`;
         })
         .join('');
-
-      if (!links) return '';
       return `<div class="shell-nav-group"><div class="shell-nav-title">${section.title}</div>${links}</div>`;
     }).join('');
   }
@@ -243,27 +243,18 @@
       .join('');
   }
 
-  function mount(config) {
-    const target = document.getElementById(config.mountId || 'app');
+  function renderShell() {
+    const target = document.getElementById(SHELL_STATE.config.mountId || 'app');
     if (!target) return;
 
-    const activeFamily = config.activeFamily || readStorage(STORAGE_KEYS.family, 'core');
-    const identity = getIdentity();
-    const currentRole = getCurrentRole(identity);
+    const { config, activeFamily, currentRoute, identity, currentRole } = SHELL_STATE;
     const rolePolicy = ROLE_PERMISSIONS[currentRole];
-    writeStorage(STORAGE_KEYS.role, currentRole);
-    if (enforceFamilyAccess(activeFamily, rolePolicy, currentRole)) return;
-    const familyFallbackRoute = FAMILY_DEFAULT_ROUTES[activeFamily] || '/dashboard/';
-    const currentRoute = normalizeRoute(config.currentRoute, familyFallbackRoute);
-    const routePrefixes = FAMILY_ROUTE_ROOTS[activeFamily] || [familyFallbackRoute];
-    const routeInFamily = routePrefixes.some((prefix) => currentRoute.startsWith(prefix));
-    setRouteContinuity(routeInFamily ? currentRoute : familyFallbackRoute, activeFamily);
-
     const breadcrumb = renderBreadcrumbs(config.breadcrumb || []);
     const chips = (config.chips || []).map((chip) => `<span class="shell-chip">${chip}</span>`).join('');
     const backLink = config.backHref
       ? `<a class="shell-back-link" href="${normalizeRoute(config.backHref, '/')}">← ${config.backLabel || 'Back'}</a>`
       : '';
+    const warning = SHELL_STATE.warningMessage ? `<div class="shell-access-warning">${SHELL_STATE.warningMessage}</div>` : '';
 
     target.innerHTML = `
       <div class="shell-layout locked-shell">
@@ -294,6 +285,7 @@
           </header>
 
           <section class="shell-route-container">
+            ${warning}
             ${backLink}
             ${config.contentHtml || ''}
           </section>
@@ -304,22 +296,72 @@
     const roleSwitcher = document.getElementById('hniRoleSwitcher');
     if (roleSwitcher) {
       roleSwitcher.addEventListener('change', function (event) {
-        writeStorage(STORAGE_KEYS.role, event.target.value);
-        window.location.reload();
+        const nextRole = event.target.value;
+        if (!ROLE_PERMISSIONS[nextRole]) return;
+        SHELL_STATE.currentRole = nextRole;
+        writeStorage(STORAGE_KEYS.role, nextRole);
+        const nextPolicy = ROLE_PERMISSIONS[nextRole];
+        if (!hasFamilyAccess(SHELL_STATE.activeFamily, nextPolicy)) {
+          SHELL_STATE.activeFamily = 'core';
+          SHELL_STATE.currentRoute = '/dashboard/';
+          SHELL_STATE.warningMessage = `Role ${nextPolicy.label} redirected to Dashboard due to route access limits.`;
+          setRouteContinuity('/dashboard/', 'core');
+          window.location.href = '/dashboard/';
+          return;
+        }
+        SHELL_STATE.warningMessage = '';
+        renderShell();
       });
     }
 
     document.querySelectorAll('[data-family]').forEach((link) => {
       link.addEventListener('click', (event) => {
         const family = event.currentTarget.getAttribute('data-family') || 'core';
-        if (!rolePolicy.canSwitchFamilies.includes(family)) {
-          event.preventDefault();
-          alert(`Access denied for ${ROLE_PERMISSIONS[currentRole].label} in ${family.toUpperCase()} family.`);
-          return;
-        }
+        const access = event.currentTarget.getAttribute('data-access');
         writeStorage(STORAGE_KEYS.family, family);
+        if (access === 'restricted') {
+          event.preventDefault();
+          const roleLabel = ROLE_PERMISSIONS[SHELL_STATE.currentRole]?.label || SHELL_STATE.currentRole;
+          SHELL_STATE.warningMessage = `Module visible, but ${roleLabel} can only use approved actions. Redirected to Dashboard.`;
+          window.location.href = '/dashboard/';
+        }
       });
     });
+  }
+
+  function mount(config) {
+    const target = document.getElementById(config.mountId || 'app');
+    if (!target) return;
+
+    const activeFamily = config.activeFamily || readStorage(STORAGE_KEYS.family, 'core');
+    const identity = getIdentity();
+    const currentRole = getCurrentRole(identity);
+    const rolePolicy = ROLE_PERMISSIONS[currentRole];
+    writeStorage(STORAGE_KEYS.role, currentRole);
+    const familyFallbackRoute = FAMILY_DEFAULT_ROUTES[activeFamily] || '/dashboard/';
+    const currentRoute = normalizeRoute(config.currentRoute, familyFallbackRoute);
+    const routePrefixes = FAMILY_ROUTE_ROOTS[activeFamily] || [familyFallbackRoute];
+    const routeInFamily = routePrefixes.some((prefix) => currentRoute.startsWith(prefix));
+    const safeRoute = routeInFamily ? currentRoute : familyFallbackRoute;
+    setRouteContinuity(safeRoute, activeFamily);
+
+    SHELL_STATE.config = config;
+    SHELL_STATE.identity = identity;
+    SHELL_STATE.currentRole = currentRole;
+    SHELL_STATE.activeFamily = activeFamily;
+    SHELL_STATE.currentRoute = safeRoute;
+
+    if (!hasFamilyAccess(activeFamily, rolePolicy)) {
+      SHELL_STATE.activeFamily = 'core';
+      SHELL_STATE.currentRoute = '/dashboard/';
+      SHELL_STATE.warningMessage = `Unauthorized route blocked for ${rolePolicy.label}. Redirected to Dashboard.`;
+      setRouteContinuity('/dashboard/', 'core');
+      window.location.href = '/dashboard/';
+      return;
+    }
+
+    SHELL_STATE.warningMessage = '';
+    renderShell();
   }
 
   window.HNIWorldShell = { mount, ROLE_PERMISSIONS, NAV_SECTIONS };
