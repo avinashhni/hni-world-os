@@ -31,12 +31,13 @@ with tenant_rows as (
         'booking.lifecycle',
         'Booking Lifecycle',
         'travel',
-        '["SEARCH","HOLD","CONFIRM","TICKET","COMPLETE"]',
+        '["SEARCH","HOLD","CONFIRM","EXECUTE","COMPLETE","AUDIT"]',
         '[
           {"from":"SEARCH","to":"HOLD","event":"booking.hold","guard":"inventory_available","retry":{"max_attempts":3,"backoff_seconds":30},"escalate_to":"OPS_MANAGER_AI"},
           {"from":"HOLD","to":"CONFIRM","event":"booking.confirm","guard":"payment_authorized","retry":{"max_attempts":3,"backoff_seconds":60},"escalate_to":"FINANCE_MANAGER_AI"},
-          {"from":"CONFIRM","to":"TICKET","event":"booking.ticket","guard":"supplier_ticketed","retry":{"max_attempts":5,"backoff_seconds":120},"escalate_to":"TRAVEL_MANAGER_AI"},
-          {"from":"TICKET","to":"COMPLETE","event":"booking.complete","guard":"travel_completed","retry":{"max_attempts":1,"backoff_seconds":0},"escalate_to":"OPS_MANAGER_AI"}
+          {"from":"CONFIRM","to":"EXECUTE","event":"booking.execute","guard":"supplier_execution_authorized","retry":{"max_attempts":5,"backoff_seconds":120},"escalate_to":"TRAVEL_MANAGER_AI"},
+          {"from":"EXECUTE","to":"COMPLETE","event":"booking.complete","guard":"travel_completed","retry":{"max_attempts":2,"backoff_seconds":120},"escalate_to":"OPS_MANAGER_AI"},
+          {"from":"COMPLETE","to":"AUDIT","event":"booking.audit","guard":"audit_trail_verified","retry":{"max_attempts":2,"backoff_seconds":60},"escalate_to":"COPSPOWER_MANAGER_AI"}
         ]'
       ),
       (

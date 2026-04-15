@@ -436,7 +436,74 @@ async function processClaimedJob(supabase: ReturnType<typeof createClient>, job:
     }
 
     await writeAudit(supabase, job.tenant_id, "job.failed", "job_queue", job.id, { queue: job.queue_name, error: message });
+    await supabase.from("error_logs").insert({
+      tenant_id: job.tenant_id,
+      source_system: "MUSKI_WORKER",
+      source_entity: "job_queue",
+      source_entity_id: job.id,
+      severity: nextAttempts >= MAX_ATTEMPTS ? "critical" : "error",
+      error_code: "job_execution_failure",
+      error_message: message,
+      error_payload: {
+        queue_name: job.queue_name,
+        attempts: nextAttempts,
+        max_attempts: MAX_ATTEMPTS,
+      },
+    });
     result.failed += 1;
+  }
+}
+
+async function writeWorkerMonitoring(
+  supabase: ReturnType<typeof createClient>,
+  claimedJobs: QueueJob[],
+  result: { processed: number; failed: number; dead_lettered: number },
+) {
+  const tenantIds = Array.from(new Set(claimedJobs.map((job) => job.tenant_id)));
+  await supabase.from("worker_health_metrics").insert({
+    worker_name: "supabase_job_worker",
+    jobs_claimed: claimedJobs.length,
+    jobs_processed: result.processed,
+    jobs_failed: result.failed,
+    jobs_dead_lettered: result.dead_lettered,
+    meta: {
+      tenant_count: tenantIds.length,
+      queues: Array.from(new Set(claimedJobs.map((job) => job.queue_name))),
+    },
+  });
+
+  for (const tenantId of tenantIds) {
+    const queueCounts = await supabase
+      .from("job_queue")
+      .select("queue_name,status")
+      .eq("tenant_id", tenantId);
+
+    if (queueCounts.error || !queueCounts.data) continue;
+
+    const grouped = new Map<string, { queued: number; running: number; failed: number; completed: number }>();
+    for (const row of queueCounts.data) {
+      const queueName = String(row.queue_name);
+      const status = String(row.status);
+      const current = grouped.get(queueName) ?? { queued: 0, running: 0, failed: 0, completed: 0 };
+      if (status === "queued") current.queued += 1;
+      if (status === "running") current.running += 1;
+      if (status === "failed") current.failed += 1;
+      if (status === "completed") current.completed += 1;
+      grouped.set(queueName, current);
+    }
+
+    const snapshots = Array.from(grouped.entries()).map(([queueName, counts]) => ({
+      tenant_id: tenantId,
+      queue_name: queueName,
+      queued_count: counts.queued,
+      running_count: counts.running,
+      failed_count: counts.failed,
+      completed_count: counts.completed,
+    }));
+
+    if (snapshots.length > 0) {
+      await supabase.from("queue_depth_snapshots").insert(snapshots);
+    }
   }
 }
 
@@ -449,10 +516,25 @@ serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  const killSwitch = await supabase
+    .from("emergency_controls")
+    .select("is_active")
+    .eq("control_key", "global_execution_kill_switch")
+    .eq("is_active", true)
+    .limit(1);
+
+  if (!killSwitch.error && (killSwitch.data ?? []).length > 0) {
+    return json(423, {
+      ok: false,
+      error: { code: "execution_kill_switch_active", message: "Execution disabled by emergency control" },
+    });
+  }
+
   const claimedJobs = await claimJobs(supabase, Number(Deno.env.get("JOB_WORKER_BATCH") ?? "10"));
   const result = { processed: 0, failed: 0, dead_lettered: 0 };
 
   await Promise.allSettled(claimedJobs.map((job) => processClaimedJob(supabase, job, result)));
+  await writeWorkerMonitoring(supabase, claimedJobs, result);
 
   return json(200, { ok: true, jobs_claimed: claimedJobs.length, ...result });
 });

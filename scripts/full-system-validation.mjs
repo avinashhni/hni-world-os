@@ -271,6 +271,7 @@ function checkDeploymentReadiness() {
     'supabase/003_deep_build_schema.sql',
     'supabase/004_deep_build_policies.sql',
     'supabase/005_deep_build_seed.sql',
+    'supabase/008_final_system_completion.sql',
     'supabase/functions/create-intake/index.ts',
     'supabase/functions/claim-lead/index.ts',
     'supabase/functions/core-api/index.ts',
@@ -348,6 +349,7 @@ function checkDeepExecutionReadiness() {
 
   assert(/insert\s+into\s+public\.workflow_definitions/i.test(seedSql), "No workflow_definitions seed records found");
   assert(seedSql.includes("booking.lifecycle") && seedSql.includes("legal.lifecycle") && seedSql.includes("education.lifecycle"), "Missing required lifecycle workflow seeds");
+  assert(seedSql.includes('["SEARCH","HOLD","CONFIRM","EXECUTE","COMPLETE","AUDIT"]'), "Booking lifecycle must enforce SEARCH -> HOLD -> CONFIRM -> EXECUTE -> COMPLETE -> AUDIT");
   assert(seedSql.includes("copspower.escalation.lifecycle"), "Missing COPSPOWER escalation lifecycle seed");
   assert(/transitions::jsonb/.test(seedSql), "Workflow seed missing transition definition payloads");
   assert(/retry"\s*:\s*\{/.test(seedSql) || seedSql.includes("retry"), "Workflow transitions missing retry metadata");
@@ -356,6 +358,9 @@ function checkDeepExecutionReadiness() {
   assert(/async function claimJobs/.test(workerRuntime) && /async function processJob/.test(workerRuntime), "Queue worker missing async claim/process structure");
   assert(/MAX_ATTEMPTS/.test(workerRuntime) && /RETRY_BACKOFF_SECONDS/.test(workerRuntime), "Queue worker missing retry constants");
   assert(/locked_at/.test(workerRuntime) && /job_dead_letters/.test(workerRuntime), "Queue worker missing lock/retry/dead-letter handling");
+  assert(/error_logs/.test(workerRuntime), "Queue worker missing error_logs failure capture");
+  assert(/queue_depth_snapshots/.test(workerRuntime) && /worker_health_metrics/.test(workerRuntime), "Queue worker missing monitoring metric persistence");
+  assert(/emergency_controls/.test(workerRuntime), "Queue worker missing emergency kill switch enforcement");
   assert(
     /queue_name:\s*"ai_execution"/.test(coreApi) || /queue_name:\s*"muski_command"/.test(coreApi),
     "AI queue intake not wired into job queue",
@@ -510,7 +515,7 @@ async function main() {
     ...checks.map((item) => `| ${item.name} | ${item.status} | ${item.details.replace(/\|/g, '\\|')} |`),
     '',
     failures.length === 0
-      ? '## Final Status: ✅ PRODUCTION READY'
+      ? '## Final Status: ✅ FULLY OPERATIONAL — PRODUCTION EXECUTION READY'
       : `## Final Status: ❌ ${failures.length} check(s) failing`,
   ];
 
