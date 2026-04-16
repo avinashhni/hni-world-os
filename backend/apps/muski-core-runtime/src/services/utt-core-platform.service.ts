@@ -31,6 +31,7 @@ export interface BookingInputPipeline {
   searchId: string;
   selectedHotelId: string;
   customerId: string;
+  customerName: string;
   globalIdentityId: string;
   customerLayer: UttCustomerLayer;
   paymentGuaranteeRequired: boolean;
@@ -117,6 +118,7 @@ export class UttCorePlatformService {
       searchId: input.searchId,
       selectedHotelId: input.selectedHotelId,
       customerId: input.customerId,
+      customerName: input.customerName,
       globalIdentityId: input.globalIdentityId,
       customerLayer: input.customerLayer,
       holdMinutes: input.holdMinutes,

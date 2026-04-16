@@ -73,6 +73,15 @@ export class PaymentService {
 
   async capturePayment(paymentId: string): Promise<PaymentRecord> {
     const payment = this.requirePayment(paymentId);
+    if (payment.paymentStatus === "verified") {
+      throw new Error(`Payment already verified and locked: ${paymentId}`);
+    }
+    if (payment.paymentStatus === "captured") {
+      return payment;
+    }
+    if (payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized") {
+      throw new Error(`Payment capture not allowed from status: ${payment.paymentStatus}`);
+    }
     const client = payment.paymentGateway === "RAZORPAY" ? this.razorpayClient : this.stripeClient;
     const result = await client.capture(paymentId, payment.amount);
     payment.paymentStatus = result.status;
@@ -82,6 +91,9 @@ export class PaymentService {
 
   async verifyPayment(paymentId: string, signature: string): Promise<PaymentRecord> {
     const payment = this.requirePayment(paymentId);
+    if (payment.paymentStatus === "verified") {
+      return payment;
+    }
     const client = payment.paymentGateway === "RAZORPAY" ? this.razorpayClient : this.stripeClient;
     const result = await client.verify(paymentId, signature);
     payment.paymentStatus = result.valid ? "verified" : "failed";
@@ -95,6 +107,11 @@ export class PaymentService {
 
   getPaymentByBooking(tenantId: string, bookingId: string): PaymentRecord | undefined {
     return this.paymentByTenantBooking.get(this.tenantBookingKey(tenantId, bookingId));
+  }
+
+  restorePayment(record: PaymentRecord): void {
+    this.paymentStore.set(record.paymentId, record);
+    this.paymentByTenantBooking.set(this.tenantBookingKey(record.tenantId, record.bookingId), record);
   }
 
   listFailedPayments(tenantId: string): PaymentRecord[] {

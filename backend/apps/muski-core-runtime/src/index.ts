@@ -394,6 +394,7 @@ const booking = uttEnterprise.executeBookingLifecycle({
   searchId: "SRCH-9001",
   selectedHotelId: aggregatedOffers[0].hotelId,
   customerId: "CUS-9001",
+  customerName: "HNI Test Traveler",
   globalIdentityId: "HNI-GID-1001",
   customerLayer: "B2C",
   holdMinutes: 30,
