@@ -119,6 +119,7 @@ interface UttBooking extends TenantScopedEntity {
   searchId: string;
   selectedHotelId: string;
   customerId: string;
+  customerName: string;
   customerLayer: UttCustomerLayer;
   globalIdentityId: string;
   stage: UttBookingStage;
@@ -182,6 +183,16 @@ interface TelemetrySignal extends TenantScopedEntity {
   payload: Record<string, unknown>;
 }
 
+interface IdempotencySnapshot {
+  tenantId: string;
+  bookingId: string;
+  lifecycleStage: string;
+  payloadHash: string;
+  cachedResult: { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice };
+  lastProcessedStage: UttBookingStage | "PAYMENT" | "INVOICE" | "VOUCHER";
+  processedAt: string;
+}
+
 function assertIsoDate(value: string, field: string): string {
   if (!/^\d{4}-\d{2}-\d{2}/.test(value)) {
     throw new Error(`Invalid ${field}. Expected ISO-like date.`);
@@ -220,6 +231,8 @@ export class UttEnterpriseOsService {
   private readonly auditTrail: AuditEvent[] = [];
   private readonly telemetrySignals: TelemetrySignal[] = [];
   private readonly queueDepthByTenant = new Map<string, number>();
+  private readonly idempotencyState = new Map<string, IdempotencySnapshot>();
+  private readonly emittedEventKeys = new Set<string>();
   private readonly supplierAggregationWorker: SupplierAggregationWorker;
   private readonly paymentService: PaymentService;
   private readonly revenueEngine = new RevenueEngineService(
@@ -323,7 +336,7 @@ export class UttEnterpriseOsService {
       .sort((a, b) => a.price - b.price);
 
     this.searchStore.set(request.searchId, normalized);
-    this.emitBookingEvent(request.tenantId, "SEARCH", {
+    this.emitOnce(`${request.searchId}::SEARCH_COMPLETED`, request.tenantId, "SEARCH_COMPLETED", {
       searchId: request.searchId,
       suppliersCompared: supplierOffers.length,
       results: normalized.length,
@@ -406,6 +419,7 @@ export class UttEnterpriseOsService {
     searchId: string;
     selectedHotelId: string;
     customerId: string;
+    customerName: string;
     globalIdentityId: string;
     customerLayer: UttCustomerLayer;
     holdMinutes: number;
@@ -439,6 +453,26 @@ export class UttEnterpriseOsService {
     signature: string;
     gstPercent: number;
   }): Promise<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }> {
+    const stage = "BOOKING_PAYMENT_INVOICE";
+    const payloadHash = this.hashPayload({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      searchId: input.searchId,
+      selectedHotelId: input.selectedHotelId,
+      customerId: input.customerId,
+      customerName: input.customerName,
+      globalIdentityId: input.globalIdentityId,
+      customerLayer: input.customerLayer,
+      holdMinutes: input.holdMinutes,
+      countryCode: input.countryCode ?? null,
+      gstPercent: input.gstPercent,
+      signaturePresent: Boolean(input.signature),
+    });
+    const cached = this.readIdempotentReplay(input.tenantId, input.bookingId, stage, payloadHash);
+    if (cached) {
+      return cached;
+    }
+
     const selected = this.requireSelectedOffer(input.searchId, input.selectedHotelId);
     const quote = this.resolvePriceQuote(input, selected);
     const booking = this.ensureBooking({ ...input, paymentGuaranteed: false, price: quote }, input.customerLayer !== "B2B");
@@ -467,8 +501,6 @@ export class UttEnterpriseOsService {
       {
         tenantId: input.tenantId,
         bookingId: input.bookingId,
-        customerId: input.customerId,
-        customerName: input.customerName,
         gstPercent: input.gstPercent,
       },
       booking,
@@ -482,9 +514,11 @@ export class UttEnterpriseOsService {
 
     this.issueVoucher(booking, true);
     this.assertInternalValidation(booking, payment, invoice);
+    this.assertFinalLifecycleState(input.tenantId, booking, payment, invoice);
     this.persistBookingSnapshot(booking, payment);
-
-    return { booking, payment, invoice };
+    const response = { booking, payment, invoice };
+    this.writeIdempotentSnapshot(input.tenantId, input.bookingId, stage, payloadHash, response, "VOUCHER");
+    return response;
   }
 
   evaluateHoldReminders(nowIso: string): HoldRecord[] {
@@ -510,9 +544,9 @@ export class UttEnterpriseOsService {
         });
       }
 
-      const completed = booking.status === "voucher_issued" || booking.status === "confirmed";
+      const statusAllowsExpiry = booking.status !== "confirmed" && booking.status !== "voucher_issued";
       const shouldExpire = !!booking.hold && hold.status === "active" && booking.holdClosed !== true && expiryTs <= nowTs;
-      if (shouldExpire && !completed) {
+      if (shouldExpire && statusAllowsExpiry) {
         hold.status = "expired";
         booking.status = "expired";
         this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "HOLD_EXPIRED", {
@@ -803,6 +837,7 @@ export class UttEnterpriseOsService {
       searchId: string;
       selectedHotelId: string;
       customerId: string;
+      customerName: string;
       globalIdentityId: string;
       customerLayer: UttCustomerLayer;
       paymentGuaranteed: boolean;
@@ -823,6 +858,7 @@ export class UttEnterpriseOsService {
       searchId: input.searchId,
       selectedHotelId: input.selectedHotelId,
       customerId: input.customerId,
+      customerName: input.customerName,
       customerLayer: input.customerLayer,
       globalIdentityId: input.globalIdentityId,
       stage: "SEARCH",
@@ -912,7 +948,7 @@ export class UttEnterpriseOsService {
     });
 
     if (risk.blocked) {
-      this.emitBookingEvent(input.tenantId, "payment_failed", {
+      this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "payment_failed", {
         bookingId: input.booking.bookingId,
         reason: risk.flags.join(","),
       });
@@ -945,6 +981,10 @@ export class UttEnterpriseOsService {
       return payment;
     }
 
+    if (payment.paymentStatus !== "failed" && payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized" && payment.paymentStatus !== "captured") {
+      throw new Error(`Payment retry blocked for immutable status: ${payment.paymentStatus}`);
+    }
+
     if (payment.paymentStatus === "initiated" || payment.paymentStatus === "authorized") {
       payment = await this.paymentService.capturePayment(payment.paymentId);
     }
@@ -963,7 +1003,7 @@ export class UttEnterpriseOsService {
       return payment;
     }
 
-    this.emitBookingEvent(input.tenantId, "payment_failed", {
+    this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "payment_failed", {
       bookingId: input.booking.bookingId,
       paymentId: payment.paymentId,
       status: payment.paymentStatus,
@@ -973,22 +1013,19 @@ export class UttEnterpriseOsService {
   }
 
   private resolveInvoiceIdempotent(
-    input: { tenantId: string; bookingId: string; customerId: string; customerName: string; gstPercent: number },
+    input: { tenantId: string; bookingId: string; gstPercent: number },
     booking: UttBooking,
   ): UttInvoice {
     const existing = this.invoicesByBooking(input.tenantId, input.bookingId);
     if (existing) {
-      this.assertInvoiceIdentityImmutable(existing, input.customerId, input.customerName);
+      this.assertInvoiceIdentityImmutable(existing, booking.customerId, booking.customerName);
       return existing;
     }
 
-    const persisted = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
+    const persisted = this.backfillAndGetPersistedInvoice(input.tenantId, input.bookingId);
     if (persisted) {
-      if (persisted.customerId !== input.customerId || persisted.customerName !== input.customerName) {
-        throw new Error("Invoice customer identity is immutable and does not match persisted record");
-      }
-
       const restored = this.restorePersistedInvoice(persisted);
+      this.assertInvoiceIdentityImmutable(restored, booking.customerId, booking.customerName);
       this.invoices.set(restored.invoiceId, restored);
       return restored;
     }
@@ -997,8 +1034,8 @@ export class UttEnterpriseOsService {
       tenantId: input.tenantId,
       bookingId: input.bookingId,
       customer: {
-        customerId: input.customerId,
-        name: input.customerName,
+        customerId: booking.customerId,
+        name: booking.customerName,
       },
       amount: booking.price.sellAmount,
       gstPercent: input.gstPercent,
@@ -1054,6 +1091,12 @@ export class UttEnterpriseOsService {
     this.persistence.upsertBooking({
       tenantId: booking.tenantId,
       bookingId: booking.bookingId,
+      customerId: booking.customerId,
+      customerName: booking.customerName,
+      globalIdentityId: booking.globalIdentityId,
+      customerLayer: booking.customerLayer,
+      searchId: booking.searchId,
+      selectedHotelId: booking.selectedHotelId,
       status: booking.status,
       stage: booking.stage,
       paymentId: payment?.paymentId,
@@ -1120,6 +1163,7 @@ export class UttEnterpriseOsService {
       updatedAt: persisted.updatedAt,
     };
 
+    this.paymentService.restorePayment(restored);
     this.payments.set(restored.paymentId, restored);
     return restored;
   }
@@ -1131,6 +1175,7 @@ export class UttEnterpriseOsService {
       searchId: string;
       selectedHotelId: string;
       customerId: string;
+      customerName: string;
       globalIdentityId: string;
       customerLayer: UttCustomerLayer;
       paymentGuaranteed: boolean;
@@ -1139,9 +1184,7 @@ export class UttEnterpriseOsService {
     },
     paymentGuaranteeRequired: boolean,
   ): UttBooking | undefined {
-    const persisted = this.persistence
-      .getState()
-      .bookings.find((row) => row.tenantId === input.tenantId && row.bookingId === input.bookingId);
+    const persisted = this.persistence.getBookingById(input.tenantId, input.bookingId);
 
     if (!persisted) {
       return undefined;
@@ -1150,11 +1193,12 @@ export class UttEnterpriseOsService {
     const restored: UttBooking = {
       tenantId: input.tenantId,
       bookingId: input.bookingId,
-      searchId: input.searchId,
-      selectedHotelId: input.selectedHotelId,
-      customerId: input.customerId,
-      globalIdentityId: input.globalIdentityId,
-      customerLayer: input.customerLayer,
+      searchId: persisted.searchId,
+      selectedHotelId: persisted.selectedHotelId,
+      customerId: persisted.customerId,
+      customerName: persisted.customerName,
+      globalIdentityId: persisted.globalIdentityId,
+      customerLayer: persisted.customerLayer as UttCustomerLayer,
       stage: persisted.stage as UttBookingStage,
       status: persisted.status as UttBookingStatus,
       price: {
@@ -1222,6 +1266,7 @@ export class UttEnterpriseOsService {
       searchId: string;
       selectedHotelId: string;
       customerId: string;
+      customerName: string;
       globalIdentityId: string;
       customerLayer: UttCustomerLayer;
     },
@@ -1230,7 +1275,11 @@ export class UttEnterpriseOsService {
       throw new Error("Booking exists outside tenant scope");
     }
 
-    if (booking.customerId !== input.customerId || booking.globalIdentityId !== input.globalIdentityId) {
+    if (
+      booking.customerId !== input.customerId ||
+      booking.customerName !== input.customerName ||
+      booking.globalIdentityId !== input.globalIdentityId
+    ) {
       throw new Error("Booking identity is immutable once created");
     }
 
@@ -1261,6 +1310,12 @@ export class UttEnterpriseOsService {
     if (!persisted) {
       throw new Error("Persisted invoice is required for restoration");
     }
+    if (!persisted.invoiceId || !persisted.customerId || !persisted.customerName) {
+      throw new Error("Persisted invoice is corrupted. Immutable identity fields are missing.");
+    }
+    if (persisted.amount < 0 || persisted.total < 0 || persisted.gst < 0 || persisted.margin < 0) {
+      throw new Error("Persisted invoice is corrupted. Monetary values cannot be negative.");
+    }
 
     return {
       tenantId: persisted.tenantId,
@@ -1279,6 +1334,47 @@ export class UttEnterpriseOsService {
     };
   }
 
+  private backfillAndGetPersistedInvoice(
+    tenantId: string,
+    bookingId: string,
+  ): ReturnType<UttPersistenceService["getInvoiceByBooking"]> | undefined {
+    const persisted = this.persistence.getInvoiceByBooking(tenantId, bookingId);
+    if (!persisted) {
+      return undefined;
+    }
+
+    if (persisted.customerId && persisted.customerName) {
+      return persisted;
+    }
+
+    const booking = this.persistence.getBookingById(tenantId, bookingId);
+    const trustedNames = new Set<string>();
+    if (booking?.customerName?.trim()) {
+      trustedNames.add(booking.customerName.trim());
+    }
+
+    if (trustedNames.size === 0) {
+      throw new Error("Invoice backfill failed. No trusted booking customer name available.");
+    }
+    if (trustedNames.size > 1) {
+      throw new Error("Invoice backfill failed. Multiple trusted customer names detected.");
+    }
+
+    const trustedCustomerName = [...trustedNames][0];
+    if (!booking?.customerId) {
+      throw new Error("Invoice backfill failed. No trusted booking customerId available.");
+    }
+
+    const backfilled = {
+      ...persisted,
+      customerId: persisted.customerId || booking.customerId,
+      customerName: trustedCustomerName,
+    };
+
+    this.persistence.upsertInvoice(backfilled);
+    return backfilled;
+  }
+
   private mapUnifiedSupplierOffer(offer: UnifiedSupplierOffer): UttAggregatedOffer {
     return {
       hotelId: `${offer.supplier}-${offer.hotelId}`,
@@ -1294,10 +1390,7 @@ export class UttEnterpriseOsService {
   }
 
   private emitBookingEventOnce(tenantId: string, bookingId: string, eventName: string, payload: Record<string, unknown>): void {
-    if (this.hasBookingEvent(tenantId, bookingId, eventName)) {
-      return;
-    }
-    this.emitBookingEvent(tenantId, eventName, payload);
+    this.emitOnce(`${tenantId}::${bookingId}::${eventName}`, tenantId, eventName, payload);
   }
 
   private emitBookingEvent(tenantId: string, eventName: string, payload: Record<string, unknown>): void {
@@ -1309,13 +1402,7 @@ export class UttEnterpriseOsService {
   }
 
   private hasBookingEvent(tenantId: string, bookingId: string, eventName: string): boolean {
-    return this.telemetrySignals.some(
-      (signal) =>
-        signal.tenantId === tenantId &&
-        signal.signalType === "booking_log" &&
-        signal.payload.eventName === eventName &&
-        signal.payload.bookingId === bookingId,
-    );
+    return this.emittedEventKeys.has(`${tenantId}::${bookingId}::${eventName}`);
   }
 
   private countBookingEvents(tenantId: string, bookingId: string, eventName: string): number {
@@ -1326,6 +1413,77 @@ export class UttEnterpriseOsService {
         signal.payload.eventName === eventName &&
         signal.payload.bookingId === bookingId,
     ).length;
+  }
+
+  private emitOnce(eventKey: string, tenantId: string, eventName: string, payload: Record<string, unknown>): void {
+    if (this.emittedEventKeys.has(eventKey)) {
+      return;
+    }
+    this.emittedEventKeys.add(eventKey);
+    this.emitBookingEvent(tenantId, eventName, payload);
+  }
+
+  private hashPayload(payload: Record<string, unknown>): string {
+    return JSON.stringify(payload);
+  }
+
+  private idempotencyKey(tenantId: string, bookingId: string, lifecycleStage: string): string {
+    return `${tenantId}::${bookingId}::${lifecycleStage}`;
+  }
+
+  private readIdempotentReplay(
+    tenantId: string,
+    bookingId: string,
+    lifecycleStage: string,
+    payloadHash: string,
+  ): { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice } | undefined {
+    const key = this.idempotencyKey(tenantId, bookingId, lifecycleStage);
+    const snapshot = this.idempotencyState.get(key);
+    if (!snapshot) {
+      return undefined;
+    }
+    if (snapshot.payloadHash !== payloadHash) {
+      throw new Error(`Idempotency hash mismatch for ${key}`);
+    }
+    return snapshot.cachedResult;
+  }
+
+  private writeIdempotentSnapshot(
+    tenantId: string,
+    bookingId: string,
+    lifecycleStage: string,
+    payloadHash: string,
+    response: { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice },
+    lastProcessedStage: IdempotencySnapshot["lastProcessedStage"],
+  ): void {
+    this.idempotencyState.set(this.idempotencyKey(tenantId, bookingId, lifecycleStage), {
+      tenantId,
+      bookingId,
+      lifecycleStage,
+      payloadHash,
+      cachedResult: response,
+      lastProcessedStage,
+      processedAt: new Date().toISOString(),
+    });
+  }
+
+  private assertFinalLifecycleState(tenantId: string, booking: UttBooking, payment: PaymentRecord, invoice: UttInvoice): void {
+    const bookingCount = [...this.bookings.values()].filter((row) => row.tenantId === tenantId && row.bookingId === booking.bookingId).length;
+    const paymentCount = [...this.payments.values()].filter((row) => row.tenantId === tenantId && row.bookingId === booking.bookingId).length;
+    const invoiceCount = [...this.invoices.values()].filter((row) => row.tenantId === tenantId && row.bookingId === booking.bookingId).length;
+
+    if (bookingCount !== 1 || paymentCount !== 1 || invoiceCount !== 1) {
+      throw new Error("Lifecycle validation failed: expected one booking, one payment, and one invoice per booking.");
+    }
+    if (booking.status !== "voucher_issued") {
+      throw new Error(`Lifecycle validation failed: expected voucher_issued, got ${booking.status}`);
+    }
+    if (payment.paymentStatus !== "verified") {
+      throw new Error(`Lifecycle validation failed: expected verified payment, got ${payment.paymentStatus}`);
+    }
+    if (invoice.bookingId !== booking.bookingId || payment.bookingId !== booking.bookingId) {
+      throw new Error("Lifecycle validation failed: booking/payment/invoice linkage mismatch.");
+    }
   }
 
   private audit(

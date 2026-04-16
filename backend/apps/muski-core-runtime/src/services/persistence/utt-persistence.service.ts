@@ -4,6 +4,12 @@ import * as path from "node:path";
 export interface PersistentBookingRecord {
   tenantId: string;
   bookingId: string;
+  customerId: string;
+  customerName: string;
+  globalIdentityId: string;
+  customerLayer: string;
+  searchId: string;
+  selectedHotelId: string;
   status: string;
   stage: string;
   paymentId?: string;
@@ -118,6 +124,10 @@ export class UttPersistenceService {
 
   getInvoiceByBooking(tenantId: string, bookingId: string): PersistentInvoiceRecord | undefined {
     return this.readState().invoices.find((invoice) => invoice.tenantId === tenantId && invoice.bookingId === bookingId);
+  }
+
+  getBookingById(tenantId: string, bookingId: string): PersistentBookingRecord | undefined {
+    return this.readState().bookings.find((booking) => booking.tenantId === tenantId && booking.bookingId === bookingId);
   }
 
   private ensurePersistenceFile(): void {
