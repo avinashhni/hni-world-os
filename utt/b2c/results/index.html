@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE UTT B2C — Search Results</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/utt/b2c/results/',
+      activeFamily: 'utt',
+      title: 'THE UTT — B2C Results',
+      breadcrumb: ['HNI WORLD OS', 'THE UTT', 'B2C', 'Results'],
+      status: 'Lowest Price Sorting Active',
+      chips: ['Dedup active', 'Fallback protected'],
+      backHref: '/utt/b2c/',
+      backLabel: 'Back to Landing',
+      contentHtml: `
+        <section class="hero-card"><h2>Results</h2><p id="uttB2CResultsStatus">Loading search...</p></section>
+        <section class="module-grid three" id="uttB2CResults"></section>
+      `
+    });
+  </script>
+  <script src="/utt/core-platform.js"></script>
+  <script>uttRenderResults();</script>
+</body>
+</html>

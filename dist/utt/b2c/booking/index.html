@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>THE UTT B2C — Booking</title>
+  <link rel="stylesheet" href="/dashboard/shared-shell.css" />
+</head>
+<body>
+  <div id="app"></div>
+  <script src="/dashboard/master-shell.js"></script>
+  <script>
+    HNIWorldShell.mount({
+      currentRoute: '/utt/b2c/booking/',
+      activeFamily: 'utt',
+      title: 'THE UTT — Booking Pipeline',
+      breadcrumb: ['HNI WORLD OS', 'THE UTT', 'B2C', 'Booking'],
+      status: 'Booking Input Pipeline Ready',
+      chips: ['Phase 2 engine routed'],
+      backHref: '/utt/b2c/results/',
+      backLabel: 'Back to Results',
+      contentHtml: `
+        <section class="form-card">
+          <h3>Booking Input</h3>
+          <form class="content-grid two" onsubmit="uttSubmitBooking(event)">
+            <label>Customer ID<br/><input class="shell-select" name="customerId" required placeholder="HNI-GID-XXXX" /></label>
+            <label>Customer Layer<br/>
+              <select class="shell-select" name="customerLayer" required>
+                <option value="B2C">B2C</option>
+                <option value="B2B">B2B</option>
+                <option value="CORPORATE">CORPORATE</option>
+              </select>
+            </label>
+            <label><input type="checkbox" name="paymentGuaranteeRequired" checked /> Payment guarantee required</label>
+            <div class="button-row"><button class="primary-btn" type="submit">Proceed to Booking</button></div>
+          </form>
+          <div class="muski-log-list" id="uttB2CBookingResult"></div>
+        </section>
+      `
+    });
+  </script>
+  <script src="/utt/core-platform.js"></script>
+</body>
+</html>
