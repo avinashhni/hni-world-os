@@ -15,6 +15,7 @@ export interface PersistentBookingRecord {
   paymentId?: string;
   paymentStatus?: string;
   paymentGateway?: string;
+  paymentLocked?: boolean;
   supplier: string;
   sellAmount: number;
   costAmount: number;
@@ -54,11 +55,30 @@ export interface PersistentInvoiceRecord {
   createdAt: string;
 }
 
+export interface PersistentIdempotencyRecord {
+  tenantId: string;
+  bookingId: string;
+  lifecycleStage: string;
+  payloadHash: string;
+  cachedResult: string;
+  processedAt: string;
+}
+
+export interface PersistentEmittedEventRecord {
+  tenantId: string;
+  bookingId: string;
+  eventName: string;
+  eventKey: string;
+  emittedAt: string;
+}
+
 interface UttPersistentState {
   bookings: PersistentBookingRecord[];
   payments: PersistentPaymentRecord[];
   suppliers: PersistentSupplierRecord[];
   invoices: PersistentInvoiceRecord[];
+  idempotency: PersistentIdempotencyRecord[];
+  emittedEvents: PersistentEmittedEventRecord[];
 }
 
 const EMPTY_STATE: UttPersistentState = {
@@ -66,6 +86,8 @@ const EMPTY_STATE: UttPersistentState = {
   payments: [],
   suppliers: [],
   invoices: [],
+  idempotency: [],
+  emittedEvents: [],
 };
 
 export class UttPersistenceService {
@@ -114,6 +136,41 @@ export class UttPersistenceService {
     this.writeState(state);
   }
 
+  upsertIdempotency(record: PersistentIdempotencyRecord): void {
+    const state = this.readState();
+    state.idempotency = [
+      ...state.idempotency.filter(
+        (item) => !(item.tenantId === record.tenantId && item.bookingId === record.bookingId && item.lifecycleStage === record.lifecycleStage),
+      ),
+      record,
+    ];
+    this.writeState(state);
+  }
+
+  getIdempotencyRecord(tenantId: string, bookingId: string, lifecycleStage: string): PersistentIdempotencyRecord | undefined {
+    return this.readState().idempotency.find(
+      (item) => item.tenantId === tenantId && item.bookingId === bookingId && item.lifecycleStage === lifecycleStage,
+    );
+  }
+
+  storeEmittedEvent(record: PersistentEmittedEventRecord): void {
+    const state = this.readState();
+    const exists = state.emittedEvents.some(
+      (item) => item.tenantId === record.tenantId && item.bookingId === record.bookingId && item.eventName === record.eventName,
+    );
+    if (exists) {
+      return;
+    }
+    state.emittedEvents.push(record);
+    this.writeState(state);
+  }
+
+  hasEmittedEvent(tenantId: string, bookingId: string, eventName: string): boolean {
+    return this.readState().emittedEvents.some(
+      (item) => item.tenantId === tenantId && item.bookingId === bookingId && item.eventName === eventName,
+    );
+  }
+
   getState(): UttPersistentState {
     return this.readState();
   }
@@ -149,6 +206,8 @@ export class UttPersistenceService {
       payments: parsed.payments ?? [],
       suppliers: parsed.suppliers ?? [],
       invoices: parsed.invoices ?? [],
+      idempotency: parsed.idempotency ?? [],
+      emittedEvents: parsed.emittedEvents ?? [],
     };
   }
 

@@ -46,6 +46,7 @@ export class PaymentService {
     const bookingKey = this.tenantBookingKey(input.tenantId, input.bookingId);
     const existingPayment = this.paymentByTenantBooking.get(bookingKey);
     if (existingPayment) {
+      this.assertKnownPaymentState(existingPayment.paymentStatus);
       return existingPayment;
     }
 
@@ -73,8 +74,9 @@ export class PaymentService {
 
   async capturePayment(paymentId: string): Promise<PaymentRecord> {
     const payment = this.requirePayment(paymentId);
+    this.assertKnownPaymentState(payment.paymentStatus);
     if (payment.paymentStatus === "verified") {
-      throw new Error(`Payment already verified and locked: ${paymentId}`);
+      return payment;
     }
     if (payment.paymentStatus === "captured") {
       return payment;
@@ -91,6 +93,7 @@ export class PaymentService {
 
   async verifyPayment(paymentId: string, signature: string): Promise<PaymentRecord> {
     const payment = this.requirePayment(paymentId);
+    this.assertKnownPaymentState(payment.paymentStatus);
     if (payment.paymentStatus === "verified") {
       return payment;
     }
@@ -128,5 +131,12 @@ export class PaymentService {
 
   private tenantBookingKey(tenantId: string, bookingId: string): string {
     return `${tenantId}::${bookingId}`;
+  }
+
+  private assertKnownPaymentState(status: PaymentStatus): void {
+    const valid: PaymentStatus[] = ["initiated", "authorized", "captured", "failed", "verified"];
+    if (!valid.includes(status)) {
+      throw new Error(`Payment entered invalid state: ${String(status)}`);
+    }
   }
 }
