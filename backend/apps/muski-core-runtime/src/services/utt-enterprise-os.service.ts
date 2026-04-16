@@ -405,28 +405,23 @@ export class UttEnterpriseOsService {
     paymentGuaranteed: boolean;
     price: UttPriceQuote;
   }): UttBooking {
-    const selected = this.requireSelectedOffer(input.searchId, input.selectedHotelId);
+    this.requireSelectedOffer(input.searchId, input.selectedHotelId);
+    const booking = this.ensureBookingIntegrity({
+      ...input,
+      paymentGuaranteeRequired: input.customerLayer !== "B2B",
+    });
 
-    const paymentGuaranteeRequired = input.customerLayer !== "B2B";
-    if (paymentGuaranteeRequired && !input.paymentGuaranteed) {
+    if (booking.paymentGuaranteeRequired && !input.paymentGuaranteed) {
       throw new Error("B2C/CORPORATE flows require payment guarantee before confirm");
     }
 
-    const booking = this.ensureBooking(input, input.price, paymentGuaranteeRequired);
-    this.ensurePhase2Lifecycle(booking, input.holdMinutes, true);
-
-    this.persistence.upsertBooking({
-      tenantId: booking.tenantId,
-      bookingId: booking.bookingId,
-      status: booking.status,
-      stage: booking.stage,
-      supplier: selected.supplier,
-      sellAmount: booking.price.sellAmount,
-      costAmount: booking.price.costAmount,
-      marginAmount: booking.price.marginAmount,
-      createdAt: new Date().toISOString(),
+    this.progressBookingLifecycle(booking, input.holdMinutes, {
+      issueVoucher: false,
+      requireVerifiedPayment: false,
     });
 
+    booking.paymentGuaranteed = input.paymentGuaranteed;
+    this.persistBookingSnapshot(booking);
     return booking;
   }
 
@@ -445,53 +440,47 @@ export class UttEnterpriseOsService {
     gstPercent: number;
   }): Promise<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }> {
     const selected = this.getSelectedOffer(input.searchId, input.selectedHotelId);
-    const bookingSupplier = selected?.supplier ?? "MANUAL";
-
     const quote = this.resolvePriceQuote(input, selected);
-    const booking = this.ensureBooking(
-      {
-        tenantId: input.tenantId,
-        bookingId: input.bookingId,
-        searchId: input.searchId,
-        selectedHotelId: input.selectedHotelId,
-        customerId: input.customerId,
-        globalIdentityId: input.globalIdentityId,
-        customerLayer: input.customerLayer,
-        holdMinutes: input.holdMinutes,
-        paymentGuaranteed: false,
-        price: quote,
-      },
-      quote,
-      input.customerLayer !== "B2B",
-    );
 
-    this.ensurePhase2Lifecycle(booking, input.holdMinutes, false);
+    const booking = this.ensureBookingIntegrity({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      searchId: input.searchId,
+      selectedHotelId: input.selectedHotelId,
+      customerId: input.customerId,
+      globalIdentityId: input.globalIdentityId,
+      customerLayer: input.customerLayer,
+      holdMinutes: input.holdMinutes,
+      paymentGuaranteed: false,
+      price: quote,
+      paymentGuaranteeRequired: input.customerLayer !== "B2B",
+    });
 
-    const payment = await this.processPaymentWithRetry(input, booking, quote);
+    this.progressBookingLifecycle(booking, input.holdMinutes, {
+      issueVoucher: false,
+      requireVerifiedPayment: false,
+    });
+
+    const payment = await this.resolveIdempotentPayment(input, booking, quote);
     booking.paymentGuaranteed = payment.paymentStatus === "verified";
-
-    if (booking.paymentGuaranteeRequired && payment.paymentStatus !== "verified") {
+    if (booking.paymentGuaranteeRequired && !booking.paymentGuaranteed) {
       throw new Error("B2C payment verification failed");
     }
 
-    const invoice = this.resolveImmutableInvoice(input, booking);
+    const invoice = this.resolveImmutableInvoice({
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      customerId: input.customerId,
+      customerName: input.customerName,
+      gstPercent: input.gstPercent,
+    }, booking);
 
-    this.ensureVoucherIssued(booking);
-    this.persistence.upsertBooking({
-      tenantId: booking.tenantId,
-      bookingId: booking.bookingId,
-      status: booking.status,
-      stage: booking.stage,
-      paymentId: payment.paymentId,
-      paymentStatus: payment.paymentStatus,
-      paymentGateway: payment.paymentGateway,
-      supplier: bookingSupplier,
-      sellAmount: booking.price.sellAmount,
-      costAmount: booking.price.costAmount,
-      marginAmount: booking.price.marginAmount,
-      createdAt: new Date().toISOString(),
+    this.progressBookingLifecycle(booking, input.holdMinutes, {
+      issueVoucher: true,
+      requireVerifiedPayment: booking.paymentGuaranteeRequired,
     });
 
+    this.persistBookingSnapshot(booking, payment);
     return { booking, payment, invoice };
   }
 
@@ -821,31 +810,22 @@ export class UttEnterpriseOsService {
     return selected;
   }
 
-  private ensureBooking(
-    input: {
-      tenantId: string;
-      bookingId: string;
-      searchId: string;
-      selectedHotelId: string;
-      customerId: string;
-      globalIdentityId: string;
-      customerLayer: UttCustomerLayer;
-      paymentGuaranteed: boolean;
-      holdMinutes: number;
-      price: UttPriceQuote;
-    },
-    quote: UttPriceQuote,
-    paymentGuaranteeRequired: boolean,
-  ): UttBooking {
-    const existing = this.bookings.get(input.bookingId);
-    if (existing && existing.tenantId !== input.tenantId) {
-      throw new Error("Booking exists outside tenant scope");
-    }
-
+  private ensureBookingIntegrity(input: {
+    tenantId: string;
+    bookingId: string;
+    searchId: string;
+    selectedHotelId: string;
+    customerId: string;
+    globalIdentityId: string;
+    customerLayer: UttCustomerLayer;
+    paymentGuaranteed: boolean;
+    holdMinutes: number;
+    price: UttPriceQuote;
+    paymentGuaranteeRequired: boolean;
+  }): UttBooking {
+    const existing = this.bookings.get(input.bookingId) ?? this.restorePersistedBooking(input);
     if (existing) {
-      existing.price = existing.price ?? quote;
-      existing.selectedHotelId = existing.selectedHotelId ?? input.selectedHotelId;
-      existing.searchId = existing.searchId ?? input.searchId;
+      this.validateBookingImmutableFields(existing, input);
       return existing;
     }
 
@@ -859,11 +839,12 @@ export class UttEnterpriseOsService {
       customerLayer: input.customerLayer,
       stage: "SEARCH",
       status: "search_completed",
-      price: quote,
-      paymentGuaranteeRequired,
+      price: input.price,
+      paymentGuaranteeRequired: input.paymentGuaranteeRequired,
       paymentGuaranteed: input.paymentGuaranteed,
       holdClosed: false,
     };
+
     this.bookings.set(booking.bookingId, booking);
     this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "booking_created", {
       bookingId: booking.bookingId,
@@ -872,35 +853,37 @@ export class UttEnterpriseOsService {
     return booking;
   }
 
-  private ensurePhase2Lifecycle(booking: UttBooking, holdMinutes: number, finalizeVoucher: boolean): void {
-    if (!booking.hold) {
-      booking.hold = {
-        tenantId: booking.tenantId,
-        holdId: nextId("HOLD", this.sequence++),
-        bookingId: booking.bookingId,
-        expiresAt: new Date(Date.now() + holdMinutes * 60_000).toISOString(),
-        reminderAt: new Date(Date.now() + Math.max(holdMinutes - 5, 1) * 60_000).toISOString(),
-        status: "active",
-      };
-    }
+  private progressBookingLifecycle(
+    booking: UttBooking,
+    holdMinutes: number,
+    options: { issueVoucher: boolean; requireVerifiedPayment: boolean },
+  ): void {
+    this.ensureHoldActive(booking, holdMinutes);
 
-    if (booking.status === "search_completed") {
-      booking.stage = "SELECT";
-      booking.status = "selected";
-    }
+    this.transitionBooking(booking, {
+      fromStatuses: ["search_completed"],
+      toStage: "SELECT",
+      toStatus: "selected",
+    });
 
-    if (booking.status === "selected" || booking.status === "held") {
-      booking.stage = "HOLD";
-      booking.status = "hold_created";
-      this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "booking_hold", {
+    this.transitionBooking(booking, {
+      fromStatuses: ["selected", "held"],
+      toStage: "HOLD",
+      toStatus: "hold_created",
+      eventName: "booking_hold",
+      eventPayload: {
         bookingId: booking.bookingId,
-        holdId: booking.hold.holdId,
-        expiresAt: booking.hold.expiresAt,
-        reminderAt: booking.hold.reminderAt,
-      });
-    }
+        holdId: booking.hold?.holdId,
+        expiresAt: booking.hold?.expiresAt,
+        reminderAt: booking.hold?.reminderAt,
+      },
+    });
 
     if (booking.status === "hold_created") {
+      if (options.requireVerifiedPayment && !booking.paymentGuaranteed) {
+        return;
+      }
+
       booking.stage = "CONFIRM";
       booking.status = "confirmed";
       booking.holdClosed = true;
@@ -911,16 +894,58 @@ export class UttEnterpriseOsService {
       });
     }
 
-    if (finalizeVoucher) {
-      this.ensureVoucherIssued(booking);
-      this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "payment_status", {
-        bookingId: booking.bookingId,
-        status: booking.paymentGuaranteed ? "guaranteed" : "not_required",
-      });
+    if (options.issueVoucher) {
+      this.issueVoucherIfEligible(booking, options.requireVerifiedPayment);
     }
   }
 
-  private ensureVoucherIssued(booking: UttBooking): void {
+  private transitionBooking(
+    booking: UttBooking,
+    input: {
+      fromStatuses: UttBookingStatus[];
+      toStage: UttBookingStage;
+      toStatus: UttBookingStatus;
+      eventName?: string;
+      eventPayload?: Record<string, unknown>;
+    },
+  ): void {
+    if (!input.fromStatuses.includes(booking.status)) {
+      return;
+    }
+    booking.stage = input.toStage;
+    booking.status = input.toStatus;
+    if (input.eventName) {
+      this.emitBookingEventOnce(booking.tenantId, booking.bookingId, input.eventName, input.eventPayload ?? { bookingId: booking.bookingId });
+    }
+  }
+
+  private ensureHoldActive(booking: UttBooking, holdMinutes: number): void {
+    if (booking.hold && booking.hold.status === "active") {
+      return;
+    }
+
+    const now = Date.now();
+    booking.hold = {
+      tenantId: booking.tenantId,
+      holdId: booking.hold?.holdId ?? nextId("HOLD", this.sequence++),
+      bookingId: booking.bookingId,
+      expiresAt: new Date(now + holdMinutes * 60_000).toISOString(),
+      reminderAt: new Date(now + Math.max(holdMinutes - 5, 1) * 60_000).toISOString(),
+      status: "active",
+    };
+  }
+
+  private issueVoucherIfEligible(booking: UttBooking, requireVerifiedPayment: boolean): void {
+    if (booking.status === "voucher_issued") {
+      return;
+    }
+    if (booking.status !== "confirmed") {
+      return;
+    }
+    if (requireVerifiedPayment && !booking.paymentGuaranteed) {
+      return;
+    }
+
     booking.stage = "VOUCHER";
     booking.status = "voucher_issued";
     booking.holdClosed = true;
@@ -950,7 +975,7 @@ export class UttEnterpriseOsService {
       ? this.revenueEngine.calculateSellPrice({
           tenantId: input.tenantId,
           bookingId: input.bookingId,
-          supplier: selected.supplier,
+          supplier: selected.supplier as "EXPEDIA" | "HOTELBEDS" | "WEBBEDS",
           costPrice: selected.price,
         })
       : undefined;
@@ -972,7 +997,7 @@ export class UttEnterpriseOsService {
     };
   }
 
-  private async processPaymentWithRetry(
+  private async resolveIdempotentPayment(
     input: {
       tenantId: string;
       bookingId: string;
@@ -984,16 +1009,17 @@ export class UttEnterpriseOsService {
     booking: UttBooking,
     quote: UttPriceQuote,
   ): Promise<PaymentRecord> {
-    const priorFailures = this.countBookingEvents(input.tenantId, input.bookingId, "payment_failed");
+    const retries = this.countBookingEvents(input.tenantId, input.bookingId, "payment_failed");
     const risk = this.fraudRiskService.evaluate({
       tenantId: input.tenantId,
       bookingId: input.bookingId,
       bookingTenantId: booking.tenantId,
       customerId: input.customerId,
-      retriesIn5Minutes: priorFailures,
+      retriesIn5Minutes: retries,
       quotedPrice: quote.sellAmount,
       baselinePrice: quote.costAmount,
     });
+
     if (risk.blocked) {
       this.emitBookingEventOnce(input.tenantId, input.bookingId, "payment_failed", {
         bookingId: input.bookingId,
@@ -1002,10 +1028,7 @@ export class UttEnterpriseOsService {
       throw new Error(`Fraud/Risk blocked booking: ${risk.flags.join(",")}`);
     }
 
-    const persistedPayment = this.persistence.getPaymentByBooking(input.tenantId, input.bookingId);
-    const restored = this.restorePersistedPayment(persistedPayment);
-    let payment = this.paymentService.getPaymentByBooking(input.tenantId, input.bookingId) ?? restored;
-
+    let payment = this.loadPaymentForBooking(input.tenantId, input.bookingId);
     if (!payment) {
       payment = await this.paymentService.createPaymentIntent({
         tenantId: input.tenantId,
@@ -1027,7 +1050,7 @@ export class UttEnterpriseOsService {
       payment = await this.paymentService.capturePayment(payment.paymentId);
     }
 
-    if (payment.paymentStatus !== "verified") {
+    if (payment.paymentStatus === "captured" || payment.paymentStatus === "failed") {
       payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
     }
 
@@ -1040,7 +1063,7 @@ export class UttEnterpriseOsService {
         status: payment.paymentStatus,
       });
     } else {
-      this.emitBookingEventOnce(input.tenantId, input.bookingId, "payment_failed", {
+      this.emitBookingEvent(input.tenantId, "payment_failed", {
         tenantId: input.tenantId,
         bookingId: input.bookingId,
         paymentId: payment.paymentId,
@@ -1058,7 +1081,7 @@ export class UttEnterpriseOsService {
       paymentStatus: payment.paymentStatus,
       amount: payment.amount,
       currency: payment.currency,
-      updatedAt: new Date().toISOString(),
+      updatedAt: payment.updatedAt,
     });
 
     return payment;
@@ -1068,23 +1091,28 @@ export class UttEnterpriseOsService {
     input: { tenantId: string; bookingId: string; customerId: string; customerName: string; gstPercent: number },
     booking: UttBooking,
   ): UttInvoice {
-    const existingLocal = this.invoicesByBooking(input.tenantId, input.bookingId);
-    if (existingLocal) {
-      return existingLocal;
-    }
-
-    const existingService = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId);
-    if (existingService) {
-      const immutableServiceInvoice: UttInvoice = {
-        ...existingService,
-      };
-      this.invoices.set(immutableServiceInvoice.invoiceId, immutableServiceInvoice);
-      return immutableServiceInvoice;
+    const localInvoice = this.invoicesByBooking(input.tenantId, input.bookingId);
+    if (localInvoice) {
+      this.assertInvoiceIdentityImmutable(localInvoice, input.customerId, input.customerName);
+      return localInvoice;
     }
 
     const persistedInvoice = this.persistence.getInvoiceByBooking(input.tenantId, input.bookingId);
-    const restored = this.restorePersistedInvoice(persistedInvoice, input.customerName);
-    if (restored) {
+    if (persistedInvoice) {
+      if (persistedInvoice.customerId !== input.customerId || persistedInvoice.customerName !== input.customerName) {
+        throw new Error("Invoice customer identity is immutable and does not match persisted record");
+      }
+      const restored = this.restorePersistedInvoice(persistedInvoice);
+      this.invoices.set(restored.invoiceId, restored);
+      return restored;
+    }
+
+    const serviceInvoice = this.invoiceService.getInvoiceByBooking(input.tenantId, input.bookingId);
+    if (serviceInvoice) {
+      this.assertInvoiceIdentityImmutable(serviceInvoice, input.customerId, input.customerName);
+      const restored: UttInvoice = { ...serviceInvoice };
+      this.invoices.set(restored.invoiceId, restored);
+      this.persistInvoice(restored);
       return restored;
     }
 
@@ -1106,11 +1134,33 @@ export class UttEnterpriseOsService {
       total: invoice.total,
       margin: invoice.margin,
     });
+    this.persistInvoice(invoice);
+    return invoice;
+  }
 
-    this.persistence.upsertInvoice({
-      tenantId: input.tenantId,
-      invoiceId: invoice.invoiceId,
+  private persistBookingSnapshot(booking: UttBooking, payment?: PaymentRecord): void {
+    const selected = this.getSelectedOffer(booking.searchId, booking.selectedHotelId);
+    this.persistence.upsertBooking({
+      tenantId: booking.tenantId,
       bookingId: booking.bookingId,
+      status: booking.status,
+      stage: booking.stage,
+      paymentId: payment?.paymentId,
+      paymentStatus: payment?.paymentStatus,
+      paymentGateway: payment?.paymentGateway,
+      supplier: selected?.supplier ?? "MANUAL",
+      sellAmount: booking.price.sellAmount,
+      costAmount: booking.price.costAmount,
+      marginAmount: booking.price.marginAmount,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  private persistInvoice(invoice: UttInvoice): void {
+    this.persistence.upsertInvoice({
+      tenantId: invoice.tenantId,
+      invoiceId: invoice.invoiceId,
+      bookingId: invoice.bookingId,
       customerId: invoice.customer.customerId,
       customerName: invoice.customer.name,
       amount: invoice.amount,
@@ -1119,12 +1169,143 @@ export class UttEnterpriseOsService {
       margin: invoice.margin,
       createdAt: invoice.createdAt,
     });
+  }
 
-    return invoice;
+  private loadPaymentForBooking(tenantId: string, bookingId: string): PaymentRecord | undefined {
+    const inMemory = this.paymentService.getPaymentByBooking(tenantId, bookingId);
+    if (inMemory) {
+      this.payments.set(inMemory.paymentId, inMemory);
+      return inMemory;
+    }
+
+    const persisted = this.persistence.getPaymentByBooking(tenantId, bookingId);
+    if (!persisted) {
+      return undefined;
+    }
+
+    const restored: PaymentRecord = {
+      paymentId: persisted.paymentId,
+      tenantId: persisted.tenantId,
+      bookingId: persisted.bookingId,
+      amount: persisted.amount,
+      currency: persisted.currency,
+      paymentGateway: persisted.paymentGateway as PaymentRecord["paymentGateway"],
+      paymentStatus: persisted.paymentStatus as PaymentRecord["paymentStatus"],
+      createdAt: persisted.updatedAt,
+      updatedAt: persisted.updatedAt,
+    };
+
+    this.payments.set(restored.paymentId, restored);
+    return restored;
+  }
+
+  private restorePersistedBooking(input: {
+    tenantId: string;
+    bookingId: string;
+    searchId: string;
+    selectedHotelId: string;
+    customerId: string;
+    globalIdentityId: string;
+    customerLayer: UttCustomerLayer;
+    paymentGuaranteed: boolean;
+    holdMinutes: number;
+    price: UttPriceQuote;
+    paymentGuaranteeRequired: boolean;
+  }): UttBooking | undefined {
+    const persisted = this.persistence
+      .getState()
+      .bookings.find((row) => row.tenantId === input.tenantId && row.bookingId === input.bookingId);
+
+    if (!persisted) {
+      return undefined;
+    }
+
+    const restored: UttBooking = {
+      tenantId: input.tenantId,
+      bookingId: input.bookingId,
+      searchId: input.searchId,
+      selectedHotelId: input.selectedHotelId,
+      customerId: input.customerId,
+      globalIdentityId: input.globalIdentityId,
+      customerLayer: input.customerLayer,
+      stage: persisted.stage as UttBookingStage,
+      status: persisted.status as UttBookingStatus,
+      price: {
+        ...input.price,
+        costAmount: persisted.costAmount,
+        sellAmount: persisted.sellAmount,
+        marginAmount: persisted.marginAmount,
+      },
+      paymentGuaranteeRequired: input.paymentGuaranteeRequired,
+      paymentGuaranteed: persisted.paymentStatus === "verified",
+      holdClosed: persisted.status === "confirmed" || persisted.status === "voucher_issued",
+      voucherRef: persisted.status === "voucher_issued" ? `VCH-${input.bookingId}` : undefined,
+    };
+
+    this.bookings.set(restored.bookingId, restored);
+    return restored;
+  }
+
+  private validateBookingImmutableFields(
+    booking: UttBooking,
+    input: {
+      tenantId: string;
+      bookingId: string;
+      searchId: string;
+      selectedHotelId: string;
+      customerId: string;
+      globalIdentityId: string;
+      customerLayer: UttCustomerLayer;
+    },
+  ): void {
+    if (booking.tenantId !== input.tenantId) {
+      throw new Error("Booking exists outside tenant scope");
+    }
+    if (booking.customerId !== input.customerId || booking.globalIdentityId !== input.globalIdentityId) {
+      throw new Error("Booking identity is immutable once created");
+    }
+    if (booking.searchId !== input.searchId || booking.selectedHotelId !== input.selectedHotelId) {
+      throw new Error("Booking selection is immutable once created");
+    }
+    if (booking.customerLayer !== input.customerLayer) {
+      throw new Error("Booking customer layer cannot be changed");
+    }
+  }
+
+  private assertInvoiceIdentityImmutable(
+    invoice: { customer: { customerId: string; name: string } },
+    customerId: string,
+    customerName: string,
+  ): void {
+    if (invoice.customer.customerId !== customerId || invoice.customer.name !== customerName) {
+      throw new Error("Invoice customer identity is immutable and cannot be overwritten");
+    }
   }
 
   private invoicesByBooking(tenantId: string, bookingId: string): UttInvoice | undefined {
     return [...this.invoices.values()].find((invoice) => invoice.tenantId === tenantId && invoice.bookingId === bookingId);
+  }
+
+  private restorePersistedInvoice(persistedInvoice: ReturnType<UttPersistenceService["getInvoiceByBooking"]>): UttInvoice {
+    if (!persistedInvoice) {
+      throw new Error("Persisted invoice is required for restoration");
+    }
+
+    return {
+      tenantId: persistedInvoice.tenantId,
+      invoiceId: persistedInvoice.invoiceId,
+      bookingId: persistedInvoice.bookingId,
+      customer: {
+        customerId: persistedInvoice.customerId,
+        name: persistedInvoice.customerName,
+      },
+      amount: persistedInvoice.amount,
+      GST: persistedInvoice.gst,
+      total: persistedInvoice.total,
+      vendorPayable: roundNoDecimals(persistedInvoice.amount - persistedInvoice.margin),
+      margin: persistedInvoice.margin,
+      createdAt: persistedInvoice.createdAt,
+    };
   }
 
   private mapUnifiedSupplierOffer(offer: UnifiedSupplierOffer): UttAggregatedOffer {
@@ -1174,56 +1355,6 @@ export class UttEnterpriseOsService {
         signal.payload.eventName === eventName &&
         signal.payload.bookingId === bookingId,
     ).length;
-  }
-
-  private restorePersistedPayment(
-    persistedPayment: ReturnType<UttPersistenceService["getPaymentByBooking"]>,
-  ): PaymentRecord | undefined {
-    if (!persistedPayment) {
-      return undefined;
-    }
-
-    const restored: PaymentRecord = {
-      paymentId: persistedPayment.paymentId,
-      tenantId: persistedPayment.tenantId,
-      bookingId: persistedPayment.bookingId,
-      amount: persistedPayment.amount,
-      currency: persistedPayment.currency,
-      paymentGateway: persistedPayment.paymentGateway as PaymentRecord["paymentGateway"],
-      paymentStatus: persistedPayment.paymentStatus as PaymentRecord["paymentStatus"],
-      createdAt: persistedPayment.updatedAt,
-      updatedAt: persistedPayment.updatedAt,
-    };
-    this.payments.set(restored.paymentId, restored);
-    return restored;
-  }
-
-  private restorePersistedInvoice(
-    persistedInvoice: ReturnType<UttPersistenceService["getInvoiceByBooking"]>,
-    fallbackCustomerName: string,
-  ): UttInvoice | undefined {
-    if (!persistedInvoice) {
-      return undefined;
-    }
-
-    const vendorPayable = roundNoDecimals(persistedInvoice.amount - persistedInvoice.margin);
-    const restored: UttInvoice = {
-      tenantId: persistedInvoice.tenantId,
-      invoiceId: persistedInvoice.invoiceId,
-      bookingId: persistedInvoice.bookingId,
-      customer: {
-        customerId: persistedInvoice.customerId,
-        name: persistedInvoice.customerName ?? fallbackCustomerName,
-      },
-      amount: persistedInvoice.amount,
-      GST: persistedInvoice.gst,
-      total: persistedInvoice.total,
-      vendorPayable,
-      margin: persistedInvoice.margin,
-      createdAt: persistedInvoice.createdAt,
-    };
-    this.invoices.set(restored.invoiceId, restored);
-    return restored;
   }
 
   private audit(
