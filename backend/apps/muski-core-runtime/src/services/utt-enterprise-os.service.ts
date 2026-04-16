@@ -709,6 +709,11 @@ export class UttEnterpriseOsService {
 
   getApiRoutes(): string[] {
     return [
+      "POST /utt/core/search/unified",
+      "POST /utt/core/search/dedupe",
+      "POST /utt/core/search/sort",
+      "POST /utt/core/price/quote",
+      "POST /utt/core/booking-input",
       "POST /utt/search",
       "POST /utt/search/suppliers/live",
       "POST /utt/select",
