@@ -37,6 +37,9 @@ export interface BookingInputPipeline {
   paymentGuaranteeRequired: boolean;
   paymentGuaranteed: boolean;
   holdMinutes: number;
+  countryCode?: string;
+  signature?: string;
+  gstPercent?: number;
 }
 
 function normalizeHotelKey(input: Pick<UnifiedHotelRecord, "name" | "location">): string {
@@ -108,11 +111,9 @@ export class UttCorePlatformService {
     };
   }
 
-  routeBookingInputToPhase2(input: BookingInputPipeline) {
-    const selected = this.requireSelectedHotel(input.searchId, input.selectedHotelId);
-    const quote = this.buildPriceQuote(input, selected);
-
-    return this.phase2Engine.executeBookingLifecycle({
+  async routeBookingInputToPhase2(input: BookingInputPipeline) {
+    this.requireSelectedHotel(input.searchId, input.selectedHotelId);
+    return this.phase2Engine.executeBookingPaymentInvoiceLifecycle({
       tenantId: input.tenantId,
       bookingId: input.bookingId,
       searchId: input.searchId,
@@ -122,8 +123,9 @@ export class UttCorePlatformService {
       globalIdentityId: input.globalIdentityId,
       customerLayer: input.customerLayer,
       holdMinutes: input.holdMinutes,
-      paymentGuaranteed: input.paymentGuaranteed,
-      price: quote,
+      countryCode: input.countryCode,
+      signature: input.signature ?? "SYSTEM_SIGNATURE",
+      gstPercent: input.gstPercent ?? 0,
     });
   }
 
