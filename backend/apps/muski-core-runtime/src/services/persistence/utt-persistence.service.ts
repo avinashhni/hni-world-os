@@ -59,7 +59,7 @@ export interface PersistentIdempotencyRecord {
   tenantId: string;
   bookingId: string;
   lifecycleStage: string;
-  cachedResult: string;
+  cachedResult: Record<string, unknown>;
   processedAt: string;
 }
 
@@ -154,20 +154,23 @@ export class UttPersistenceService {
 
   storeEmittedEvent(record: PersistentEmittedEventRecord): void {
     const state = this.readState();
+    const recordKey = this.buildEventKey(record.tenantId, record.bookingId, record.eventName);
     const exists = state.emittedEvents.some(
-      (item) => item.tenantId === record.tenantId && item.bookingId === record.bookingId && item.eventName === record.eventName,
+      (item) => item.eventKey === recordKey,
     );
     if (exists) {
       return;
     }
-    state.emittedEvents.push(record);
+    state.emittedEvents.push({
+      ...record,
+      eventKey: recordKey,
+    });
     this.writeState(state);
   }
 
   hasEmittedEvent(tenantId: string, bookingId: string, eventName: string): boolean {
-    return this.readState().emittedEvents.some(
-      (item) => item.tenantId === tenantId && item.bookingId === bookingId && item.eventName === eventName,
-    );
+    const eventKey = this.buildEventKey(tenantId, bookingId, eventName);
+    return this.readState().emittedEvents.some((item) => item.eventKey === eventKey);
   }
 
   getState(): UttPersistentState {
@@ -212,5 +215,9 @@ export class UttPersistenceService {
 
   private writeState(state: UttPersistentState): void {
     fs.writeFileSync(this.filePath, JSON.stringify(state, null, 2));
+  }
+
+  private buildEventKey(tenantId: string, bookingId: string, eventName: string): string {
+    return `${tenantId}::${bookingId}::${eventName}`;
   }
 }
