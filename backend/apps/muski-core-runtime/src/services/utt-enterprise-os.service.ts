@@ -325,7 +325,7 @@ export class UttEnterpriseOsService {
       .sort((a, b) => a.price - b.price);
 
     this.searchStore.set(request.searchId, normalized);
-    this.emitOnce(`${request.searchId}::SEARCH_COMPLETED`, request.tenantId, "SEARCH_COMPLETED", {
+    this.emitOnce(request.tenantId, request.searchId, "SEARCH_COMPLETED", {
       searchId: request.searchId,
       suppliersCompared: supplierOffers.length,
       results: normalized.length,
@@ -471,7 +471,6 @@ export class UttEnterpriseOsService {
       paymentReady: booking.paymentGuaranteed,
     });
 
-    this.assertPreWriteNoDuplicate(input.tenantId, input.bookingId);
     const payment = await this.resolvePaymentIdempotent({
       tenantId: input.tenantId,
       booking,
@@ -1360,7 +1359,7 @@ export class UttEnterpriseOsService {
   }
 
   private emitBookingEventOnce(tenantId: string, bookingId: string, eventName: string, payload: Record<string, unknown>): void {
-    this.emitOnce(`${tenantId}::${bookingId}::${eventName}`, tenantId, eventName, payload);
+    this.emitOnce(tenantId, bookingId, eventName, payload);
   }
 
   private emitBookingEvent(tenantId: string, eventName: string, payload: Record<string, unknown>): void {
@@ -1385,21 +1384,22 @@ export class UttEnterpriseOsService {
     ).length;
   }
 
-  private emitOnce(eventKey: string, tenantId: string, eventName: string, payload: Record<string, unknown>): void {
-    const [resolvedTenantId, resolvedBookingId, resolvedEventName] = eventKey.split("::");
-    const bookingId = resolvedBookingId ?? String(payload.bookingId ?? "UNKNOWN");
-    const normalizedEventName = resolvedEventName ?? eventName;
-    if (this.persistence.hasEmittedEvent(resolvedTenantId ?? tenantId, bookingId, normalizedEventName)) {
+  private emitOnce(tenantId: string, bookingId: string, eventName: string, payload: Record<string, unknown>): void {
+    const eventKey = `${tenantId}::${bookingId}::${eventName}`;
+    if (this.persistence.hasEmittedEvent(tenantId, bookingId, eventName)) {
       return;
     }
     this.persistence.storeEmittedEvent({
-      tenantId: resolvedTenantId ?? tenantId,
+      tenantId,
       bookingId,
-      eventName: normalizedEventName,
+      eventName,
       eventKey,
       emittedAt: new Date().toISOString(),
     });
-    this.emitBookingEvent(tenantId, eventName, payload);
+    this.emitBookingEvent(tenantId, eventName, {
+      bookingId,
+      ...payload,
+    });
   }
 
   private hashPayload(payload: Record<string, unknown>): string {
@@ -1423,7 +1423,41 @@ export class UttEnterpriseOsService {
     if (snapshot.payloadHash !== payloadHash) {
       throw new Error(`Idempotency hash mismatch for ${this.idempotencyKey(tenantId, bookingId, lifecycleStage)}`);
     }
-    return JSON.parse(snapshot.cachedResult) as { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice };
+    try {
+      const parsed = JSON.parse(snapshot.cachedResult) as Partial<{
+        booking: UttBooking;
+        payment: PaymentRecord;
+        invoice: UttInvoice;
+      }>;
+      if (!this.isValidLifecycleSnapshot(parsed, tenantId, bookingId)) {
+        return undefined;
+      }
+      return parsed as { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice };
+    } catch {
+      return undefined;
+    }
+  }
+
+  private isValidLifecycleSnapshot(
+    snapshot: Partial<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }>,
+    tenantId: string,
+    bookingId: string,
+  ): snapshot is { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice } {
+    if (!snapshot.booking || !snapshot.payment || !snapshot.invoice) {
+      return false;
+    }
+
+    const { booking, payment, invoice } = snapshot;
+    if (!booking.bookingId || !payment.bookingId || !invoice.bookingId || !payment.paymentId || !invoice.invoiceId) {
+      return false;
+    }
+    if (booking.tenantId !== tenantId || payment.tenantId !== tenantId || invoice.tenantId !== tenantId) {
+      return false;
+    }
+    if (booking.bookingId !== bookingId || payment.bookingId !== bookingId || invoice.bookingId !== bookingId) {
+      return false;
+    }
+    return true;
   }
 
   private writeIdempotentSnapshot(
@@ -1459,23 +1493,6 @@ export class UttEnterpriseOsService {
     }
     if (invoice.bookingId !== booking.bookingId || payment.bookingId !== booking.bookingId) {
       throw new Error("Lifecycle validation failed: booking/payment/invoice linkage mismatch.");
-    }
-  }
-
-  private assertPreWriteNoDuplicate(tenantId: string, bookingId: string): void {
-    const bookingCount = [...this.bookings.values()].filter((row) => row.tenantId === tenantId && row.bookingId === bookingId).length;
-    if (bookingCount > 1) {
-      throw new Error("Lifecycle validation failed before write: duplicate booking detected.");
-    }
-
-    const paymentCount = [...this.payments.values()].filter((row) => row.tenantId === tenantId && row.bookingId === bookingId).length;
-    if (paymentCount > 1) {
-      throw new Error("Lifecycle validation failed before write: duplicate payment detected.");
-    }
-
-    const invoiceCount = [...this.invoices.values()].filter((row) => row.tenantId === tenantId && row.bookingId === bookingId).length;
-    if (invoiceCount > 1) {
-      throw new Error("Lifecycle validation failed before write: duplicate invoice detected.");
     }
   }
 
