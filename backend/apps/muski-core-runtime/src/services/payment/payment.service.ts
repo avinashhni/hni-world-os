@@ -81,6 +81,9 @@ export class PaymentService {
     if (payment.paymentStatus === "captured") {
       return payment;
     }
+    if (payment.paymentStatus === "failed") {
+      return payment;
+    }
     if (payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized") {
       throw new Error(`Payment capture not allowed from status: ${payment.paymentStatus}`);
     }
