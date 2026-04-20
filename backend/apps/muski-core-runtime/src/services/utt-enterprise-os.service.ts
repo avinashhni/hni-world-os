@@ -443,7 +443,7 @@ export class UttEnterpriseOsService {
     gstPercent: number;
   }): Promise<{ booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice }> {
     const stage = "BOOKING_PAYMENT_INVOICE";
-    const cached = this.readIdempotentReplay(input.tenantId, input.bookingId, stage);
+    const cached = this.readIdempotentReplay(input, stage);
     if (cached) {
       return cached;
     }
@@ -978,12 +978,22 @@ export class UttEnterpriseOsService {
       throw new Error(`Payment retry blocked for immutable status: ${payment.paymentStatus}`);
     }
 
-    if (payment.paymentStatus === "initiated" || payment.paymentStatus === "authorized" || payment.paymentStatus === "failed") {
+    if (payment.paymentStatus === "initiated" || payment.paymentStatus === "authorized") {
       payment = await this.paymentService.capturePayment(payment.paymentId);
     }
 
     if (payment.paymentStatus === "captured" || payment.paymentStatus === "failed") {
       payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
+    }
+
+    if (payment.paymentStatus === "failed") {
+      const failureBeforeCapture = payment.createdAt === payment.updatedAt;
+      if (failureBeforeCapture) {
+        payment = await this.paymentService.capturePayment(payment.paymentId);
+        if (payment.paymentStatus === "captured") {
+          payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
+        }
+      }
     }
 
     this.persistPayment(payment);
@@ -1382,16 +1392,26 @@ export class UttEnterpriseOsService {
   }
 
   private readIdempotentReplay(
-    tenantId: string,
-    bookingId: string,
+    input: {
+      tenantId: string;
+      bookingId: string;
+      searchId: string;
+      selectedHotelId: string;
+      customerId: string;
+      customerName: string;
+      globalIdentityId: string;
+    },
     lifecycleStage: string,
   ): { booking: UttBooking; payment: PaymentRecord; invoice: UttInvoice } | undefined {
-    const snapshot = this.persistence.getIdempotencyRecord(tenantId, bookingId, lifecycleStage);
+    const snapshot = this.persistence.getIdempotencyRecord(input.tenantId, input.bookingId, lifecycleStage);
     if (!snapshot) {
       return undefined;
     }
     const parsed = JSON.parse(snapshot.cachedResult) as { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice };
-    if (!this.isValidLifecycleSnapshot(parsed, tenantId, bookingId)) {
+    if (!this.isValidLifecycleSnapshot(parsed, input.tenantId, input.bookingId)) {
+      return undefined;
+    }
+    if (!this.matchesImmutableReplayIdentity(parsed.booking, input)) {
       return undefined;
     }
     return {
@@ -1399,6 +1419,29 @@ export class UttEnterpriseOsService {
       payment: parsed.payment,
       invoice: parsed.invoice,
     };
+  }
+
+  private matchesImmutableReplayIdentity(
+    booking: UttBooking,
+    input: {
+      tenantId: string;
+      bookingId: string;
+      searchId: string;
+      selectedHotelId: string;
+      customerId: string;
+      customerName: string;
+      globalIdentityId: string;
+    },
+  ): boolean {
+    return (
+      booking.tenantId === input.tenantId &&
+      booking.bookingId === input.bookingId &&
+      booking.searchId === input.searchId &&
+      booking.selectedHotelId === input.selectedHotelId &&
+      booking.customerId === input.customerId &&
+      booking.customerName === input.customerName &&
+      booking.globalIdentityId === input.globalIdentityId
+    );
   }
 
   private writeIdempotentSnapshot(
