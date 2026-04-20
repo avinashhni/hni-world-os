@@ -721,34 +721,6 @@ export class UttEnterpriseOsService {
     };
   }
 
-  getApiRoutes(): string[] {
-    return [
-      "POST /utt/core/search/unified",
-      "POST /utt/core/search/dedupe",
-      "POST /utt/core/search/sort",
-      "POST /utt/core/price/quote",
-      "POST /utt/core/booking-input",
-      "POST /utt/search",
-      "POST /utt/search/suppliers/live",
-      "POST /utt/select",
-      "POST /utt/hold",
-      "POST /utt/confirm",
-      "POST /utt/voucher",
-      "POST /utt/payment/intent",
-      "POST /utt/payment/capture",
-      "POST /utt/payment/verify",
-      "POST /utt/crm/lead-convert",
-      "POST /utt/finance/invoice",
-      "GET /utt/suppliers/status",
-      "GET /utt/suppliers/health",
-      "GET /utt/bookings",
-      "GET /utt/revenue",
-      "GET /utt/payments/status",
-      "GET /utt/payments/failed",
-      "GET /utt/alerts",
-    ];
-  }
-
   getEventFlowMap(): Array<{ stage: string; emits: string[]; worker: string }> {
     return [
       { stage: "SEARCH", emits: ["SEARCH", "SELECT", "HOLD", "CONFIRM"], worker: "Booking Engine Worker" },

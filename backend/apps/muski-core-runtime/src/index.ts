@@ -426,7 +426,6 @@ const muskiCommandRoute = uttEnterprise.muskiRouteCommand({
   command: "show bookings",
 });
 uttEnterprise.pushQueueMetric("HNI_GLOBAL", 284);
-const apiRoutes = uttEnterprise.getApiRoutes();
 const eventFlows = uttEnterprise.getEventFlowMap();
 const bookingLifecycleTestOutput = uttEnterprise.getBookingById("HNI_GLOBAL", booking.bookingId);
 const uttReadiness = uttEnterprise.getReadinessSnapshot("HNI_GLOBAL");
@@ -451,7 +450,6 @@ console.log("UTT CRM conversion:", crmConversion.status);
 console.log("UTT finance payment status:", paidFinance.paymentStatus);
 console.log("UTT hold reminders:", holdReminders.length);
 console.log("UTT MUSKI command route:", muskiCommandRoute);
-console.log("UTT API routes:", apiRoutes);
 console.log("UTT event flows:", eventFlows);
 console.log("UTT booking lifecycle test output:", bookingLifecycleTestOutput);
 console.log("UTT readiness snapshot:", uttReadiness);
