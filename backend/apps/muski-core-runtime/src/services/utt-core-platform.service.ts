@@ -1,16 +1,23 @@
-import { UttEnterpriseOsService, type UttAggregatedOffer, type UttCustomerLayer, type UttPriceQuote, type UttSearchRequest, type UttSupplierCode } from "./utt-enterprise-os.service";
+import {
+  UttEnterpriseOsService,
+  type UttAggregatedOffer,
+  type UttCustomerLayer,
+  type UttPriceQuote,
+  type UttSearchRequest,
+  type UttSupplierCode,
+} from "./utt-enterprise-os.service";
+import { UttPriceEngineService, type UttMarkupType, type UttPriceCalculationResult } from "./utt-price-engine.service";
 import { SupplierAggregationWorker } from "./suppliers/supplier-aggregation.worker";
 import type { SupplierAdapter } from "./suppliers/supplier.types";
 
-export type PriceEngineMode = "MODE_A" | "MODE_B";
-export type MarginType = "PERCENT" | "FIXED";
+export type PriceEngineMode = "standard" | "country_layer";
 
 export interface MarginConfig {
   mode: PriceEngineMode;
-  marginType: MarginType;
+  markupType: UttMarkupType;
   dynamicMarginPct: number;
   fixedMarginAmount: number;
-  minimalMarginPct: number;
+  minimumMarginAmount: number;
 }
 
 export interface UnifiedHotelRecord {
@@ -23,6 +30,7 @@ export interface UnifiedHotelRecord {
   supplier: UttSupplierCode;
   rating: number;
   images: string[];
+  pricing: UttPriceCalculationResult["breakdown"];
 }
 
 export interface BookingInputPipeline {
@@ -42,6 +50,16 @@ export interface BookingInputPipeline {
   gstPercent?: number;
 }
 
+export interface PriceQuoteInput {
+  tenantId: string;
+  bookingId: string;
+  searchId: string;
+  selectedHotelId: string;
+  customerLayer: UttCustomerLayer;
+  countryCode?: string;
+  source?: string;
+}
+
 function normalizeHotelKey(input: Pick<UnifiedHotelRecord, "name" | "location">): string {
   return `${input.name.toLowerCase().trim()}|${input.location.toLowerCase().replace(/\s+/g, " ").trim()}`;
 }
@@ -53,15 +71,16 @@ function clampMargin(value: number): number {
 
 export class UttCorePlatformService {
   private marginConfig: MarginConfig = {
-    mode: "MODE_A",
-    marginType: "PERCENT",
+    mode: "standard",
+    markupType: "percent",
     dynamicMarginPct: 12,
     fixedMarginAmount: 25,
-    minimalMarginPct: 0,
+    minimumMarginAmount: 0,
   };
 
   private readonly searchStore = new Map<string, UnifiedHotelRecord[]>();
   private readonly supplierAggregationWorker: SupplierAggregationWorker;
+  private readonly priceEngine = new UttPriceEngineService();
 
   constructor(
     private readonly phase2Engine: UttEnterpriseOsService,
@@ -80,7 +99,7 @@ export class UttCorePlatformService {
       ...input,
       dynamicMarginPct: clampMargin(input.dynamicMarginPct ?? this.marginConfig.dynamicMarginPct),
       fixedMarginAmount: clampMargin(input.fixedMarginAmount ?? this.marginConfig.fixedMarginAmount),
-      minimalMarginPct: clampMargin(input.minimalMarginPct ?? this.marginConfig.minimalMarginPct),
+      minimumMarginAmount: clampMargin(input.minimumMarginAmount ?? this.marginConfig.minimumMarginAmount),
     };
     return this.getMarginConfig();
   }
@@ -97,10 +116,9 @@ export class UttCorePlatformService {
       currency: request.currency,
     });
 
-    const normalized = aggregated.offers.map((offer, index) => this.toUnifiedHotel(offer, index));
+    const normalized = aggregated.offers.map((offer, index) => this.toUnifiedHotel(offer, index, request.tenantId));
     const deduped = this.dedupeByLowestSupplierPrice(normalized);
-    const priced = deduped.map((hotel) => ({ ...hotel, price: this.applyPriceEngine(hotel.supplierPrice) }));
-    const sorted = priced.sort((a, b) => a.price - b.price);
+    const sorted = deduped.sort((a, b) => a.price - b.price);
 
     this.searchStore.set(request.searchId, sorted);
 
@@ -109,6 +127,48 @@ export class UttCorePlatformService {
       hotels: sorted,
       failures: aggregated.failures,
     };
+  }
+
+  generatePriceQuote(input: PriceQuoteInput): { quote: UttPriceQuote; breakdown: UttPriceCalculationResult } {
+    const selected = this.requireSelectedHotel(input.searchId, input.selectedHotelId);
+
+    const breakdown = this.priceEngine.calculate({
+      supplierBasePrice: selected.supplierPrice,
+      bookingId: input.bookingId,
+      correlationId: `${input.searchId}:${input.selectedHotelId}`,
+      rule: {
+        tenantId: input.tenantId,
+        supplier: selected.supplier,
+        customerLayer: input.customerLayer,
+        countryCode: input.countryCode,
+        markupType: this.marginConfig.markupType,
+        markupValue: this.marginConfig.markupType === "fixed" ? this.marginConfig.fixedMarginAmount : this.marginConfig.dynamicMarginPct,
+        minimumMarginAmount: this.marginConfig.minimumMarginAmount,
+        currency: selected.currency,
+        source: input.source ?? "UTT_PRICE_ENGINE",
+      },
+    });
+
+    const quote: UttPriceQuote = {
+      pricingId: `PRC-${input.bookingId}`,
+      costCurrency: selected.currency,
+      sellCurrency: selected.currency,
+      costAmount: breakdown.breakdown.supplierPrice,
+      sellAmount: breakdown.breakdown.finalSellPrice,
+      marginAmount: breakdown.breakdown.markup,
+      marginPct:
+        breakdown.breakdown.supplierPrice > 0
+          ? Number(((breakdown.breakdown.markup / breakdown.breakdown.supplierPrice) * 100).toFixed(2))
+          : 0,
+      roundedRule: "NO_DECIMALS",
+      taxReady: {
+        taxCode: "GST_READY",
+        gstPct: 0,
+        estimatedTax: 0,
+      },
+    };
+
+    return { quote, breakdown };
   }
 
   async routeBookingInputToPhase2(input: BookingInputPipeline) {
@@ -133,15 +193,36 @@ export class UttCorePlatformService {
     return this.searchStore.get(searchId) ?? [];
   }
 
-  private toUnifiedHotel(offer: UttAggregatedOffer, index: number): UnifiedHotelRecord {
+  getHotelDetails(searchId: string, hotelId: string): UnifiedHotelRecord {
+    const selected = this.requireSelectedHotel(searchId, hotelId);
+    return { ...selected };
+  }
+
+  private toUnifiedHotel(offer: UttAggregatedOffer, index: number, tenantId: string): UnifiedHotelRecord {
+    const pricing = this.priceEngine.calculate({
+      supplierBasePrice: offer.price,
+      rule: {
+        tenantId,
+        supplier: offer.supplier,
+        customerLayer: "B2B",
+        markupType: this.marginConfig.markupType,
+        markupValue: this.marginConfig.markupType === "fixed" ? this.marginConfig.fixedMarginAmount : this.marginConfig.dynamicMarginPct,
+        minimumMarginAmount: this.marginConfig.minimumMarginAmount,
+        currency: offer.currency,
+        source: `SUPPLIER_${offer.supplier}`,
+      },
+      correlationId: offer.hotelId,
+    });
+
     return {
       hotelId: offer.hotelId,
       name: offer.name,
       location: offer.location,
-      price: offer.price,
-      supplierPrice: offer.price,
+      price: pricing.breakdown.finalSellPrice,
+      supplierPrice: pricing.breakdown.supplierPrice,
       currency: offer.currency,
       supplier: offer.supplier,
+      pricing: pricing.breakdown,
       rating: 3.8 + (index % 6) * 0.2,
       images: [
         `https://images.unsplash.com/photo-1566073771259-6a8506099945?sig=${index + 1}`,
@@ -162,20 +243,6 @@ export class UttCorePlatformService {
     return [...deduped.values()];
   }
 
-  private applyPriceEngine(supplierPrice: number): number {
-    if (this.marginConfig.mode === "MODE_A") {
-      const minimalMargin = (supplierPrice * this.marginConfig.minimalMarginPct) / 100;
-      return Math.round(supplierPrice + minimalMargin);
-    }
-
-    if (this.marginConfig.marginType === "FIXED") {
-      return Math.round(supplierPrice + this.marginConfig.fixedMarginAmount);
-    }
-
-    const dynamicMargin = (supplierPrice * this.marginConfig.dynamicMarginPct) / 100;
-    return Math.round(supplierPrice + dynamicMargin);
-  }
-
   private requireSelectedHotel(searchId: string, selectedHotelId: string): UnifiedHotelRecord {
     const results = this.searchStore.get(searchId) ?? [];
     const selected = results.find((row) => row.hotelId === selectedHotelId);
@@ -183,26 +250,5 @@ export class UttCorePlatformService {
       throw new Error("Selected hotel not found in unified search store");
     }
     return selected;
-  }
-
-  private buildPriceQuote(input: BookingInputPipeline, selected: UnifiedHotelRecord): UttPriceQuote {
-    const marginAmount = Math.max(selected.price - selected.supplierPrice, 0);
-    const marginPct = selected.supplierPrice > 0 ? Number(((marginAmount / selected.supplierPrice) * 100).toFixed(2)) : 0;
-
-    return {
-      pricingId: `PRC-${input.bookingId}`,
-      costCurrency: selected.currency,
-      sellCurrency: selected.currency,
-      costAmount: selected.supplierPrice,
-      sellAmount: selected.price,
-      marginAmount,
-      marginPct,
-      roundedRule: "NO_DECIMALS",
-      taxReady: {
-        taxCode: "GST_READY",
-        gstPct: 0,
-        estimatedTax: 0,
-      },
-    };
   }
 }
