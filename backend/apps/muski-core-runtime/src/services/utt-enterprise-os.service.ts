@@ -184,6 +184,12 @@ interface TelemetrySignal extends TenantScopedEntity {
   payload: Record<string, unknown>;
 }
 
+export interface UttBookingTimelineEvent {
+  at: string;
+  eventName: string;
+  payload: Record<string, unknown>;
+}
+
 function assertIsoDate(value: string, field: string): string {
   if (!/^\d{4}-\d{2}-\d{2}/.test(value)) {
     throw new Error(`Invalid ${field}. Expected ISO-like date.`);
@@ -746,6 +752,12 @@ export class UttEnterpriseOsService {
       "GET /utt/payments/status",
       "GET /utt/payments/failed",
       "GET /utt/alerts",
+      "GET /utt/health/readiness",
+      "GET /utt/bookings/:bookingId",
+      "GET /utt/bookings/:bookingId/timeline",
+      "GET /utt/payments/:bookingId/status",
+      "GET /utt/invoices/:bookingId",
+      "GET /utt/hotels/:searchId/:hotelId",
     ];
   }
 
@@ -780,6 +792,39 @@ export class UttEnterpriseOsService {
       throw new Error("Booking not found for tenant");
     }
     return booking;
+  }
+
+  getPaymentStatusByBooking(tenantId: string, bookingId: string): PaymentRecord {
+    const payment = this.loadPaymentForBooking(tenantId, bookingId);
+    if (!payment) {
+      throw new Error("Payment not found for tenant booking");
+    }
+    return payment;
+  }
+
+  getInvoiceByBooking(tenantId: string, bookingId: string): UttInvoice {
+    const invoice = this.invoicesByBooking(tenantId, bookingId) ?? this.restorePersistedInvoice(this.persistence.getInvoiceByBooking(tenantId, bookingId));
+    if (!invoice) {
+      throw new Error("Invoice not found for tenant booking");
+    }
+    return invoice;
+  }
+
+  getBookingStatusTimeline(tenantId: string, bookingId: string): UttBookingTimelineEvent[] {
+    return this.telemetrySignals
+      .filter(
+        (signal) =>
+          signal.tenantId === tenantId &&
+          signal.signalType === "booking_log" &&
+          signal.payload.bookingId === bookingId &&
+          typeof signal.payload.eventName === "string",
+      )
+      .map((signal) => ({
+        at: signal.at,
+        eventName: String(signal.payload.eventName),
+        payload: { ...signal.payload },
+      }))
+      .sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
   }
 
   pushQueueMetric(tenantId: string, queueDepth: number): void {
