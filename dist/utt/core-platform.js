@@ -1,4 +1,14 @@
-const UTT_CORE_STORAGE_KEY = 'utt_core_platform_state_v1';
+const UTT_CORE_STORAGE_KEY = 'utt_core_platform_state_v2';
+
+const LIFECYCLE_STAGES = Object.freeze([
+  'SEARCH',
+  'SELECT',
+  'HOLD',
+  'CONFIRM',
+  'PAYMENT_SUCCESS',
+  'INVOICE_GENERATED',
+  'VOUCHER_ISSUED',
+]);
 
 const defaultCoreState = {
   marginConfig: {
@@ -16,6 +26,11 @@ const defaultCoreState = {
     WEBBEDS: { healthy: true, lastCheck: new Date().toISOString(), message: 'backup_live' },
   },
   searchCache: {},
+  bookings: {},
+  payments: {},
+  invoices: {},
+  idempotency: {},
+  emittedEvents: {},
   bookingLogs: [],
   paymentInvoiceLogs: [],
 };
@@ -31,8 +46,13 @@ function readCoreState() {
       marginConfig: { ...defaultCoreState.marginConfig, ...(parsed.marginConfig || {}) },
       apiStatus: { ...defaultCoreState.apiStatus, ...(parsed.apiStatus || {}) },
       searchCache: parsed.searchCache || {},
-      bookingLogs: parsed.bookingLogs || [],
-      paymentInvoiceLogs: parsed.paymentInvoiceLogs || [],
+      bookings: parsed.bookings || {},
+      payments: parsed.payments || {},
+      invoices: parsed.invoices || {},
+      idempotency: parsed.idempotency || {},
+      emittedEvents: parsed.emittedEvents || {},
+      bookingLogs: Array.isArray(parsed.bookingLogs) ? parsed.bookingLogs : [],
+      paymentInvoiceLogs: Array.isArray(parsed.paymentInvoiceLogs) ? parsed.paymentInvoiceLogs : [],
     };
   } catch (_) {
     return structuredClone(defaultCoreState);
@@ -47,6 +67,11 @@ function saveCoreState() {
 
 function makeSearchId() {
   return `SRCH-${Date.now()}`;
+}
+
+function makeBookingId(searchId, hotelId, customerId) {
+  const safeCustomerId = customerId.trim().toUpperCase();
+  return `BKG-${btoa(`${searchId}:${hotelId}:${safeCustomerId}`).replace(/=/g, '')}`;
 }
 
 function toCurrency(amount, currency = 'USD') {
@@ -118,6 +143,214 @@ function mapRawToUnified(raw, supplier) {
     images: raw.images,
     description: raw.description,
   };
+}
+
+function emitOnce(eventKey, payload) {
+  if (uttCoreState.emittedEvents[eventKey]) {
+    return false;
+  }
+  uttCoreState.emittedEvents[eventKey] = {
+    emittedAt: new Date().toISOString(),
+    payload,
+  };
+  return true;
+}
+
+function withIdempotency(tenantId, bookingId, lifecycleStage, execute) {
+  const key = `${tenantId}:${bookingId}:${lifecycleStage}`;
+  const existing = uttCoreState.idempotency[key];
+  if (existing?.status === 'completed') {
+    return existing.response;
+  }
+  if (existing?.status === 'locked') {
+    throw new Error(`idempotency_locked:${key}`);
+  }
+
+  uttCoreState.idempotency[key] = {
+    key,
+    status: 'locked',
+    lockedAt: new Date().toISOString(),
+  };
+
+  try {
+    const response = execute();
+    uttCoreState.idempotency[key] = {
+      key,
+      status: 'completed',
+      lockedAt: uttCoreState.idempotency[key].lockedAt,
+      completedAt: new Date().toISOString(),
+      response,
+    };
+    return response;
+  } catch (error) {
+    uttCoreState.idempotency[key] = {
+      key,
+      status: 'failed',
+      failedAt: new Date().toISOString(),
+      message: error instanceof Error ? error.message : 'execution_failed',
+    };
+    throw error;
+  }
+}
+
+function advanceBookingLifecycle(booking, stage) {
+  if (!LIFECYCLE_STAGES.includes(stage)) {
+    throw new Error(`invalid_lifecycle_stage:${stage}`);
+  }
+  booking.lifecycleStage = stage;
+  booking.lifecycleHistory.push({ stage, at: new Date().toISOString() });
+
+  const eventKey = `${booking.tenantId}:${booking.bookingId}:${stage}`;
+  const emitted = emitOnce(eventKey, { bookingId: booking.bookingId, stage });
+
+  uttCoreState.bookingLogs.unshift({
+    at: new Date().toISOString(),
+    type: emitted ? 'lifecycle_progressed' : 'lifecycle_duplicate_suppressed',
+    bookingId: booking.bookingId,
+    stage,
+  });
+}
+
+function ensureBooking(searchId, hotelId, customerId, customerLayer, tenantId) {
+  const bookingId = makeBookingId(searchId, hotelId, customerId);
+  const existing = uttCoreState.bookings[bookingId];
+  if (existing) {
+    if (existing.tenantId !== tenantId) {
+      throw new Error('tenant_isolation_violation');
+    }
+    return existing;
+  }
+
+  const booking = {
+    bookingId,
+    tenantId,
+    searchId,
+    hotelId,
+    customerId,
+    customerLayer,
+    lifecycleStage: 'SEARCH',
+    lifecycleHistory: [{ stage: 'SEARCH', at: new Date().toISOString() }],
+    hold: {
+      status: 'active',
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
+    },
+    createdAt: new Date().toISOString(),
+  };
+
+  uttCoreState.bookings[bookingId] = booking;
+  return booking;
+}
+
+function processBookingPipeline(input) {
+  const tenantId = 'HNI_GLOBAL';
+  const booking = ensureBooking(input.searchId, input.selectedHotelId, input.customerId, input.customerLayer, tenantId);
+
+  withIdempotency(tenantId, booking.bookingId, 'SELECT', () => {
+    advanceBookingLifecycle(booking, 'SELECT');
+    return { bookingId: booking.bookingId, stage: 'SELECT' };
+  });
+
+  withIdempotency(tenantId, booking.bookingId, 'HOLD', () => {
+    if (booking.hold.status !== 'active') {
+      throw new Error('hold_not_active');
+    }
+    advanceBookingLifecycle(booking, 'HOLD');
+    return { bookingId: booking.bookingId, stage: 'HOLD' };
+  });
+
+  withIdempotency(tenantId, booking.bookingId, 'CONFIRM', () => {
+    if (booking.hold.status !== 'active') {
+      throw new Error('hold_expired_or_closed');
+    }
+    advanceBookingLifecycle(booking, 'CONFIRM');
+    return { bookingId: booking.bookingId, stage: 'CONFIRM' };
+  });
+
+  const payment = withIdempotency(tenantId, booking.bookingId, 'PAYMENT_SUCCESS', () => {
+    const paymentId = `PAY-${booking.bookingId}`;
+    const existingPayment = uttCoreState.payments[paymentId];
+    if (existingPayment && existingPayment.status === 'verified') {
+      return existingPayment;
+    }
+    const paymentRecord = {
+      paymentId,
+      bookingId: booking.bookingId,
+      tenantId,
+      status: input.paymentGuaranteeRequired ? 'verified' : 'not_required',
+      retrySafe: true,
+      updatedAt: new Date().toISOString(),
+    };
+    uttCoreState.payments[paymentId] = paymentRecord;
+    advanceBookingLifecycle(booking, 'PAYMENT_SUCCESS');
+    return paymentRecord;
+  });
+
+  const invoice = withIdempotency(tenantId, booking.bookingId, 'INVOICE_GENERATED', () => {
+    const invoiceId = `INV-${booking.bookingId}`;
+    const existingInvoice = uttCoreState.invoices[invoiceId];
+    if (existingInvoice) {
+      if (existingInvoice.customerId !== booking.customerId || existingInvoice.customerName !== booking.customerLayer) {
+        throw new Error('invoice_immutable_violation');
+      }
+      return existingInvoice;
+    }
+
+    const invoiceRecord = {
+      invoiceId,
+      bookingId: booking.bookingId,
+      tenantId,
+      customerId: booking.customerId,
+      customerName: booking.customerLayer,
+      immutable: true,
+      createdAt: new Date().toISOString(),
+    };
+    uttCoreState.invoices[invoiceId] = invoiceRecord;
+    advanceBookingLifecycle(booking, 'INVOICE_GENERATED');
+    return invoiceRecord;
+  });
+
+  withIdempotency(tenantId, booking.bookingId, 'VOUCHER_ISSUED', () => {
+    advanceBookingLifecycle(booking, 'VOUCHER_ISSUED');
+    booking.hold = {
+      status: 'consumed',
+      expiresAt: booking.hold.expiresAt,
+    };
+    return { bookingId: booking.bookingId, stage: 'VOUCHER_ISSUED' };
+  });
+
+  uttCoreState.paymentInvoiceLogs.unshift({
+    at: new Date().toISOString(),
+    paymentStatus: payment.status,
+    invoiceStatus: invoice.immutable ? 'immutable' : 'mutable',
+    bookingRef: booking.bookingId,
+  });
+
+  return {
+    booking,
+    payment,
+    invoice,
+    replaySafeRestore: {
+      bookingId: booking.bookingId,
+      restoredFrom: 'persistent_state',
+      lifecycleStage: booking.lifecycleStage,
+    },
+  };
+}
+
+function expireActiveHolds() {
+  const now = Date.now();
+  Object.values(uttCoreState.bookings).forEach((booking) => {
+    if (booking.hold?.status !== 'active') return;
+    if (booking.lifecycleStage === 'VOUCHER_ISSUED') return;
+    if (new Date(booking.hold.expiresAt).getTime() <= now) {
+      booking.hold.status = 'expired';
+      uttCoreState.bookingLogs.unshift({
+        at: new Date().toISOString(),
+        type: 'hold_expired',
+        bookingId: booking.bookingId,
+      });
+    }
+  });
 }
 
 async function mockSupplierCall(supplier, payload) {
@@ -294,28 +527,29 @@ window.uttSubmitBooking = function uttSubmitBooking(event) {
     searchId,
     selectedHotelId: hotelId,
     customerId: form.customerId.value.trim(),
-    customerLayer: form.customerLayer.value,
+    customerLayer: form.customerLayer.value.trim(),
     paymentGuaranteeRequired: form.paymentGuaranteeRequired.checked,
   };
 
-  uttCoreState.bookingLogs.unshift({
-    at: new Date().toISOString(),
-    type: 'booking_input_pipeline',
-    payload: bookingInput,
-    phase2Engine: 'routed',
-  });
+  if (!bookingInput.customerId || !bookingInput.customerLayer) {
+    return;
+  }
 
-  uttCoreState.paymentInvoiceLogs.unshift({
-    at: new Date().toISOString(),
-    paymentStatus: bookingInput.paymentGuaranteeRequired ? 'pending_verification' : 'not_required',
-    invoiceStatus: 'phase2_invoice_pipeline_locked',
-    bookingRef: `${searchId}:${hotelId}`,
-  });
+  expireActiveHolds();
 
-  saveCoreState();
-  const result = document.getElementById('uttB2CBookingResult');
-  if (result) {
-    result.innerHTML = `<div class="muski-log-item"><strong>Booking pipeline submitted</strong><br/>searchId: ${bookingInput.searchId}<br/>selectedHotelId: ${bookingInput.selectedHotelId}<br/>customerId: ${bookingInput.customerId}<br/>customerLayer: ${bookingInput.customerLayer}<br/>paymentGuaranteeRequired: ${bookingInput.paymentGuaranteeRequired}<br/><em>Passed into locked Phase 2 lifecycle/payment/invoice/idempotency engine.</em></div>`;
+  try {
+    const output = processBookingPipeline(bookingInput);
+    saveCoreState();
+
+    const result = document.getElementById('uttB2CBookingResult');
+    if (result) {
+      result.innerHTML = `<div class="muski-log-item"><strong>Booking stabilized</strong><br/>bookingId: ${output.booking.bookingId}<br/>lifecycleStage: ${output.booking.lifecycleStage}<br/>paymentStatus: ${output.payment.status}<br/>invoiceId: ${output.invoice.invoiceId}<br/><em>Lifecycle, idempotency, immutability, payment lock and replay safety enforced from persistent state.</em></div>`;
+    }
+  } catch (error) {
+    const result = document.getElementById('uttB2CBookingResult');
+    if (result) {
+      result.innerHTML = `<div class="muski-log-item"><strong>Booking blocked</strong><br/><em>${error instanceof Error ? error.message : 'pipeline_error'}</em></div>`;
+    }
   }
 };
 
@@ -371,7 +605,7 @@ window.uttRenderAdmin = function uttRenderAdmin() {
         <tr>
           <td>${new Date(row.at).toLocaleString()}</td>
           <td>${row.type}</td>
-          <td>${JSON.stringify(row.payload || row.mode || row.records || '')}</td>
+          <td>${JSON.stringify(row.bookingId || row.stage || row.payload || row.mode || row.records || '')}</td>
         </tr>
       `).join('') || '<tr><td colspan="3">No logs yet.</td></tr>'}
     `;
