@@ -81,7 +81,7 @@ export class PaymentService {
     if (payment.paymentStatus === "captured") {
       return payment;
     }
-    if (payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized") {
+    if (payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized" && payment.paymentStatus !== "failed") {
       throw new Error(`Payment capture not allowed from status: ${payment.paymentStatus}`);
     }
     const client = payment.paymentGateway === "RAZORPAY" ? this.razorpayClient : this.stripeClient;

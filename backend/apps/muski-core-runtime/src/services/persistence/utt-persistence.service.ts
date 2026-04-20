@@ -59,7 +59,6 @@ export interface PersistentIdempotencyRecord {
   tenantId: string;
   bookingId: string;
   lifecycleStage: string;
-  payloadHash: string;
   cachedResult: string;
   processedAt: string;
 }
