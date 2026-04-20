@@ -1433,9 +1433,7 @@ export class UttEnterpriseOsService {
       globalIdentityId: string;
     },
   ): boolean {
-    if (!booking) {
-      return false;
-    }
+    if (!booking) return false;
 
     const immutableMatches =
       booking.tenantId === input.tenantId &&
@@ -1446,11 +1444,7 @@ export class UttEnterpriseOsService {
       booking.customerName === input.customerName &&
       booking.globalIdentityId === input.globalIdentityId;
 
-    if (!immutableMatches) {
-      return false;
-    }
-
-    return true;
+    return immutableMatches;
   }
 
   private writeIdempotentSnapshot(
