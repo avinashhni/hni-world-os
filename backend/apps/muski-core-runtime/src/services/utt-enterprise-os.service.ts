@@ -1422,7 +1422,7 @@ export class UttEnterpriseOsService {
   }
 
   private matchesImmutableReplayIdentity(
-    booking: UttBooking,
+    booking: UttBooking | undefined,
     input: {
       tenantId: string;
       bookingId: string;
@@ -1433,15 +1433,24 @@ export class UttEnterpriseOsService {
       globalIdentityId: string;
     },
   ): boolean {
-    return (
+    if (!booking) {
+      return false;
+    }
+
+    const immutableMatches =
       booking.tenantId === input.tenantId &&
       booking.bookingId === input.bookingId &&
       booking.searchId === input.searchId &&
       booking.selectedHotelId === input.selectedHotelId &&
       booking.customerId === input.customerId &&
       booking.customerName === input.customerName &&
-      booking.globalIdentityId === input.globalIdentityId
-    );
+      booking.globalIdentityId === input.globalIdentityId;
+
+    if (!immutableMatches) {
+      return false;
+    }
+
+    return true;
   }
 
   private writeIdempotentSnapshot(
