@@ -50,13 +50,14 @@ export class UttPriceEngineService {
     const marginPercent = this.config.supplierMarginOverride[input.supplier] ?? this.config.globalMarginPercent;
     this.assertMarginPercent(marginPercent, "marginPercent");
 
-    const computedSellPrice = Number((input.costPrice + (input.costPrice * marginPercent) / 100).toFixed(2));
+    const marginAmount = Number(((input.costPrice * marginPercent) / 100).toFixed(2));
+    const computedSellPrice = Number((input.costPrice + marginAmount).toFixed(2));
     const requestedAmount = input.amount ?? computedSellPrice;
     this.assertAmount(requestedAmount, "amount");
 
-    const sellPrice = Number(requestedAmount.toFixed(2));
-    const marginAmount = Number(Math.max(sellPrice - input.costPrice, 0).toFixed(2));
-    const lossFlag = input.costPrice > sellPrice;
+    const normalizedAmount = Number(requestedAmount.toFixed(2));
+    const safeMargin = Number(Math.max(normalizedAmount - input.costPrice, 0).toFixed(2));
+    const lossFlag = input.costPrice > normalizedAmount;
 
     if (lossFlag) {
       this.telemetry?.("utt_price_loss_flag", {
@@ -64,7 +65,7 @@ export class UttPriceEngineService {
         bookingId: input.bookingId,
         supplier: input.supplier,
         costPrice: Number(input.costPrice.toFixed(2)),
-        amount: sellPrice,
+        amount: normalizedAmount,
         lossFlag: true,
       });
     }
@@ -74,8 +75,8 @@ export class UttPriceEngineService {
       bookingId: input.bookingId,
       costPrice: Number(input.costPrice.toFixed(2)),
       marginPercent,
-      marginAmount,
-      sellPrice,
+      marginAmount: safeMargin,
+      sellPrice: normalizedAmount,
       lossFlag,
     };
   }
