@@ -81,7 +81,7 @@ export class PaymentService {
     if (payment.paymentStatus === "captured") {
       return payment;
     }
-    if (payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized" && payment.paymentStatus !== "failed") {
+    if (payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized") {
       throw new Error(`Payment capture not allowed from status: ${payment.paymentStatus}`);
     }
     const client = payment.paymentGateway === "RAZORPAY" ? this.razorpayClient : this.stripeClient;
@@ -96,6 +96,9 @@ export class PaymentService {
     this.assertKnownPaymentState(payment.paymentStatus);
     if (payment.paymentStatus === "verified") {
       return payment;
+    }
+    if (payment.paymentStatus !== "captured" && payment.paymentStatus !== "failed") {
+      throw new Error(`Payment verify not allowed from status: ${payment.paymentStatus}`);
     }
     const client = payment.paymentGateway === "RAZORPAY" ? this.razorpayClient : this.stripeClient;
     const result = await client.verify(paymentId, signature);

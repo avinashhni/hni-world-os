@@ -472,9 +472,6 @@ export class UttEnterpriseOsService {
     if (booking.paymentGuaranteed) {
       booking.stage = "PAYMENT_SUCCESS";
     }
-    if (booking.paymentGuaranteeRequired && !booking.paymentGuaranteed) {
-      throw new Error("B2C/CORPORATE payment verification failed. Retry allowed with same booking/payment identity.");
-    }
 
     const invoice = this.resolveInvoiceIdempotent(
       {
@@ -486,7 +483,7 @@ export class UttEnterpriseOsService {
     );
 
     booking.stage = "INVOICE_GENERATED";
-    this.emitBookingEventOnce(input.tenantId, input.bookingId, "INVOICE_GENERATED", {
+    this.emitOnce(input.tenantId, input.bookingId, "INVOICE_GENERATED", {
       bookingId: input.bookingId,
       invoiceId: invoice.invoiceId,
       total: invoice.total,
@@ -529,7 +526,7 @@ export class UttEnterpriseOsService {
       if (shouldExpire && statusAllowsExpiry) {
         hold.status = "expired";
         booking.status = "expired";
-        this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "HOLD_EXPIRED", {
+        this.emitOnce(booking.tenantId, booking.bookingId, "HOLD_EXPIRED", {
           bookingId: booking.bookingId,
           holdId: hold.holdId,
         });
@@ -851,7 +848,7 @@ export class UttEnterpriseOsService {
     };
 
     this.bookings.set(booking.bookingId, booking);
-    this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "SEARCH", { bookingId: booking.bookingId });
+    this.emitOnce(booking.tenantId, booking.bookingId, "SEARCH", { bookingId: booking.bookingId });
     return booking;
   }
 
@@ -865,13 +862,13 @@ export class UttEnterpriseOsService {
     if (booking.status === "search_completed") {
       booking.stage = "SELECT";
       booking.status = "selected";
-      this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "SELECT", { bookingId: booking.bookingId });
+      this.emitOnce(booking.tenantId, booking.bookingId, "SELECT", { bookingId: booking.bookingId });
     }
 
     if (booking.status === "selected" || booking.status === "held") {
       booking.stage = "HOLD";
       booking.status = "hold_created";
-      this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "HOLD", {
+      this.emitOnce(booking.tenantId, booking.bookingId, "HOLD", {
         bookingId: booking.bookingId,
         holdId: booking.hold?.holdId,
         expiresAt: booking.hold?.expiresAt,
@@ -885,7 +882,7 @@ export class UttEnterpriseOsService {
 
       booking.stage = "CONFIRM";
       booking.status = "confirmed";
-      this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "CONFIRM", { bookingId: booking.bookingId });
+      this.emitOnce(booking.tenantId, booking.bookingId, "CONFIRM", { bookingId: booking.bookingId });
     }
   }
 
@@ -920,13 +917,10 @@ export class UttEnterpriseOsService {
   }): Promise<PaymentRecord> {
     if (input.booking.paymentLocked) {
       const existingLocked = this.loadPaymentForBooking(input.tenantId, input.booking.bookingId);
-      if (!existingLocked) {
-        throw new Error("Booking payment lock corruption: locked booking has no persisted payment.");
+      if (existingLocked?.paymentStatus === "verified") {
+        return existingLocked;
       }
-      if (existingLocked.paymentStatus !== "verified") {
-        throw new Error(`Booking payment lock corruption: expected verified payment, got ${existingLocked.paymentStatus}`);
-      }
-      return existingLocked;
+      input.booking.paymentLocked = false;
     }
 
     const risk = this.fraudRiskService.evaluate({
@@ -940,7 +934,7 @@ export class UttEnterpriseOsService {
     });
 
     if (risk.blocked) {
-      this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "payment_failed", {
+      this.emitOnce(input.tenantId, input.booking.bookingId, "payment_failed", {
         bookingId: input.booking.bookingId,
         reason: risk.flags.join(","),
       });
@@ -958,7 +952,7 @@ export class UttEnterpriseOsService {
         customerLayer: input.customerLayer,
         countryCode: input.countryCode,
       });
-      this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "payment_initiated", {
+      this.emitOnce(input.tenantId, input.booking.bookingId, "payment_initiated", {
         bookingId: input.booking.bookingId,
         paymentId: payment.paymentId,
       });
@@ -967,47 +961,42 @@ export class UttEnterpriseOsService {
     if (payment.paymentStatus === "verified") {
       input.booking.paymentLocked = true;
       this.persistPayment(payment);
-      this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "PAYMENT_SUCCESS", {
+      this.emitOnce(input.tenantId, input.booking.bookingId, "PAYMENT_SUCCESS", {
         bookingId: input.booking.bookingId,
         paymentId: payment.paymentId,
       });
       return payment;
-    }
-
-    if (payment.paymentStatus !== "failed" && payment.paymentStatus !== "initiated" && payment.paymentStatus !== "authorized" && payment.paymentStatus !== "captured") {
-      throw new Error(`Payment retry blocked for immutable status: ${payment.paymentStatus}`);
     }
 
     if (payment.paymentStatus === "initiated" || payment.paymentStatus === "authorized") {
       payment = await this.paymentService.capturePayment(payment.paymentId);
     }
 
-    if (payment.paymentStatus === "captured" || payment.paymentStatus === "failed") {
-      payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
-    }
-
     if (payment.paymentStatus === "failed") {
       const failureBeforeCapture = payment.createdAt === payment.updatedAt;
       if (failureBeforeCapture) {
         payment = await this.paymentService.capturePayment(payment.paymentId);
-        if (payment.paymentStatus === "captured") {
-          payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
-        }
+      } else {
+        payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
       }
+    }
+
+    if (payment.paymentStatus === "captured" || payment.paymentStatus === "failed") {
+      payment = await this.paymentService.verifyPayment(payment.paymentId, input.signature);
     }
 
     this.persistPayment(payment);
 
     if (payment.paymentStatus === "verified") {
       input.booking.paymentLocked = true;
-      this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "PAYMENT_SUCCESS", {
+      this.emitOnce(input.tenantId, input.booking.bookingId, "PAYMENT_SUCCESS", {
         bookingId: input.booking.bookingId,
         paymentId: payment.paymentId,
       });
       return payment;
     }
 
-    this.emitBookingEventOnce(input.tenantId, input.booking.bookingId, "payment_failed", {
+    this.emitOnce(input.tenantId, input.booking.bookingId, "payment_failed", {
       bookingId: input.booking.bookingId,
       paymentId: payment.paymentId,
       status: payment.paymentStatus,
@@ -1070,7 +1059,7 @@ export class UttEnterpriseOsService {
     booking.voucherRef = booking.voucherRef ?? `VCH-${booking.bookingId}`;
     booking.holdClosed = true;
 
-    this.emitBookingEventOnce(booking.tenantId, booking.bookingId, "VOUCHER_ISSUED", {
+    this.emitOnce(booking.tenantId, booking.bookingId, "VOUCHER_ISSUED", {
       bookingId: booking.bookingId,
       voucherRef: booking.voucherRef,
     });
@@ -1354,10 +1343,6 @@ export class UttEnterpriseOsService {
     };
   }
 
-  private emitBookingEventOnce(tenantId: string, bookingId: string, eventName: string, payload: Record<string, unknown>): void {
-    this.emitOnce(tenantId, bookingId, eventName, payload);
-  }
-
   private emitBookingEvent(tenantId: string, eventName: string, payload: Record<string, unknown>): void {
     this.telemetry(tenantId, "booking_log", {
       tenantId,
@@ -1407,7 +1392,10 @@ export class UttEnterpriseOsService {
     if (!snapshot) {
       return undefined;
     }
-    const parsed = JSON.parse(snapshot.cachedResult) as { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice };
+    const parsed = this.parseLifecycleSnapshot(snapshot.cachedResult);
+    if (!parsed) {
+      return undefined;
+    }
     if (!this.isValidLifecycleSnapshot(parsed, input.tenantId, input.bookingId)) {
       return undefined;
     }
@@ -1457,9 +1445,23 @@ export class UttEnterpriseOsService {
       tenantId,
       bookingId,
       lifecycleStage,
-      cachedResult: JSON.stringify(response),
+      cachedResult: response as unknown as Record<string, unknown>,
       processedAt: new Date().toISOString(),
     });
+  }
+
+  private parseLifecycleSnapshot(value: unknown): { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice } | undefined {
+    if (typeof value === "string") {
+      try {
+        return JSON.parse(value) as { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice };
+      } catch {
+        return undefined;
+      }
+    }
+    if (value && typeof value === "object") {
+      return value as { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice };
+    }
+    return undefined;
   }
 
   private isValidLifecycleSnapshot(

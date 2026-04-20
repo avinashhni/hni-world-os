@@ -59,7 +59,7 @@ export interface PersistentIdempotencyRecord {
   tenantId: string;
   bookingId: string;
   lifecycleStage: string;
-  cachedResult: string;
+  cachedResult: Record<string, unknown>;
   processedAt: string;
 }
 
@@ -154,9 +154,7 @@ export class UttPersistenceService {
 
   storeEmittedEvent(record: PersistentEmittedEventRecord): void {
     const state = this.readState();
-    const exists = state.emittedEvents.some(
-      (item) => item.tenantId === record.tenantId && item.bookingId === record.bookingId && item.eventName === record.eventName,
-    );
+    const exists = state.emittedEvents.some((item) => item.eventKey === record.eventKey);
     if (exists) {
       return;
     }
@@ -165,9 +163,8 @@ export class UttPersistenceService {
   }
 
   hasEmittedEvent(tenantId: string, bookingId: string, eventName: string): boolean {
-    return this.readState().emittedEvents.some(
-      (item) => item.tenantId === tenantId && item.bookingId === bookingId && item.eventName === eventName,
-    );
+    const eventKey = `${tenantId}::${bookingId}::${eventName}`;
+    return this.readState().emittedEvents.some((item) => item.eventKey === eventKey);
   }
 
   getState(): UttPersistentState {
