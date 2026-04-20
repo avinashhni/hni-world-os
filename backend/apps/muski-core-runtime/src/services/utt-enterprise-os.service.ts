@@ -1399,17 +1399,33 @@ export class UttEnterpriseOsService {
     if (!snapshot) {
       return undefined;
     }
-    const parsed = snapshot.cachedResult as { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice };
-    if (!this.isValidLifecycleSnapshot(parsed, input.tenantId, input.bookingId)) {
+    let normalizedCachedResult: { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice } | undefined;
+    if (typeof snapshot.cachedResult === "string") {
+      try {
+        normalizedCachedResult = JSON.parse(snapshot.cachedResult) as {
+          booking?: UttBooking;
+          payment?: PaymentRecord;
+          invoice?: UttInvoice;
+        };
+      } catch {
+        return undefined;
+      }
+    } else if (snapshot.cachedResult && typeof snapshot.cachedResult === "object") {
+      normalizedCachedResult = snapshot.cachedResult as { booking?: UttBooking; payment?: PaymentRecord; invoice?: UttInvoice };
+    } else {
       return undefined;
     }
-    if (!this.matchesImmutableReplayIdentity(parsed.booking, input)) {
+
+    if (!this.isValidLifecycleSnapshot(normalizedCachedResult, input.tenantId, input.bookingId)) {
+      return undefined;
+    }
+    if (!this.matchesImmutableReplayIdentity(normalizedCachedResult.booking, input)) {
       return undefined;
     }
     return {
-      booking: parsed.booking,
-      payment: parsed.payment,
-      invoice: parsed.invoice,
+      booking: normalizedCachedResult.booking,
+      payment: normalizedCachedResult.payment,
+      invoice: normalizedCachedResult.invoice,
     };
   }
 
